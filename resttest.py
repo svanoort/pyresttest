@@ -1,6 +1,7 @@
 import argparse
 import yaml
 import pycurl
+import json #Temporary, remove me!
 
 
 HTTP_METHODS = ['GET','PUT','POST','DELETE']
@@ -14,6 +15,7 @@ class Test:
     method = "GET"
     group = 'Default'
     name = 'Unnamed'
+    benchmark = False
     
 
 class TestConfig:
@@ -23,14 +25,20 @@ class TestConfig:
     repeats = 0 
     verbose = False
 
+class BenchmarkConfig:
+    """ Holds configuration specific to benchmarking of method """
+    warmup_runs = 100 #Times call is executed to warm up
+    benchmark_runs = 1000 #Times call is executed to generate benchmark
+    #TODO some sort of tracking for different kinds of stats on responses?
+    #I.E. mean response time, stdev on response time 
+
 class TestResponse: 
     """ Encapsulates everything about a test response """   
     test = None #Test run
     response_code = None
     body = "" #Response body, if tracked
     passed = False
-    response_headers = ""
-    benchmark = False    
+    response_headers = ""    
     statistics = None #Used for benchmark stats on the method
 
     def body_callback(self, buf): #Callback for when we actually want the method body back
@@ -51,8 +59,50 @@ def read_test_file(path):
 
 def build_tests(tests, test_files = set() ):
     """ Convert a YAML structure to a set of structured tests
-    test_files is used for tests that import to avoid recursive loops """
+    test_files is used to track tests that import other tests, to avoid recursive loops """
+
+    tests_out = list()
+    test_config = TestConfig()
+
+    #returns a testconfig and collection of tests
+    for node in tests:
+        if isinstance(node,dict):
+            if len(node.keys()) == 1:
+                key = node.keys()[0]
+                if key == 'import':
+                    importfile = node[key] #import another file
+                    print 'Importing additional testset: '+importfile
+                if key == 'url': #Simple test, just a GET to a URL
+                    mytest = Test()
+                    mytest.url = node[key]
+                    tests_out.append(mytest)
+                    print 'Simple GET to URL: ' + node[key]
+                if key == 'test': #Complex test with additional parameters
+                    child = node[key]
+                    mytest = create_validate_complex_test(child)
+                    #TODO need to validate complex test                   
+                    
+
+                    tests_out.append(mytest)
+                    print 'Complex test: ' + json.dumps(node[key])
+                if key == 'Config':
+                    print 'Configuration: ' + json.dumps(node[key])
     return None
+
+def create_validate_complex_test(yaml_object):
+    """ Perform configuration and validation for a complex test """
+    mytest = Test()
+    for configelement in child: #Configure test using configuration elements
+        #TODO validate all strings are single strings
+        if configelement == 'url':
+            mytest.url = child[configelement]
+        elif configelement == 'method':
+            mytest.method = child[configelement]                        
+        elif configelement == 'group':
+            mytest.group = child[configelement]
+        elif configelement == 'name':
+            mytest.name = child[configelement]
+    return mytest
 
 
 def test(mytest, test_config = TestConfig()):
@@ -95,7 +145,7 @@ def test(mytest, test_config = TestConfig()):
 
 
 def execute_tests(mytests, test_config = TestConfig() ):
-    """ Execute a set of tests """
+    """ Execute a set of tests, using given collection of tests and config info for test set """
     group_results = dict() #results, by group 
     group_failure_counts = dict()   
 
@@ -108,7 +158,8 @@ def execute_tests(mytests, test_config = TestConfig() ):
         result = test(test, test_config = test_config)
 
         failures = group_failure_counts[test.group]
-        if not result.passed:
+
+        if not result.passed: #Print failure, increase failure counts for that test group
             print 'Test Failed: '+test.name+" URL="+test.url+" Group="+test.group            
             
             #Increment test failure counts for that group (adding an entry if not present)
@@ -149,4 +200,5 @@ if(__name__ == '__main__'):
     print args.url
     print args.test
     testset = read_test_file(args.test)
-    print testset
+    parsed = build_tests(testset)
+    print parsed
