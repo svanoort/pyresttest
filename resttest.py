@@ -3,23 +3,24 @@ import yaml
 import pycurl
 import json #Temporary, remove me!
 #TODO use voluptuous for structural validation of elements
+#TODO set up and maintain Unicode safety! YAML and strings are unicode, bytes are bytes (reponse and request bodies)
 
 #Map HTTP method names to curl methods
 #Kind of obnoxious that it works this way...
-HTTP_METHODS = {'GET' : pycurl.HTTPGET,
-    'PUT' : pycurl.UPLOAD,
-    'POST' : pycurl.POST,
-    'DELETE' : 'DELETE'}
+HTTP_METHODS = {u'GET' : pycurl.HTTPGET,
+    u'PUT' : pycurl.UPLOAD,
+    u'POST' : pycurl.POST,
+    u'DELETE' : 'DELETE'}
 
 class Test:
-    """ Describes a REST test """
+    """ Describes a REST test, which may include a benchmark component """
     url  = None
     expected_status = [200] #expected HTTP status code or codes
     body = None #Request body, if any (for POST/PUT methods)
     headers = dict() #HTTP Headers
-    method = "GET"
-    group = 'Default'
-    name = 'Unnamed'    
+    method = u"GET"
+    group = u'Default'
+    name = u'Unnamed'    
     validators = None #Validators for response body, IE regexes, etc
     benchmark = None #Benchmarking config for item
     #In this case, config would be used by all tests following config definition, and in the same scope as tests
@@ -33,6 +34,7 @@ class TestConfig:
     print_bodies = False #Print response bodies in all cases
     retries = 0 #Retries on failures
     verbose = False
+    test_parallel = False #Allow parallel execution of tests in a test set, for speed?
 
     def __str__(self):
         print json.dumps(self)
@@ -41,6 +43,12 @@ class TestSet:
     """ Encapsulates a set of tests and test configuration for them """
     tests = list()
     config = TestConfig()
+
+class BenchmarkResult:
+    """ Stores results from a benchmark for reporting use """
+    aggregates = dict() #Map aggregate name (key) to aggregate value (value)
+    #TODO aggregates act as a reduce operation on a metric result, doing stream-wise processing
+    results = list() #Benchmark output
 
 class BenchmarkConfig:
     """ Holds configuration specific to benchmarking of method """
@@ -58,9 +66,9 @@ class TestResponse:
     """ Encapsulates everything about a test response """   
     test = None #Test run
     response_code = None
-    body = "" #Response body, if tracked -- TODO use chunk or byte-array storage
+    body = bytearray() #Response body, if tracked -- TODO use chunk or byte-array storage
     passed = False
-    response_headers = ""
+    response_headers = bytearray()
     statistics = None #Used for benchmark stats on the method
 
     def __str__(self):
@@ -68,11 +76,14 @@ class TestResponse:
 
     def body_callback(self, buf):
         """ Write response body by pyCurl callback """
-        self.body = self.body + buf #TODO use chunk or byte-array storage
+        self.body.extend(buf)
+
+    def unicode_body(self):
+        return unicode(body,'UTF-8')        
 
     def header_callback(self,buf):
         """ Write headers by pyCurl callback """
-        self.response_headers = self.response_headers + buf #Optional TODO use chunk or byte-array storage
+        self.response_headers.extend(buf) #Optional TODO use chunk or byte-array storage    
 
 def read_test_file(path):
     """ Read test file at 'path' in YAML """
@@ -103,18 +114,18 @@ def build_testsets(base_url, test_structure, test_files = set() ):
         if isinstance(node,dict):
             node = lowercase_keys(node)
             for key in node:                
-                if key == 'import':
+                if key == u'import':
                     importfile = node[key] #import another file
-                    print 'Importing additional testset: '+importfile
-                if key == 'url': #Simple test, just a GET to a URL
+                    print u'Importing additional testset: '+importfile
+                if key == u'url': #Simple test, just a GET to a URL
                     mytest = Test()
                     mytest.url = base_url + node[key]
                     tests_out.append(mytest)                                        
-                if key == 'test': #Complex test with additional parameters
+                if key == u'test': #Complex test with additional parameters
                     child = node[key]
                     mytest = make_test(base_url, child)                    
                     tests_out.append(mytest)                    
-                if key == 'config' or key == 'configuration':
+                if key == u'config' or key == u'configuration':
                     test_config = make_configuration(node[key])
                     print 'Configuration: ' + json.dumps(node[key])
     testset = TestSet()
@@ -129,13 +140,13 @@ def make_configuration(node):
     node = lowercase_keys(flatten_dictionaries(node)) #Make it usable    
 
     for key, value in node.items():
-        if key == 'timeout':
+        if key == u'timeout':
             test_config.timeout = int(value)
-        elif key == 'print_bodies':
+        elif key == u'print_bodies':
             test_config.print_bodies = bool(value)
-        elif key == 'retries':
+        elif key == u'retries':
             test_config.retries = int(value)
-        elif key == 'verbose':
+        elif key == u'verbose':
             test_config.verbose = bool(value)
 
     return test_config
@@ -186,22 +197,22 @@ def make_test(base_url, node):
     #Copy/convert input elements into appropriate form for a test object
     for configelement, configvalue in node.items(): 
         #Configure test using configuration elements            
-        if configelement == 'url':
+        if configelement == u'url':
             mytest.url = base_url + str(configvalue)
-        elif configelement == 'method': #Http method, converted to uppercase string
+        elif configelement == u'method': #Http method, converted to uppercase string
             mytest.method = str(configvalue).upper()                 
-        elif configelement == 'group': #Test group
+        elif configelement == u'group': #Test group
             mytest.group = str(configvalue)
-        elif configelement == 'name': #Test name
+        elif configelement == u'name': #Test name
             mytest.name = str(configvalue)
-        elif configelement == 'validators':
+        elif configelement == u'validators':
             raise NotImplementedError() #TODO implement validators by regex, or file/schema match
-        elif configelement == 'benchmark':
+        elif configelement == u'benchmark':
             raise NotImplementedError() #TODO implement benchmarking routines
         
-        elif configelement == 'body': #Read request body, either as inline input or from file            
-            if isinstance(configvalue, dict) and 'file' in lowercase_keys(body):
-                mytest.body = read_file(body['file']) #TODO change me to pass in a file handle, rather than reading all bodies into RAM
+        elif configelement == u'body': #Read request body, either as inline input or from file            
+            if isinstance(configvalue, dict) and u'file' in lowercase_keys(body):
+                mytest.body = read_file(body[u'file']) #TODO change me to pass in a file handle, rather than reading all bodies into RAM
             elif isinstance(configvalue, str):
                 mytest.body = configvalue
             else:
@@ -244,9 +255,6 @@ def run_test(mytest, test_config = TestConfig()):
     if not isinstance(test_config, TestConfig):
         raise Exception('Need to input a TestConfig type object for the testconfig')
     
-    #Check if we need to store the response body, otherwise we will discard it
-    store_body = mytest.validators or test_config.print_bodies 
-
     curl = pycurl.Curl()
     curl.setopt(curl.URL,mytest.url)
     curl.setopt(curl.TIMEOUT,test_config.timeout)
@@ -258,11 +266,11 @@ def run_test(mytest, test_config = TestConfig()):
 
     #TODO Handle get/put/post/delete method settings
     #Needs to set curl.POSTFIELDS option to do a POST
-    if mytest.method == 'POST':
+    if mytest.method == u'POST':
         pass
-    elif mytest.method == 'PUT':
+    elif mytest.method == u'PUT':
         pass
-    elif mytest.method == 'DELETE':
+    elif mytest.method == u'DELETE':
         curl.setopt(curl.CUSTOMREQUEST,'DELETE')
     
     if mytest.headers: #Convert headers dictionary to list of header entries, tested and working
@@ -272,10 +280,7 @@ def run_test(mytest, test_config = TestConfig()):
         curl.setopt(curl.HTTPHEADER, headers) #Need to read from headers
 
     result = TestResponse()
-    if not store_body: #Silence handling of response bodies, tested and working
-        curl.setopt(pycurl.WRITEFUNCTION, lambda x: None)
-    else: #Store the response body, for validation or printing
-        curl.setopt(pycurl.WRITEFUNCTION, result.body_callback)
+    curl.setopt(pycurl.WRITEFUNCTION, result.body_callback)
     curl.setopt(pycurl.HEADERFUNCTION,result.header_callback) #Gets headers
     
     try:
@@ -288,12 +293,16 @@ def run_test(mytest, test_config = TestConfig()):
     result.response_code = response_code
     result.passed = response_code in mytest.expected_status 
 
-    if test_config.print_bodies:
+    print str(test_config.print_bodies) + ',' + str(not result.passed) + ' , ' + str(test_config.print_bodies or not result.passed)
+    
+    #Print response body if override is set to print all *OR* if test failed (to capture maybe a stack trace)
+    if test_config.print_bodies or not result.passed:
+        #TODO figure out why this prints for ALL methods if any of them fail!!!
         print result.body
 
     curl.close()
 
-    result.body = "" #Remove the body, we do NOT need to waste the memory anymore
+    result.body = None #Remove the body, we do NOT need to waste the memory anymore
     return result
 
 def benchmark(curl, benchmark_config):
@@ -381,7 +390,7 @@ def execute_tests(testset):
 
     #Run tests, collecting statistics as needed
     for test in mytests: 
-        result = run_test(test, test_config = myconfig)
+        result = run_test(test, test_config = myconfig)        
         
         if not result.passed: #Print failure, increase failure counts for that test group
             print 'Test Failed: '+test.name+" URL="+test.url+" Group="+test.group+" HTTP Status Code: "+str(result.response_code)
@@ -403,18 +412,19 @@ def execute_tests(testset):
         test_count = len(group_results[group])
         failures = group_failure_counts[group]
         if (failures > 0):
-            print 'Test Group '+group+' FAILED: '+ str((test_count-failures))+'/'+str(test_count) + ' Tests Passed!'
+            print u'Test Group '+group+u' FAILED: '+ str((test_count-failures))+'/'+str(test_count) + u' Tests Passed!'            
         else:
-            print 'Test Group '+group+' SUCCEEDED: '+ str((test_count-failures))+'/'+str(test_count) + ' Tests Passed!'
+            print u'Test Group '+group+u' SUCCEEDED: '+ str((test_count-failures))+'/'+str(test_count) + u' Tests Passed!'
 
 
 
 #Allow import into another module without executing the main method
 if(__name__ == '__main__'):
     parser = argparse.ArgumentParser()
-    parser.add_argument("url", help="Base URL to run tests against")
-    parser.add_argument("test", help="Test file to use")
-    parser.add_argument("--verbose", help="Verbose output")
+    parser.add_argument(u"url", help="Base URL to run tests against")
+    parser.add_argument(u"test", help="Test file to use")
+    parser.add_argument(u"--verbose", help="Verbose output")
+    parser.add_argument(u"--print-bodies", help="Print all response bodies", type=bool)
     args = parser.parse_args()
     test_structure = read_test_file(args.test)
     tests = build_testsets(args.url, test_structure)
