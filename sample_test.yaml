@@ -9,10 +9,17 @@
       group: "Complex"
       name: "Test complex object"
       method: "GET"
-      expected_status: "200"
+      expected_status: 200
 - test: 
     - url: "/object"
     - method: "GET"
+    - headers: 
+        - Accept: application/json
+        - Content-Encoding: lzf
+- test: 
+    - url: "/cheese"
+    - method: "POST"
+    - headers: {Content-Type: application/xml, "Content-Encoding": "gzip"}
 - test: 
     - url: "/complex/100"
     - method: "POST"
