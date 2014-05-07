@@ -1,8 +1,8 @@
 import argparse
 import yaml
 import pycurl
-import json #Temporary, remove me!
-#TODO use voluptuous for structural validation of elements
+import json 
+from voluptuous import Schema, Required, All, Length, Range, Optional, MultipleInvalid, Invalid
 #TODO set up and maintain Unicode safety! YAML and strings are unicode, bytes are bytes (reponse and request bodies)
 
 #Map HTTP method names to curl methods
@@ -11,6 +11,65 @@ HTTP_METHODS = {u'GET' : pycurl.HTTPGET,
     u'PUT' : pycurl.UPLOAD,
     u'POST' : pycurl.POST,
     u'DELETE' : 'DELETE'}
+
+#Curl metrics for benchmarking, key is name in config file, value is pycurl variable
+#Taken from pycurl docs, this is libcurl variable minus the CURLINFO prefix
+# Descriptions of the timing variables are taken from libcurl docs:
+#   http://curl.haxx.se/libcurl/c/curl_easy_getinfo.html
+
+METRICS = {
+    #Timing info, precisely in order from start to finish
+    #The time it took from the start until the name resolving was completed.
+    'namelookup_time' : pycurl.NAMELOOKUP_TIME, 
+
+    #The time it took from the start until the connect to the remote host (or proxy) was completed.
+    'connect_time' : pycurl.CONNECT_TIME, 
+
+    #The time it took from the start until the SSL connect/handshake with the remote host was completed.
+    'appconnect_time' : pycurl.APPCONNECT_TIME, 
+
+    #The time it took from the start until the file transfer is just about to begin. 
+    #This includes all pre-transfer commands and negotiations that are specific to the particular protocol(s) involved.
+    'pretransfer_time' : pycurl.PRETRANSFER_TIME, 
+        
+    #The time it took from the start until the first byte is received by libcurl.
+    'starttransfer_time' : pycurl.STARTTRANSFER_TIME, 
+
+    #The time it took for all redirection steps include name lookup, connect, pretransfer and transfer 
+    #  before final transaction was started. So, this is zero if no redirection took place.
+    'redirect_time' : pycurl.REDIRECT_TIME,
+
+    #Total time of the previous request.
+    'total_time' : pycurl.TOTAL_TIME,
+
+    
+    #Transfer sizes and speeds
+    'size_download' : pycurl.SIZE_DOWNLOAD,
+    'request_size' : pycurl.REQUEST_SIZE,
+    'speed_download' : pycurl.SPEED_DOWNLOAD,
+    'speed_upload' : pycurl.SPEED_UPLOAD,
+    
+    #Connection counts
+    'redirect_count' : pycurl.REDIRECT_COUNT,
+    'num_connects' : pycurl.NUM_CONNECTS
+
+    #TODO custom implementation for requests per second and server processing time, separate from previous 
+}
+
+#TODO Use function definitions and reduce() with lambdas (or closures for internal state) to do aggregates
+AGGREGATES = {
+    'mean_arithmetic':None, #AKA the average, good for many things
+    'mean_harmonic':None, #Harmonic mean, better predicts average of rates: http://en.wikipedia.org/wiki/Harmonic_mean
+    'median':None,
+    'std_deviation':None,
+    '90_percentile':None #90th percentile, below which 90% of functions fall
+}
+
+    
+#Schema for file objects -- imports and request bodies
+__file_schema__ = { 
+       Required('file'):All(str,Length(min=1))
+}    
 
 class Test:
     """ Describes a REST test, which may include a benchmark component """
@@ -25,6 +84,16 @@ class Test:
     benchmark = None #Benchmarking config for item
     #In this case, config would be used by all tests following config definition, and in the same scope as tests
     
+    __schema__ = [ #Schema for complex test definitions
+        {Required(u'url'):All(unicode, Length(min=1))},
+        {Optional(u'expected_status'):[]},
+        {Optional(u'group'):All(unicode)},
+        {Optional(u'name'):All(unicode)},
+        {Optional(u'method'):[u'GET',u'PUT',u'POST',u'DELETE']},
+    ]
+
+
+
     def __str__(self):
         print json.dumps(self)
 
@@ -36,6 +105,10 @@ class TestConfig:
     verbose = False
     test_parallel = False #Allow parallel execution of tests in a test set, for speed?
 
+    __schema__ = [{
+
+    }] #Allows extra unknown keys
+
     def __str__(self):
         print json.dumps(self)
 
@@ -43,6 +116,14 @@ class TestSet:
     """ Encapsulates a set of tests and test configuration for them """
     tests = list()
     config = TestConfig()
+
+    __schema__ = Schema([ #Overall test set schema for object converted to this
+        {Optional(u'url'):All(str, Length(min=1))},
+        {Optional(u'config'):TestConfig.__schema__},
+        {Optional(u'test'):Test.__schema__},
+        {Optional(u'import'):__file_schema__}        
+    ], 
+    extra=True)
 
 class BenchmarkResult:
     """ Stores results from a benchmark for reporting use """
@@ -132,6 +213,12 @@ def build_testsets(base_url, test_structure, test_files = set() ):
     testset.tests = tests_out
     testset.config = test_config
     return [testset]
+
+def validate_testset(testset):
+    """ Validate a testset data structure, return boolean if it's valid, else print errors  """
+
+    return TestSet.__schema__(testset) #Schema is stored in the class itself 
+
 
 def make_configuration(node):
     """ Convert input object to configuration information """

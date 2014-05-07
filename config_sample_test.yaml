@@ -2,7 +2,6 @@
 ---
 - config: 
     - testset: "Sample Tests" #Name test sets
-    - 
 - url: "/ping" #Basic test, just a simple GET
 - test: {url: "/ping", method: "GET"} #Specify method, in-line version
 - test: #Defined test
