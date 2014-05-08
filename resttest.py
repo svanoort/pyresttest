@@ -56,15 +56,36 @@ METRICS = {
     #TODO custom implementation for requests per second and server processing time, separate from previous 
 }
 
-#TODO Use function definitions and reduce() with lambdas (or closures for internal state) to do aggregates
+#Map statistical aggregate to the function to use to perform the aggregation on an array
 AGGREGATES = {
-    'mean_arithmetic':None, #AKA the average, good for many things
-    'mean_harmonic':None, #Harmonic mean, better predicts average of rates: http://en.wikipedia.org/wiki/Harmonic_mean
-    'median':None,
-    'std_deviation':None,
-    '90_percentile':None #90th percentile, below which 90% of functions fall
+    'all': lambda x: x, #Placeholder lambda, for it to return all elements (no aggregation)
+    'mean_arithmetic': #AKA the average, good for many things 
+        lambda x: float(sum(x))/len(x), 
+    'mean_harmonic': #Harmonic mean, better predicts average of rates: http://en.wikipedia.org/wiki/Harmonic_mean
+        lambda x: 1/( sum([1/float(y) for y in x]) / len(x)),
+    'median':  lambda x: median(x),        
+    'std_deviation': lambda x: std_deviation(x)
 }
 
+def median(array):
+    """ Get the median of an array """    
+    sorted = [x for x in array]
+    sort(sorted)
+    floor = math.floor(len(sorted)/2) #Gets the middle element, if present
+    if len(sorted) % 2 == 0: #Even, so need to average together the middle two values
+        return float((sorted[floor]+sorted[floor-1]))/2
+    else:
+        return sorted[floor]
+
+def std_deviation(array):
+    """ Compute the standard deviation of an array of numbers """
+    if not array or len(array) == 1:
+        return 0
+
+    average = AGGREGATES['mean_arithmetic'](array)
+    variance = map(lambda x: (x-average)**2,array) 
+    stdev = AGGREGATES['mean_arithmetic'](variance)
+    return setdev
     
 #Schema for file objects -- imports and request bodies
 __file_schema__ = { 
@@ -127,17 +148,20 @@ class TestSet:
 
 class BenchmarkResult:
     """ Stores results from a benchmark for reporting use """
-    aggregates = dict() #Map aggregate name (key) to aggregate value (value)
-    #TODO aggregates act as a reduce operation on a metric result, doing stream-wise processing
-    results = list() #Benchmark output
+    aggregates = dict() #Aggregation recult, maps metricname to dictionary of aggregate --> result
+    results = dict() #Benchmark output, map the metric to the result array for that metric
+    failures = 0 #Track call count that failed
 
 class BenchmarkConfig:
     """ Holds configuration specific to benchmarking of method """
     warmup_runs = 100 #Times call is executed to warm up
     benchmark_runs = 1000 #Times call is executed to generate benchmark results
-    metrics = set() #Metrics to gather, TODO define these
-    aggregates = set() #Aggregate options to report, TODO define these
-    store_full = False #Store full statistics, not just aggregates
+    
+    #Metrics to gather, must have one of them!
+    #For the metrics, this is a map if key (in METRIC name)
+    #Mapped to AGGREGATE name (single aggregate) or list, if more than one aggregate
+    #  So, you define which aggregates are reported for which metric
+    metrics = dict() 
     #TODO output of full response set to CSV / JSON
 
     def __str__(self):
@@ -147,7 +171,7 @@ class TestResponse:
     """ Encapsulates everything about a test response """   
     test = None #Test run
     response_code = None
-    body = bytearray() #Response body, if tracked -- TODO use chunk or byte-array storage
+    body = bytearray() #Response body, if tracked
     passed = False
     response_headers = bytearray()
     statistics = None #Used for benchmark stats on the method
@@ -295,7 +319,7 @@ def make_test(base_url, node):
         elif configelement == u'validators':
             raise NotImplementedError() #TODO implement validators by regex, or file/schema match
         elif configelement == u'benchmark':
-            raise NotImplementedError() #TODO implement benchmarking routines
+            raise NotImplementedError() #TODO implement benchmarking parsing
         
         elif configelement == u'body': #Read request body, either as inline input or from file            
             if isinstance(configvalue, dict) and u'file' in lowercase_keys(body):
@@ -393,70 +417,76 @@ def run_test(mytest, test_config = TestConfig()):
     return result
 
 def benchmark(curl, benchmark_config):
-    """ Perform a benchmark, (re)using a given, configured CURL call to do so """
-    curl.setopt(pycurl.WRITEFUNCTION, lambda x: None) #Do not store actual response body at all. 
+    """ Perform a benchmark, (re)using a given, configured CURL call to do so 
+    This is surprisingly complex, because benchmark allows storing metric to aggregate """
+    
     warmup_runs = benchmark_config.warmup_runs
     benchmark_runs = benchmark_config.benchmark_runs
     message = ''  #Message is name of benchmark... print it?
 
-    # Source: http://pycurl.sourceforge.net/doc/curlobject.html
-    # http://curl.haxx.se/libcurl/c/curl_easy_getinfo.html -- this is the info parameters, used for timing, etc
-    info_fetch = {'response_code':pycurl.RESPONSE_CODE,
-        'pretransfer_time':pycurl.PRETRANSFER_TIME,
-        'starttransfer_time':pycurl.STARTTRANSFER_TIME,
-        'size_download':pycurl.SIZE_DOWNLOAD,
-        'total_time':pycurl.TOTAL_TIME
-    }
+    if (warmup_runs <= 0):
+        raise Exception("Invalid number of warmup runs, must be > 0 :" + warmup_runs)
+    if (benchmark_runs <= 0):
+        raise Exception("Invalid number of benchmark runs, must be > 0 :" + benchmark_runs)
 
-    #Benchmark warm-up to allow for caching, JIT compiling, etc
+    #Initialize variables to store output
+    output = BenchmarkResult()
+    metricnames = list(benchmark_config.metrics.keys())
+    metricvalues = [METRICS[name] for name in metricnames] #Metric variable for curl, to avoid hash lookup for every metric name
+    results = [list() for x in xrange(0, len(metricnames))] #Initialize arrays to store results for each metric 
+
+    curl.setopt(pycurl.WRITEFUNCTION, lambda x: None) #Do not store actual response body at all. 
+
+    #Benchmark warm-up to allow for caching, JIT compiling, on client
     print 'Warmup: ' + message + ' started'
     for x in xrange(0, warmup_runs):
         curl.perform()
     print 'Warmup: ' + message + ' finished'
 
-    bytes = dict()
-    speed = dict()
-    time_pre = dict()
-    time_server = dict()
-    time_xfer = dict()
-
     print 'Benchmark: ' + message + ' starting'
-    for x in xrange(0, benchmark_runs):
-        curl.perform()
-        if curl.getinfo(pycurl.RESPONSE_CODE) != 200:
-            raise Exception('Error: failed call to service!')
+    
+    for x in xrange(0, benchmark_runs): #Run the actual benchmarks
+        
+        try: #Run the curl call, if it errors, then add to failure counts for benchmark
+            curl.perform()
+        except Exception:
+            output.failures = output.failures + 1
+            continue #Skip metrics collection
 
-        time_pretransfer = curl.getinfo(pycurl.PRETRANSFER_TIME) #Time to negotiate connection, before server starts response negotiation
-        time_starttransfer = curl.getinfo(pycurl.STARTTRANSFER_TIME) #Pre-transfer time until server has generated response, just before first byte sent
-        time_total = curl.getinfo(pycurl.TOTAL_TIME) #Download included
-
-        time_xfer[x] = time_total - time_starttransfer
-        time_server[x] = time_starttransfer - time_pretransfer
-        time_pre[x] = time_pretransfer
-
-        bytes[x] = curl.getinfo(pycurl.SIZE_DOWNLOAD) #bytes
-        speed[x] = curl.getinfo(pycurl.SPEED_DOWNLOAD) #bytes/sec
-
-        if print_intermediate:
-            print 'Bytes: {size}, speed (MB/s) {speed}'.format(size=bytes[x],speed=speed[x]/(1024*1024))
-            print 'Pre-transfer, server processing, and transfer times: {pre}/{server}/{transfer}'.format(pre=time_pretransfer,server=time_server[x],transfer=time_xfer[x])
+        # Get all metrics values for this run, and store to metric lists
+        for i in xrange(0, len(metricnames)):
+            results[i].append( curl.getinfo(metricvalues[i]) )
 
     #print info
     print 'Benchmark: ' + message + ' ending'
 
-    print 'Benchmark results for ' + message + ' Average bytes {bytes}, average transfer speed (MB/s): {speed}'.format(
-        bytes=sum(bytes.values())/benchmark_runs,
-        speed=sum(speed.values())/(benchmark_runs*1024*1024)
-    )
 
-    print 'Benchmark results for ' + message + ' Avg pre/server/xfer time (s) {pre}/{server}/{transfer}'.format(
-        pre=sum(time_pre.values())/benchmark_runs,
-        server=sum(time_server.values())/benchmark_runs,
-        transfer=sum(time_xfer.values())/benchmark_runs
-    )
+    #Compute aggregates from results, and add to BenchmarkResult
+    # If it's storing all values (aggregate 'all'), it is added to BenchmarkResult.results arrays
+    # Otherwise, a dict {aggregate1:value1, aggregate2:value2...} is added to BenchmarkResult.aggregates[metricname]
+    for i in xrange(0,len(metricnames)):
+        metric = metricnames[i]
+        aggregates = benchmark_config.metrics[metric]
+        result_array = results[i]
 
-    pass
+        #Convert aggregates to list, so we can iterate over them, even if single element
+        if not isinstance(aggregates,list) or isinstance(aggregates,set):  
+            aggregates = [aggregates]
 
+        aggregate_results = dict()
+
+        #Compute values for all aggregates, apply aggregation function to the results array and store
+        for aggregate_name in aggregates: 
+            aggregate_function = AGGREGATES[aggregate_name]
+            if aggregate_name == 'all': #Add to the results arrays storing full results
+                output.results[metric]=result_array
+            else:
+                aggregate_results[aggregate_name] = aggregate_function(result_array)
+
+        #Add aggregate-value mappings for this metric to output
+        output.aggregates[metric] = vals 
+
+    return output
 
 def execute_tests(testset):
     """ Execute a set of tests, using given TestSet input """
