@@ -2,7 +2,6 @@ import resttest
 import unittest
 import json
 import yaml
-from voluptuous import MultipleInvalid
 
 class TestRestTest(unittest.TestCase):
     """ Tests to test a REST testing framework, how meta is that? """
@@ -10,12 +9,12 @@ class TestRestTest(unittest.TestCase):
     def setUp(self):
         pass
 
-    def test_make_test(self):
+    def test_build_test(self):
         """ Test basic ways of creating test objects from input object structure """
 
         #Most basic case
         input = {"url": "/ping", "method": "DELETE", "NAME":"foo", "group":"bar", "body":"<xml>input</xml>","headers":{"Accept":"Application/json"}}
-        test = resttest.make_test('',input)
+        test = resttest.build_test('',input)
         self.assertTrue(test.url == input['url'])
         self.assertTrue(test.method == input['method'])
         self.assertTrue(test.name == input['NAME'])
@@ -26,14 +25,14 @@ class TestRestTest(unittest.TestCase):
 
         #Happy path, only gotcha is that it's a POST, so must accept 200 or 204 response code
         input = {"url": "/ping", "meThod": "POST"}
-        test = resttest.make_test('',input)
+        test = resttest.build_test('',input)
         self.assertTrue(test.url == input['url'])
         self.assertTrue(test.method == input['meThod'])
         self.assertTrue(test.expected_status == [200,201,204])
 
         #Test that headers propagate
         input = {"url": "/ping", "method": "GET", "headers" : [{"Accept":"application/json"},{"Accept-Encoding":"gzip"}] }
-        test = resttest.make_test('',input)
+        test = resttest.build_test('',input)
         expected_headers = {"Accept":"application/json","Accept-Encoding":"gzip"}
 
         self.assertTrue(test.url == input['url'])
@@ -47,52 +46,38 @@ class TestRestTest(unittest.TestCase):
 
         #Test expected status propagates and handles conversion to integer
         input = [{"url": "/ping"},{"name": "cheese"},{"expected_status":["200",204,"202"]}]
-        test = resttest.make_test('',input)
+        test = resttest.build_test('',input)
         self.assertTrue(test.name == "cheese")
         print test.expected_status
         self.assertTrue(test.expected_status == [200,204,202])
 
-    def test_testset_validation(self):
-        testset = [{'url':'simpleUrl'}]
-        self.assertTrue(resttest.validate_testset(testset))
+    def test_safe_boolean(self):
+        """ Test safe conversion to boolean """
+        self.assertFalse(resttest.safe_to_bool(False))
+        self.assertTrue(resttest.safe_to_bool(True))
+        self.assertTrue(resttest.safe_to_bool('True'))
+        self.assertTrue(resttest.safe_to_bool('true'))
+        self.assertTrue(resttest.safe_to_bool('truE'))
+        self.assertFalse(resttest.safe_to_bool('false'))
 
-        #Raises exception, not a long enough url
-        testset = [{'url':''}]
+        #Try things that should throw exceptions
         try:
-            self.assertTrue(resttest.validate_testset(testset))
-            raise AssertionError('MultipleInvalid not raised')
-        except MultipleInvalid as e:
-            pass #Valid
+            boolean = resttest.safe_to_bool('fail')
+            raise AssertionError('Failed to throw type error that should have')
+        except TypeError:
+            pass #Good
 
-        #Extra, unknown keys are allowed (back compatibility, they just get ignored)
-        testset = [{'url':'cheese'},{'goats':'sheep'}]
-        #self.assertTrue(resttest.validate_testset(testset))
+        try:
+            boolean = resttest.safe_to_bool([])
+            raise AssertionError('Failed to throw type error that should have')
+        except TypeError:
+            pass #Good
 
-        #See what happens with method specified
-        testset = [{'url':'cheese'},
-            {'method':'GET'}
-        ]
-        self.assertTrue(resttest.validate_testset(testset))
-        testset[1]['method'] = 'POST'
-        self.assertTrue(resttest.validate_testset(testset))
-        testset[1]['method'] = 'INVALID'
-        print json.dumps(testset)
-        self.assertTrue(resttest.validate_testset(testset))
-
-
-
-        testset = [{ #Duplicate URLs are NOT okay!
-            'test':[
-                {'url':'cheese'},
-                {'url':'cheese2'} #Whoopsie, this should fail!
-            ]
-        }]
-        try: #Needs to throw validation exceptions
-            self.assertTrue(resttest.validate_testset(testset))
-            raise AssertionError('Allowed multiple URLs to pass for a test: this is NOT okay!')
-        except MultipleInvalid as inv:
-            pass
-
+        try:
+            boolean = resttest.safe_to_bool(None)
+            raise AssertionError('Failed to throw type error that should have')
+        except TypeError:
+            pass #Good
 
 
     def test_make_configuration(self):
