@@ -12,12 +12,12 @@ class TestRestTest(unittest.TestCase):
 
     def test_make_test(self):
         """ Test basic ways of creating test objects from input object structure """
-        
+
         #Most basic case
         input = {"url": "/ping", "method": "DELETE", "NAME":"foo", "group":"bar", "body":"<xml>input</xml>","headers":{"Accept":"Application/json"}}
         test = resttest.make_test('',input)
         self.assertTrue(test.url == input['url'])
-        self.assertTrue(test.method == input['method'])        
+        self.assertTrue(test.method == input['method'])
         self.assertTrue(test.name == input['NAME'])
         self.assertTrue(test.group == input['group'])
         self.assertTrue(test.body == input['body'])
@@ -28,7 +28,7 @@ class TestRestTest(unittest.TestCase):
         input = {"url": "/ping", "meThod": "POST"}
         test = resttest.make_test('',input)
         self.assertTrue(test.url == input['url'])
-        self.assertTrue(test.method == input['meThod'])        
+        self.assertTrue(test.method == input['meThod'])
         self.assertTrue(test.expected_status == [200,201,204])
 
         #Test that headers propagate
@@ -37,12 +37,12 @@ class TestRestTest(unittest.TestCase):
         expected_headers = {"Accept":"application/json","Accept-Encoding":"gzip"}
 
         self.assertTrue(test.url == input['url'])
-        self.assertTrue(test.method == 'GET')        
+        self.assertTrue(test.method == 'GET')
         self.assertTrue(test.expected_status == [200])
         self.assertTrue(isinstance(test.headers,dict))
 
         #Test no header mappings differ
-        self.assertFalse( set(test.headers.values()) ^ set(expected_headers.values()) ) 
+        self.assertFalse( set(test.headers.values()) ^ set(expected_headers.values()) )
 
 
         #Test expected status propagates and handles conversion to integer
@@ -57,7 +57,7 @@ class TestRestTest(unittest.TestCase):
         self.assertTrue(resttest.validate_testset(testset))
 
         #Raises exception, not a long enough url
-        testset = [{'url':''}] 
+        testset = [{'url':''}]
         try:
             self.assertTrue(resttest.validate_testset(testset))
             raise AssertionError('MultipleInvalid not raised')
@@ -78,8 +78,8 @@ class TestRestTest(unittest.TestCase):
         testset[1]['method'] = 'INVALID'
         print json.dumps(testset)
         self.assertTrue(resttest.validate_testset(testset))
-        
-        
+
+
 
         testset = [{ #Duplicate URLs are NOT okay!
             'test':[
@@ -91,8 +91,8 @@ class TestRestTest(unittest.TestCase):
             self.assertTrue(resttest.validate_testset(testset))
             raise AssertionError('Allowed multiple URLs to pass for a test: this is NOT okay!')
         except MultipleInvalid as inv:
-            pass     
-        
+            pass
+
 
 
     def test_make_configuration(self):
@@ -103,7 +103,7 @@ class TestRestTest(unittest.TestCase):
 
         input = {"url": "/ping", "method": "DELETE", "NAME":"foo", "group":"bar", "body":"<xml>input</xml>","headers":{"Accept":"Application/json"}}
 
-        pass        
+        pass
 
     def test_flatten(self):
         """ Test flattening of lists of dictionaries to single dictionaries """
@@ -111,8 +111,8 @@ class TestRestTest(unittest.TestCase):
         #Test happy path: list of single-item dictionaries in
         array = [{"url" : "/cheese"}, {"method" : "POST"}]
         expected = {"url" :"/cheese", "method" : "POST"}
-        output = resttest.flatten_dictionaries(array)                
-        self.assertTrue(isinstance(output,dict))        
+        output = resttest.flatten_dictionaries(array)
+        self.assertTrue(isinstance(output,dict))
         self.assertFalse( len(set(output.items()) ^ set(expected.items())) ) #Test that expected output matches actual
 
         #Test dictionary input
@@ -124,23 +124,23 @@ class TestRestTest(unittest.TestCase):
 
         #Test empty list input
         array = []
-        expected = {}        
+        expected = {}
         output = resttest.flatten_dictionaries(array)
-        self.assertTrue(isinstance(output,dict))        
+        self.assertTrue(isinstance(output,dict))
         self.assertFalse( len(set(output.items()) ^ set(expected.items())) ) #Test that expected output matches actual
 
         #Test empty dictionary input
         array = {}
-        expected = {}        
+        expected = {}
         output = resttest.flatten_dictionaries(array)
-        self.assertTrue(isinstance(output,dict))        
+        self.assertTrue(isinstance(output,dict))
         self.assertFalse( len(set(output.items()) ^ set(expected.items())) ) #Test that expected output matches actual
 
         #Test mixed-size input dictionaries
         array = [{"url" : "/cheese"}, {"method" : "POST", "foo" : "bar"}]
         expected = {"url" : "/cheese", "method" : "POST", "foo" : "bar"}
-        output = resttest.flatten_dictionaries(array)                
-        self.assertTrue(isinstance(output,dict))        
+        output = resttest.flatten_dictionaries(array)
+        self.assertTrue(isinstance(output,dict))
         self.assertFalse( len(set(output.items()) ^ set(expected.items())) ) #Test that expected output matches actual
 
 
