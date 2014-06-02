@@ -397,7 +397,7 @@ def run_test(mytest, test_config = TestConfig()):
     result.response_code = response_code
     result.passed = response_code in mytest.expected_status
 
-    print str(test_config.print_bodies) + ',' + str(not result.passed) + ' , ' + str(test_config.print_bodies or not result.passed)
+    #print str(test_config.print_bodies) + ',' + str(not result.passed) + ' , ' + str(test_config.print_bodies or not result.passed)
 
     #Print response body if override is set to print all *OR* if test failed (to capture maybe a stack trace)
     if test_config.print_bodies or not result.passed:
@@ -488,15 +488,14 @@ def execute_tests(testset):
     group_results = dict() #results, by group
     group_failure_counts = dict()
 
+    #Make sure we actually have tests to execute
+    if not mytests:
+        return None
+
     #Initialize the dictionaries to store test fail counts and results
     for test in mytests:
         group_results[test.group] = list()
         group_failure_counts[test.group] = 0
-
-
-    #Make sure we actually have tests to execute
-    if not mytests:
-        return None
 
     #Run tests, collecting statistics as needed
     for test in mytests:
@@ -514,7 +513,7 @@ def execute_tests(testset):
             if myconfig.verbose:
                 print 'Test Succeeded: '+test.name+" URL="+test.url+" Group="+test.group
 
-        #Add to results for this test group to the resultset
+        #Add results for this test group to the resultset
         group_results[test.group].append(result)
 
     #Print summary results

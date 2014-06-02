@@ -1,0 +1,5 @@
+#Simple test file that simply does a GET on the base URL
+---
+- config: 
+    - testset: "Simple Test" #Name test sets
+- url: "/" #Basic test, just a simple GET
