@@ -21,5 +21,4 @@ python resttest.py http://www.google.com simple_test.yaml
 sudo su -
 easy_install argparse
 exit
-python resttest.py http://www.google.com simple_test.yaml
 ```
