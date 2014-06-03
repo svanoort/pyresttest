@@ -6,17 +6,17 @@
   - name: "Test with successful validations"
   - url: "/search/users?q=jewzaam"
   - group: "Successful"
-  - validators:
-     - {type: "json", query: "total_count", expected: 1, operator: "eq"}
-     - {type: "json", query: "total_count", expected: 1, operator: "ge"}
-     - {type: "json", query: "total_count", expected: 2, operator: "gt"}
-     - {type: "json", query: "total_count", expected: 1}
+  - validators: # operator is applied as: <actual> <operator> <expected>
+     - {type: "json", query: "total_count", operator: "eq", expected: 1}
+     - {type: "json", query: "total_count", operator: "ge", expected: 1}
+     - {type: "json", query: "total_count", operator: "gt", expected: 0}
+     - {type: "json", query: "total_count",                 expected: 1} # default operator of "eq"
      - {type: "json", query: "items", count: 1}
-     - {type: "json", query: "items/0/login", expected: "jewzaam"}
-     - {type: "json", query: "items/0/id", expected: "0", operator: "gt"}
+     - {type: "json", query: "items/0/login",               expected: "jewzaam"}
+     - {type: "json", query: "items/0/id",  operator: "gt", expected: 0}
 - test:
   - name: "Test with validations that will fail"
   - url: "/search/users?q=svanoort"
   - group: "Failure"
   - validators:
-     - {type: "json", query: "total_count", expected: 0, operator: "eq"}
+     - {type: "json", query: "total_count", operator: "eq", expected: 0}

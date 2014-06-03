@@ -157,9 +157,17 @@ class ValidatorJson:
             output = True if self.actual == self.count else False
         elif self.expected is not None and self.operator is not None:
             #print "ValidatorJson: " + str(self.expected) + " " + str(self.operator) + " " + str(self.actual)
-            # operator list: https://docs.python.org/2/library/operator.html
-            myoperator = getattr(operator, self.operator)
-            output = True if myoperator(self.expected, self.actual) == True else False
+            
+            # any special case operators here:
+            if self.operator == "contains":
+                if isinstance(self.actual, dict) or isinstance(self.actual, list):
+                    output = True if self.expected in self.actual else False
+                else:
+                    raise Exception("Attempted to use 'contains' operator on non-collection type: " + type(self.actual).__name__)
+            else:
+                # operator list: https://docs.python.org/2/library/operator.html
+                myoperator = getattr(operator, self.operator)
+                output = True if myoperator(self.actual, self.expected) == True else False
         else:
             self.actual = "Unable to validate!"
             output = False
