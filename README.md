@@ -13,7 +13,7 @@ Apache License, Version 2.0
 Run a simple test that checks a URL returns a 200:
 
 ```
-python resttest.py http://www.google.com simple_test.yaml
+python resttest.py https://github.com simple_test.yaml
 ```
 
 ## Simple Benchmark
