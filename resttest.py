@@ -1,3 +1,4 @@
+import operator
 import argparse
 import yaml
 import pycurl
@@ -100,6 +101,74 @@ class Test:
 
     def __str__(self):
         print json.dumps(self)
+
+class ValidatorJson:
+    """ Validation for a Json document """
+    query = None
+    count = None
+    expected = None
+    operator = "eq"
+    passed = None
+    actual = None
+
+    def __str__(self):
+        myobj = dict()
+        if self.query is not None:
+            myobj['query'] = self.query
+        if self.count is not None:
+            myobj['count'] = self.count
+        if self.expected is not None:
+            myobj['expected'] = self.expected
+        if self.operator is not None:
+            myobj['operator'] = self.operator
+        if self.passed is not None:
+            myobj['passed'] = self.passed
+        if self.actual is not None:
+            myobj['actual'] = self.actual
+
+        return str(json.dumps(myobj))
+
+
+    def validate(self, jsonDict):
+        """ Uses the query as an XPath like query for JSON to extract a value and check count and/or expected """
+        # from http://stackoverflow.com/questions/7320319/xpath-like-query-for-nested-python-dictionaries
+        self.actual = jsonDict 
+        try:
+            for x in self.query.strip("/").split("/"):
+                try:
+                    x = int(x)
+                    self.actual = self.actual[x]
+                except ValueError:
+                    self.actual = self.actual.get(x)
+        except:
+            pass
+
+        # self.actual is now the endpoint of the query.  if it's None we fail, if count is set it must be a dict or list, else check expected
+        if self.actual is None:
+            #print "ValidatorJson: no element found"
+            return False
+
+        # default to false, if we have a check it has to hit either count or expected checks!
+        output = False
+
+        if self.count is not None and (isinstance(self.actual, dict) or isinstance(self.actual, list)):
+            #print "ValidatorJson: count check: " + str(len(self.actual)) + " == " + str(self.count) + " ? " + str(len(self.actual) == self.count)
+            self.actual = len(self.actual) # for a count, actual is the count of the collection
+            output = True if self.actual == self.count else False
+        elif self.expected is not None and self.operator is not None:
+            #print "ValidatorJson: " + str(self.expected) + " " + str(self.operator) + " " + str(self.actual)
+            # operator list: https://docs.python.org/2/library/operator.html
+            myoperator = getattr(operator, self.operator)
+            output = True if myoperator(self.expected, self.actual) == True else False
+        else:
+            self.actual = "Unable to validate!"
+            output = False
+
+        #print "ValidatorJson: output is " + str(output)
+
+        self.passed = output
+
+        return output
 
 class TestConfig:
     """ Configuration for a test run """
@@ -296,7 +365,7 @@ def build_test(base_url, node):
         #Configure test using configuration elements
         if configelement == u'url':
             assert isinstance(configvalue,str) or isinstance(configvalue,unicode) or isinstance(configvalue,int)
-            mytest.url = base_url + unicode(configvalue,'UTF-8')
+            mytest.url = base_url + unicode(configvalue,'UTF-8').encode('ascii','ignore')
         elif configelement == u'method': #Http method, converted to uppercase string
             var = unicode(configvalue,'UTF-8').upper()
             assert var in HTTP_METHODS
@@ -308,7 +377,33 @@ def build_test(base_url, node):
             assert isinstance(configvalue,str) or isinstance(configvalue,unicode) or isinstance(configvalue,int)
             mytest.name = unicode(configvalue,'UTF-8')
         elif configelement == u'validators':
-            raise NotImplementedError('Validators not supported') #TODO implement validators by regex, or file/schema match
+            #TODO implement more validators: regex, file/schema match, etc
+            if isinstance(configvalue, list):
+                for var in configvalue:
+                    mytype = var.get(u'type')
+                    myquery = var.get(u'query')
+                    mycount = var.get(u'count')
+                    myexpected = var.get(u'expected')
+                    myoperator = var.get(u'operator')
+                    if mytype == 'json':
+                        if myquery is None:
+                            raise Exception("Query is required for json validator")
+                        if mycount is None and myexpected is None:
+                            raise Exception("One of count or expected is required for json validator")
+                        assert isinstance(myquery,str)
+                        if mytest.validators is None:
+                            mytest.validators = list()
+                        validator = ValidatorJson()
+                        validator.query = myquery
+                        validator.count = mycount
+                        validator.expected = myexpected
+                        # http://stackoverflow.com/questions/394809/does-python-have-a-ternary-conditional-operator
+                        validator.operator = myoperator if myoperator is not None else validator.operator
+                        mytest.validators.append(validator)
+                    else:
+                        raise Exception("Unknown validator type: " + var[u'type'])
+            else:
+                raise Exception('Misconfigured validator, requires type property')
         elif configelement == u'benchmark':
             raise NotImplementedError('Benchmark input parsing not supported yet') #TODO implement benchmarking parsing
 
@@ -384,6 +479,8 @@ def run_test(mytest, test_config = TestConfig()):
         curl.setopt(curl.HTTPHEADER, headers) #Need to read from headers
 
     result = TestResponse()
+    # reset the body, it holds values from previous runs otherwise
+    result.body = bytearray()
     curl.setopt(pycurl.WRITEFUNCTION, result.body_callback)
     curl.setopt(pycurl.HEADERFUNCTION,result.header_callback) #Gets headers
 
@@ -402,7 +499,17 @@ def run_test(mytest, test_config = TestConfig()):
     #Print response body if override is set to print all *OR* if test failed (to capture maybe a stack trace)
     if test_config.print_bodies or not result.passed:
         #TODO figure out why this prints for ALL methods if any of them fail!!!
+        #^^^^ I think it is because the body is not really cleared, it keeps the same bytearray for each test.. now does result.body = bytearray() in this method
         print result.body
+
+    # execute validator on body
+    if result.passed == True and mytest.validators is not None and isinstance(mytest.validators, list):
+        myjson = json.loads(str(result.body))
+        for validator in mytest.validators:
+            mypassed = validator.validate(myjson)
+            if mypassed == False:
+                result.passed = False
+                # do NOT break, collect all validation data!
 
     curl.close()
 
@@ -504,6 +611,11 @@ def execute_tests(testset):
         if not result.passed: #Print failure, increase failure counts for that test group
             print 'Test Failed: '+test.name+" URL="+test.url+" Group="+test.group+" HTTP Status Code: "+str(result.response_code)
 
+            if test.validators is not None:
+                for validator in test.validators:
+                    if validator.passed == False:
+                        print "   Validation Failed: " + str(validator)
+
             #Increment test failure counts for that group (adding an entry if not present)
             failures = group_failure_counts[test.group]
             failures = failures + 1
@@ -525,7 +637,13 @@ def execute_tests(testset):
         else:
             print u'Test Group '+group+u' SUCCEEDED: '+ str((test_count-failures))+'/'+str(test_count) + u' Tests Passed!'
 
-
+def main(url, test):
+    """ Execute a test against the given base url """
+    test_structure = read_test_file(test)
+    tests = build_testsets(url, test_structure)
+    #Execute batches of testsets
+    for testset in tests:
+        execute_tests(testset)
 
 #Allow import into another module without executing the main method
 if(__name__ == '__main__'):
@@ -535,13 +653,10 @@ if(__name__ == '__main__'):
     parser.add_argument(u"--verbose", help="Verbose output")
     parser.add_argument(u"--print-bodies", help="Print all response bodies", type=bool)
     args = parser.parse_args()
-    test_structure = read_test_file(args.test)
-    tests = build_testsets(args.url, test_structure)
 
     #Override testset verbosity if given as command-line argument
     if args.verbose:
         tests.config.verbose = True
 
-    #Execute batches of testsets
-    for testset in tests:
-        execute_tests(testset)
+    main(args.url, args.test)
+
