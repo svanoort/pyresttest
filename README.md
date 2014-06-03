@@ -16,12 +16,13 @@ Run a simple test that checks a URL returns a 200:
 python resttest.py https://github.com simple_test.yaml
 ```
 
-## Simple Benchmark
+## REST API with JSON Validation
 
-Run a benchmark with the "Simple Test" test set.
+A simple set of tests that show how json validation can be used to check contents of a response.
+Test includes both successful and unsuccessful validation using github API.
 
 ```
-Coming Soon!
+python resttest.py https://api.github.com github_api_test.yaml
 ```
 
 # Troubleshoot
