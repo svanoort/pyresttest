@@ -51,12 +51,11 @@ METRICS = {
     'redirect_count' : pycurl.REDIRECT_COUNT,
     'num_connects' : pycurl.NUM_CONNECTS
 
-    #TODO custom implementation for requests per second and server processing time, separate from previous
+    #TODO custom implementation for requests per second and server processing time, separate from previous?
 }
 
 #Map statistical aggregate to the function to use to perform the aggregation on an array
 AGGREGATES = {
-    'all': lambda x: x, #Placeholder lambda, for it to return all elements (no aggregation)
     'mean_arithmetic': #AKA the average, good for many things
         lambda x: float(sum(x))/len(x),
     'mean_harmonic': #Harmonic mean, better predicts average of rates: http://en.wikipedia.org/wiki/Harmonic_mean
