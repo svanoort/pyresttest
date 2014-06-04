@@ -83,8 +83,6 @@ class TestRestTest(unittest.TestCase):
     def test_make_configuration(self):
         input = {"url": "/ping", "method": "DELETE", "NAME":"foo", "group":"bar", "body":"<xml>input</xml>","headers":{"Accept":"Application/json"}}
         test = resttest.make_configuration(input)
-        self.assertTrue
-
 
         input = {"url": "/ping", "method": "DELETE", "NAME":"foo", "group":"bar", "body":"<xml>input</xml>","headers":{"Accept":"Application/json"}}
 

@@ -233,12 +233,12 @@ def make_configuration(node):
     """ Convert input object to configuration information """
     test_config = TestConfig()
 
-    node = lowercase_keys(flatten_dictionaries(node)) #Make it usable
+    node = lowercase_keys(flatten_dictionaries(node))  # Make it usable
 
     for key, value in node.items():
         if key == u'timeout':
             test_config.timeout = int(value)
-        elif key == u'print_bodies': #TODO validation it's string
+        elif key == u'print_bodies':
             test_config.print_bodies = safe_to_bool(value)
         elif key == u'retries':
             test_config.retries = int(value)
