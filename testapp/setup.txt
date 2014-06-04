@@ -1,0 +1,56 @@
+Setup:
+
+# Create virtual env
+virtualenv env
+source/env/bin/activate
+
+# To leave virtual ENV
+deactivate
+
+# Install Django
+pip install django django-tastypie
+
+# Run test server with some preinstalled data
+sh kick_tests.sh
+OR python manage.py testserver test_data.json
+
+
+## APIS of test app
+
+# Person object as JSON from API, note that id & URI are auto-generated
+{
+    "first_name": "Gaius",
+    "id": 1,
+    "last_name": "Balthazar",
+    "login": "gbalthazar",
+    "resource_uri": "/api/person/1/"
+}
+
+# List all peoople
+GET http://localhost:8000/api/person/
+curl http://localhost:8000/api/person/ | python -mjson.tool
+
+# List 1st person
+GET http://localhost:8000/api/person/1/
+curl http://localhost:8000/api/person/1/ | python -mjson.tool
+
+# Delete 1st person (Gaius Baltar, in our test fixture)
+DELETE http://localhost:8000/api/person/1/
+curl -X DELETE http://localhost:8000/api/person/1/
+
+# Put a new person for slot 1 (Gaius Baltar returns from the dead)
+curl -X PUT -H 'Content-Type: application/json' -d '{"first_name": "Gaius","id": 1,"last_name": "Balthazar","login": "gbalthazar"}' http://localhost:8000/api/person/1/
+
+# Create a brand new person
+curl -X POST -H 'Content-Type: application/json' -d '{"first_name": "Willim","last_name": "Adama","login": "theadmiral"}' http://localhost:8000/api/person/
+
+# Search people for Gaius Balthazar (returns results)
+curl http://localhost:8000/api/person/?login=gbalthazar
+
+# And look for someone with Gaius in their first name
+curl http://localhost:8000/api/person/?first_name__contains=Gaius
+
+# And to look for Cylons
+curl http://localhost:8000/api/person/?first_name__icontains=cylon
+
+# There you go, it's a fully functional CRUD rest app, for testing against!
