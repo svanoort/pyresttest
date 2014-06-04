@@ -3,3 +3,8 @@
 - config: 
     - testset: "Simple Test" #Name test sets
 - url: "/" #Basic test, just a simple GET
+- url: "/$USER"
+- test:
+  - url: "/${THIS_DOESNT_EXIST}"
+  - expected_status: 404
+- url: "/${USER}"

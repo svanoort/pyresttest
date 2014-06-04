@@ -1,3 +1,4 @@
+import os
 import operator
 import argparse
 import yaml
@@ -246,7 +247,7 @@ class TestResponse:
 def read_test_file(path):
     """ Read test file at 'path' in YAML """
     #TODO Handle multiple test sets in a given doc
-    teststruct = yaml.safe_load(read_file(path))
+    teststruct = yaml.safe_load(os.path.expandvars(read_file(path)))
     return teststruct
 
 def build_testsets(base_url, test_structure, test_files = set() ):
