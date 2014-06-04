@@ -52,12 +52,11 @@ METRICS = {
     'redirect_count' : pycurl.REDIRECT_COUNT,
     'num_connects' : pycurl.NUM_CONNECTS
 
-    #TODO custom implementation for requests per second and server processing time, separate from previous
+    #TODO custom implementation for requests per second and server processing time, separate from previous?
 }
 
 #Map statistical aggregate to the function to use to perform the aggregation on an array
 AGGREGATES = {
-    'all': lambda x: x, #Placeholder lambda, for it to return all elements (no aggregation)
     'mean_arithmetic': #AKA the average, good for many things
         lambda x: float(sum(x))/len(x),
     'mean_harmonic': #Harmonic mean, better predicts average of rates: http://en.wikipedia.org/wiki/Harmonic_mean
@@ -311,12 +310,12 @@ def make_configuration(node):
     """ Convert input object to configuration information """
     test_config = TestConfig()
 
-    node = lowercase_keys(flatten_dictionaries(node)) #Make it usable
+    node = lowercase_keys(flatten_dictionaries(node))  # Make it usable
 
     for key, value in node.items():
         if key == u'timeout':
             test_config.timeout = int(value)
-        elif key == u'print_bodies': #TODO validation it's string
+        elif key == u'print_bodies':
             test_config.print_bodies = safe_to_bool(value)
         elif key == u'retries':
             test_config.retries = int(value)

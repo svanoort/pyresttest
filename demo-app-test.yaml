@@ -1,0 +1,29 @@
+#Sample test file
+---
+#- config: 
+#    - print_bodies: True
+#- url: "/ping" #Basic test, just a simple GET
+- test: #Defined test
+    - url: "/complex"
+    - group: "Complex"
+    - name: "Test complex object"
+- test: 
+    - url: "/object"
+    - group: "Complex"
+    - headers: 
+        - Accept: application/json
+        - Accept-Encoding: lzf
+- test: 
+    - url: "/complex"
+    - group: "Complex"
+    - method: "GET"
+    - headers: 
+        - Accept: application/xml
+        - Accept-Encoding: "lzf"
+- test: 
+    - url: "/comple"
+    - group: "Complex"
+    - method: "POST"
+    - body: 'cheese'
+    - headers: 
+        - Accept: application/json        
