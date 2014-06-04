@@ -7,16 +7,17 @@
   - url: "/search/users?q=jewzaam"
   - group: "Successful"
   - validators: # operator is applied as: <actual> <operator> <expected>
-     - {type: "json", query: "total_count", operator: "eq", expected: 1}
-     - {type: "json", query: "total_count", operator: "ge", expected: 1}
-     - {type: "json", query: "total_count", operator: "gt", expected: 0}
-     - {type: "json", query: "total_count",                 expected: 1} # default operator of "eq"
+     - {type: "json", query: "total_count",     operator: "eq",     expected: 1}
+     - {type: "json", query: "total_count",     operator: "ge",     expected: 1}
+     - {type: "json", query: "total_count",     operator: "gt",     expected: 0}
+     - {type: "json", query: "total_count",                         expected: 1} # default operator of "eq"
      - {type: "json", query: "items", count: 1}
-     - {type: "json", query: "items/0/login",               expected: "jewzaam"}
-     - {type: "json", query: "items/0/id",  operator: "gt", expected: 0}
+     - {type: "json", query: "items/0/login",                       expected: "jewzaam"}
+     - {type: "json", query: "items/0/id",      operator: "gt",     expected: 0}
+     - {type: "json", query: "does_not_exist",  operator: "empty",  expected: ""} # have to put in expected or it fails..
 - test:
   - name: "Test with validations that will fail"
-  - url: "/search/users?q=svanoort"
+  - url: "/search/users?q=someonethatdoesnotexist"
   - group: "Failure"
   - validators:
      - {type: "json", query: "total_count", operator: "eq", expected: 0}

@@ -143,15 +143,17 @@ class ValidatorJson:
         except:
             pass
 
-        # self.actual is now the endpoint of the query.  if it's None we fail, if count is set it must be a dict or list, else check expected
-        if self.actual is None:
-            #print "ValidatorJson: no element found"
-            return False
-
         # default to false, if we have a check it has to hit either count or expected checks!
         output = False
 
-        if self.count is not None and (isinstance(self.actual, dict) or isinstance(self.actual, list)):
+        if self.actual is None:
+            if self.operator is not None and self.operator == "empty":
+                # nothing found, but we didn't expect anything. pass!
+                output = True
+            else:
+                # nothing found, this is a mistake
+                output = False
+        elif self.count is not None and (isinstance(self.actual, dict) or isinstance(self.actual, list)):
             #print "ValidatorJson: count check: " + str(len(self.actual)) + " == " + str(self.count) + " ? " + str(len(self.actual) == self.count)
             self.actual = len(self.actual) # for a count, actual is the count of the collection
             output = True if self.actual == self.count else False
