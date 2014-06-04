@@ -108,7 +108,7 @@ class Test:
     #In this case, config would be used by all tests following config definition, and in the same scope as tests
 
     def __str__(self):
-        print json.dumps(self)
+        return json.dumps(self, default=lambda o: o.__dict__)
 
 class ValidatorJson:
     """ Validation for a Json document """
@@ -120,22 +120,7 @@ class ValidatorJson:
     actual = None
 
     def __str__(self):
-        myobj = dict()
-        if self.query is not None:
-            myobj['query'] = self.query
-        if self.count is not None:
-            myobj['count'] = self.count
-        if self.expected is not None:
-            myobj['expected'] = self.expected
-        if self.operator is not None:
-            myobj['operator'] = self.operator
-        if self.passed is not None:
-            myobj['passed'] = self.passed
-        if self.actual is not None:
-            myobj['actual'] = self.actual
-
-        return str(json.dumps(myobj))
-
+        return json.dumps(self, default=lambda o: o.__dict__)
 
     def validate(self, jsonDict):
         """ Uses the query as an XPath like query for JSON to extract a value and check count and/or expected """
@@ -197,18 +182,24 @@ class TestConfig:
     test_parallel = False #Allow parallel execution of tests in a test set, for speed?
 
     def __str__(self):
-        print json.dumps(self)
+        return json.dumps(self, default=lambda o: o.__dict__)
 
 class TestSet:
     """ Encapsulates a set of tests and test configuration for them """
     tests = list()
     config = TestConfig()
 
+    def __str__(self):
+        return json.dumps(self, default=lambda o: o.__dict__)
+
 class BenchmarkResult:
     """ Stores results from a benchmark for reporting use """
     aggregates = dict() #Aggregation recult, maps metricname to dictionary of aggregate --> result
     results = dict() #Benchmark output, map the metric to the result array for that metric
     failures = 0 #Track call count that failed
+
+    def __str__(self):
+        return json.dumps(self, default=lambda o: o.__dict__)
 
 class BenchmarkConfig:
     """ Holds configuration specific to benchmarking of method
@@ -229,7 +220,7 @@ class BenchmarkConfig:
     #TODO output of full response set to CSV / JSON
 
     def __str__(self):
-        print json.dumps(self)
+        return json.dumps(self, default=lambda o: o.__dict__)
 
 class TestResponse:
     """ Encapsulates everything about a test response """
@@ -241,7 +232,7 @@ class TestResponse:
     statistics = None #Used for benchmark stats on the method
 
     def __str__(self):
-        print json.dumps(self)
+        return json.dumps(self, default=lambda o: str(o) if isinstance(o, bytearray) else o.__dict__)
 
     def body_callback(self, buf):
         """ Write response body by pyCurl callback """
