@@ -30,7 +30,9 @@ python resttest.py https://api.github.com github_api_test.yaml
 
 (For help: python resttest.py  --help )
 
-# Sample Test Syntax
+# Test Configuration
+
+## Sample Test Syntax
 
 ```
 ---
@@ -76,7 +78,7 @@ python resttest.py https://api.github.com github_api_test.yaml
 ```
 
 
-# Basic Test Set Syntax:
+## Basic Test Set Syntax
 As you can see, tests are defined in [YAML](http://en.wikipedia.org/wiki/YAML) format.
 
 There are 3 top level test syntax elements:
@@ -86,7 +88,7 @@ There are 3 top level test syntax elements:
 - *import*: (not implemented yet) import test set into another test so you Don't Repeat Yourself
 
 
-# Syntax Limitations:
+## Syntax Limitations
 Whenever possible, I've tried to make reading configuration Be Smart And Do The Right Thing.  That means type conversions are handled wherever possible,
 and fail early if configuration is nonsensical.
 
@@ -115,11 +117,13 @@ pip install argparse yaml pycurl
 exit
 ```
 
-**Why not pure-python tests?**
+# FAQ
+
+## Why not pure-python tests?
 This is intended for use in an environment where Python isn't the primary language.  You only need to know a little YAML to be able to throw together a working test for a REST API written in Java, Ruby, Python, node.js, etc.
 
 
-**Why YAML and not XML/JSON?**
+## Why YAML and not XML/JSON?
 - It's human readable and human editable
 - XML is extremely verbose, reducing readability
 - JSON was considered -- it may be added eventually, once core features are filled in
