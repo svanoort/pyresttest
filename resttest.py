@@ -4,6 +4,14 @@ import argparse
 import yaml
 import pycurl
 import json
+import logging
+
+LOGGING_LEVELS = {'debug': logging.DEBUG,
+    'info': logging.INFO,
+    'warning': logging.WARNING,
+    'error': logging.ERROR,
+    'critical': logging.CRITICAL}
+
 
 #Map HTTP method names to curl methods
 #Kind of obnoxious that it works this way...
@@ -154,11 +162,11 @@ class ValidatorJson:
                 # nothing found, this is a mistake
                 output = False
         elif self.count is not None and (isinstance(self.actual, dict) or isinstance(self.actual, list)):
-            #print "ValidatorJson: count check: " + str(len(self.actual)) + " == " + str(self.count) + " ? " + str(len(self.actual) == self.count)
+            logging.debug("ValidatorJson: " + str(len(self.actual)) + " == " + str(self.count) + " ? " + str(len(self.actual) == self.count))
             self.actual = len(self.actual) # for a count, actual is the count of the collection
             output = True if self.actual == self.count else False
         elif self.expected is not None and self.operator is not None:
-            #print "ValidatorJson: " + str(self.expected) + " " + str(self.operator) + " " + str(self.actual)
+            logging.debug("ValidatorJson: " + str(self.expected) + " " + str(self.operator) + " " + str(self.actual))
             
             # any special case operators here:
             if self.operator == "contains":
@@ -507,9 +515,7 @@ def run_test(mytest, test_config = TestConfig()):
     #print str(test_config.print_bodies) + ',' + str(not result.passed) + ' , ' + str(test_config.print_bodies or not result.passed)
 
     #Print response body if override is set to print all *OR* if test failed (to capture maybe a stack trace)
-    if test_config.print_bodies or not result.passed:
-        #TODO figure out why this prints for ALL methods if any of them fail!!!
-        #^^^^ I think it is because the body is not really cleared, it keeps the same bytearray for each test.. now does result.body = bytearray() in this method
+    if test_config.print_bodies:
         print result.body
 
     # execute validator on body
@@ -520,6 +526,8 @@ def run_test(mytest, test_config = TestConfig()):
             if mypassed == False:
                 result.passed = False
                 # do NOT break, collect all validation data!
+
+    logging.debug(result)
 
     curl.close()
 
@@ -548,12 +556,12 @@ def benchmark(curl, benchmark_config):
     curl.setopt(pycurl.WRITEFUNCTION, lambda x: None) #Do not store actual response body at all.
 
     #Benchmark warm-up to allow for caching, JIT compiling, on client
-    print 'Warmup: ' + message + ' started'
+    logging.info('Warmup: ' + message + ' started')
     for x in xrange(0, warmup_runs):
         curl.perform()
-    print 'Warmup: ' + message + ' finished'
+    logging.info('Warmup: ' + message + ' finished')
 
-    print 'Benchmark: ' + message + ' starting'
+    logging.info('Benchmark: ' + message + ' starting')
 
     for x in xrange(0, benchmark_runs): #Run the actual benchmarks
 
@@ -567,8 +575,7 @@ def benchmark(curl, benchmark_config):
         for i in xrange(0, len(metricnames)):
             results[i].append( curl.getinfo(metricvalues[i]) )
 
-    #print info
-    print 'Benchmark: ' + message + ' ending'
+    logging.info('Benchmark: ' + message + ' ending')
 
 
     #Compute aggregates from results, and add to BenchmarkResult
@@ -619,38 +626,46 @@ def execute_tests(testset):
         result = run_test(test, test_config = myconfig)
 
         if not result.passed: #Print failure, increase failure counts for that test group
-            print 'Test Failed: '+test.name+" URL="+test.url+" Group="+test.group+" HTTP Status Code: "+str(result.response_code)
+            logging.error('Test Failed: '+test.name+" URL="+test.url+" Group="+test.group+" HTTP Status Code: "+str(result.response_code))
 
             if test.validators is not None:
                 for validator in test.validators:
                     if validator.passed == False:
-                        print "   Validation Failed: " + str(validator)
+                        logging.warning("   Validation Failed: " + str(validator))
 
             #Increment test failure counts for that group (adding an entry if not present)
             failures = group_failure_counts[test.group]
             failures = failures + 1
             group_failure_counts[test.group] = failures
 
-        else: #Test passed, print results if verbose mode is on
-            if myconfig.verbose:
-                print 'Test Succeeded: '+test.name+" URL="+test.url+" Group="+test.group
+        else: #Test passed, print results
+            logging.info('Test Succeeded: '+test.name+" URL="+test.url+" Group="+test.group)
 
         #Add results for this test group to the resultset
         group_results[test.group].append(result)
 
     #Print summary results
+    total_failures = 0 # will just use number of failures for now
     for group in sorted(group_results.keys()):
         test_count = len(group_results[group])
         failures = group_failure_counts[group]
+        total_failures = total_failures + failures
         if (failures > 0):
             print u'Test Group '+group+u' FAILED: '+ str((test_count-failures))+'/'+str(test_count) + u' Tests Passed!'
         else:
             print u'Test Group '+group+u' SUCCEEDED: '+ str((test_count-failures))+'/'+str(test_count) + u' Tests Passed!'
 
-def main(url, test):
+#    return total_failures 
+
+def main(url, test, logging_level):
     """ Execute a test against the given base url """
+
+    if logging_level is not None:
+        logging.basicConfig(level=LOGGING_LEVELS.get(logging_level, logging.NOTSET))
+
     test_structure = read_test_file(test)
     tests = build_testsets(url, test_structure)
+
     #Execute batches of testsets
     for testset in tests:
         execute_tests(testset)
@@ -662,11 +677,12 @@ if(__name__ == '__main__'):
     parser.add_argument(u"test", help="Test file to use")
     parser.add_argument(u"--verbose", help="Verbose output")
     parser.add_argument(u"--print-bodies", help="Print all response bodies", type=bool)
+    parser.add_argument(u"--log", help="Logging level")
     args = parser.parse_args()
 
     #Override testset verbosity if given as command-line argument
     if args.verbose:
         tests.config.verbose = True
 
-    main(args.url, args.test)
+    main(args.url, args.test, args.log)
 
