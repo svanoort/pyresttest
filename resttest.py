@@ -422,7 +422,7 @@ def build_test(base_url, node):
             if isinstance(configvalue, dict) and u'file' in lowercase_keys(configvalue):
                 var = lowercase_keys(configvalue)
                 assert isinstance(var[u'file'],str) or isinstance(var[u'file'],unicode)
-                mytest.body = read_file(body[u'file']) #TODO change me to pass in a file handle, rather than reading all bodies into RAM
+                mytest.body = os.path.expandvars(read_file(var[u'file'])) #TODO change me to pass in a file handle, rather than reading all bodies into RAM
             elif isinstance(configvalue, str):
                 mytest.body = configvalue
             else:
