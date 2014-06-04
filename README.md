@@ -63,7 +63,7 @@ python resttest.py http://www.google.com simple_test.yaml
     - body: "<xmlhere><tag>contents</tag></xmlhere>"  # Body for the POST method
 
 - import: "more_tests.yaml"  # Import another test file into this one
-``
+```
 
 
 # Basic Test Set Syntax:
