@@ -1,0 +1,29 @@
+[
+{
+    "pk": 1, 
+    "model": "testapp.person", 
+    "fields": {
+        "login": "gbalthazar", 
+        "last_name": "Balthazar", 
+        "first_name": "Gaius"
+    }
+},
+{
+    "pk": 2, 
+    "model": "testapp.person", 
+    "fields": {
+        "login": "jenkins", 
+        "last_name": "Jenkins", 
+        "first_name": "Leeroy"
+    }
+},
+{
+    "pk": 3, 
+    "model": "testapp.person", 
+    "fields": {
+        "login": "bbaggins", 
+        "last_name": "Baggins", 
+        "first_name": "Bilbo"
+    }
+}
+]

@@ -5,15 +5,15 @@ And if that ain't meta I don't know what is!
 from tastypie.authorization import Authorization
 from tastypie.resources import ModelResource, ALL, ALL_WITH_RELATIONS
 from tastypie import fields
-from testapp.models import UserModel
+from testapp.models import Person
 
 
-class UserResource(ModelResource):
+class PersonResource(ModelResource):
     """ Rest resource for the users"""
 
     class Meta:
-        queryset = UserModel.objects.all()
-        resource_name = 'users'
+        queryset = Person.objects.all()
+        resource_name = 'person'
         authorization = Authorization()
         list_allowed_methods = ['get', 'post']  # List or create single item
         detail_allowed_methods = ['get', 'post', 'put', 'delete']
