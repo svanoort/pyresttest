@@ -1,0 +1,12 @@
+Setup:
+
+# Create virtual env
+virtualenv env
+source/env/bin/activate
+
+# To leave virtual ENV
+deactivate
+
+# Install Django
+pip install django django-tastypie
+
