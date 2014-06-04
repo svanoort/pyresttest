@@ -19,7 +19,9 @@ class PersonResource(ModelResource):
         detail_allowed_methods = ['get', 'post', 'put', 'delete']
         filtering = { #Search by fields
             'id': ALL,
-            'login': ALL
+            'login': ALL,
+            'first_name': ALL,
+            'last_name': ALL
         }
         always_return_data = True  # Allows for POST to return object
 
