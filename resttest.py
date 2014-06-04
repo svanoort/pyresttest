@@ -1,3 +1,4 @@
+import sys
 import os
 import operator
 import argparse
@@ -646,7 +647,7 @@ def execute_tests(testset):
         else:
             print u'Test Group '+group+u' SUCCEEDED: '+ str((test_count-failures))+'/'+str(test_count) + u' Tests Passed!'
 
-#    return total_failures 
+    return total_failures 
 
 def main(url, test, logging_level):
     """ Execute a test against the given base url """
@@ -658,8 +659,11 @@ def main(url, test, logging_level):
     tests = build_testsets(url, test_structure)
 
     #Execute batches of testsets
+    failures = 0
     for testset in tests:
-        execute_tests(testset)
+        failures = failures + execute_tests(testset)
+
+    sys.exit(failures)
 
 #Allow import into another module without executing the main method
 if(__name__ == '__main__'):
