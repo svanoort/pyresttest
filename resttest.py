@@ -164,8 +164,11 @@ class ValidatorJson:
         # default to false, if we have a check it has to hit either count or expected checks!
         output = False
 
-        if self.operator is not None and self.operator == "empty":
-            # nothing found, but we didn't expect anything. pass!
+        if self.operator is not None and self.operator == "exists":
+            # require actual value
+            output = True if self.actual is not None else False
+        elif self.operator is not None and self.operator == "empty":
+            # expect no actual value
             output = True if self.actual is None else False
         elif self.count is not None and (isinstance(self.actual, dict) or isinstance(self.actual, list)):
             logging.debug("ValidatorJson: " + str(len(self.actual)) + " == " + str(self.count) + " ? " + str(len(self.actual) == self.count))
