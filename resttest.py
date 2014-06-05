@@ -511,13 +511,17 @@ def run_test(mytest, test_config = TestConfig()):
         print result.body
 
     # execute validator on body
-    if result.passed == True and mytest.validators is not None and isinstance(mytest.validators, list):
-        myjson = json.loads(str(result.body))
-        for validator in mytest.validators:
-            mypassed = validator.validate(myjson)
-            if mypassed == False:
-                result.passed = False
-                # do NOT break, collect all validation data!
+    if result.passed == True:
+        if mytest.validators is not None and isinstance(mytest.validators, list):
+            logging.debug("executing this many validators: " + str(len(mytest.validators)))
+            myjson = json.loads(str(result.body))
+            for validator in mytest.validators:
+                mypassed = validator.validate(myjson)
+                if mypassed == False:
+                    result.passed = False
+                    # do NOT break, collect all validation data!
+        else:
+            logging.debug("no validators found")
 
     logging.debug(result)
 
