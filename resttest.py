@@ -8,7 +8,7 @@ import json
 HTTP_METHODS = {u'GET' : pycurl.HTTPGET,
     u'PUT' : pycurl.UPLOAD,
     u'POST' : pycurl.POST,
-    u'DELETE' : 'DELETE'}
+    u'DELETE'  : 'DELETE'}
 
 #Curl metrics for benchmarking, key is name in config file, value is pycurl variable
 #Taken from pycurl docs, this is libcurl variable minus the CURLINFO prefix
@@ -84,6 +84,30 @@ def std_deviation(array):
     stdev = AGGREGATES['mean_arithmetic'](variance)
     return setdev
 
+
+class BodyReader:
+    ''' Read from a data str/byte array into reader function for pyCurl '''
+
+    def __init__(self, data):
+        self.data = data
+        self.loc = 0
+
+    def readfunction(self, size):
+        startidx = self.loc
+        endidx = startidx + size
+        data = self.data
+
+        if len(data) == 0:
+            return ''
+
+        if endidx >= len(data):
+            endidx = len(data) - 1
+
+        result = data[startidx : endidx]
+        self.loc += (endidx-startidx)
+        return result
+
+
 class Test:
     """ Describes a REST test, which may include a benchmark component """
     url  = None
@@ -102,11 +126,11 @@ class Test:
 
 class TestConfig:
     """ Configuration for a test run """
-    timeout = 30 #timeout of tests, in seconds
-    print_bodies = False #Print response bodies in all cases
-    retries = 0 #Retries on failures
+    timeout = 30  # timeout of tests, in seconds
+    print_bodies = False  # Print response bodies in all cases
+    retries = 0  # Retries on failures
     verbose = False
-    test_parallel = False #Allow parallel execution of tests in a test set, for speed?
+    test_parallel = False  # Allow parallel execution of tests in a test set, for speed?
 
     def __str__(self):
         print json.dumps(self)
@@ -223,7 +247,7 @@ def safe_to_bool(input):
         return input
     elif isinstance(input,unicode) or isinstance(input,str) and unicode(input,'UTF-8').lower() == u'false':
         return False
-    elif isinstance(input,unicode) or isinstance(input,str) and unicode(input,'UTF-8').lower() == u'true':
+    elif isinstance(nput,unicode) or isinstance(input,str) and unicode(input,'UTF-8').lower() == u'true':
         return True
     else:
         raise TypeError('Input Object is not a boolean or string form of boolean!')
@@ -316,7 +340,7 @@ def build_test(base_url, node):
             if isinstance(configvalue, dict) and u'file' in lowercase_keys(configvalue):
                 var = lowercase_keys(configvalue)
                 assert isinstance(var[u'file'],str) or isinstance(var[u'file'],unicode)
-                mytest.body = read_file(body[u'file']) #TODO change me to pass in a file handle, rather than reading all bodies into RAM
+                mytest.body = read_file(var[u'file']) #TODO change me to pass in a file handle, rather than reading all bodies into RAM
             elif isinstance(configvalue, str):
                 mytest.body = configvalue
             else:
@@ -359,22 +383,23 @@ def run_test(mytest, test_config = TestConfig()):
         raise Exception('Need to input a TestConfig type object for the testconfig')
 
     curl = pycurl.Curl()
-    curl.setopt(curl.URL,mytest.url)
-    curl.setopt(curl.TIMEOUT,test_config.timeout)
-
-    #if mytest.body:
-    #TODO use file objects for CURLOPT_READDATA http://pycurl.sourceforge.net/doc/files.html
-    #OR if not file, use CURLOPT_READFUNCTION
+    curl.setopt(curl.URL, str(mytest.url))
+    curl.setopt(curl.TIMEOUT, test_config.timeout)
 
 
-    #TODO Handle get/put/post/delete method settings
-    #Needs to set curl.POSTFIELDS option to do a POST
+    #TODO use CURLOPT_READDATA http://pycurl.sourceforge.net/doc/files.html and lazy-read files if possible
+
+    # Set read function for post/put bodies
+    if mytest.method == u'POST' or mytest.method == u'PUT':
+        r = BodyReader(mytest.body)
+        curl.setopt(curl.READFUNCTION, r.readfunction)
+
     if mytest.method == u'POST':
-        pass
+        curl.setopt(HTTP_METHODS[u'POST'], 1)
     elif mytest.method == u'PUT':
-        pass
+        curl.setopt(HTTP_METHODS[u'PUT'], 1)
     elif mytest.method == u'DELETE':
-        curl.setopt(curl.CUSTOMREQUEST,'DELETE')
+        curl.setopt(curl.CUSTOMREQUEST,'DELETE')  # TODO testme, I may not work
 
     if mytest.headers: #Convert headers dictionary to list of header entries, tested and working
         headers = list()
@@ -537,9 +562,14 @@ if(__name__ == '__main__'):
     test_structure = read_test_file(args.test)
     tests = build_testsets(args.url, test_structure)
 
-    #Override testset verbosity if given as command-line argument
-    if args.verbose:
-        tests.config.verbose = True
+
+    # Override configs from command line if config set
+    for t in tests:
+        if args.verbose:
+            t.config.verbose = True
+
+        if args.print_bodies:
+            t.config.print_bodies = args.print_bodies
 
     #Execute batches of testsets
     for testset in tests:
