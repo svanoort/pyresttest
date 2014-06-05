@@ -344,6 +344,7 @@ def build_test(base_url, node):
             elif isinstance(configvalue, str):
                 mytest.body = configvalue
             else:
+                # TODO add ability to handle input of directories or file lists with wildcards to test against multiple bodies
                 raise Exception('Illegal input to HTTP request body: must be string or map of file -> path')
 
         elif configelement == 'headers': #HTTP headers to use, flattened to a single string-string dictionary
