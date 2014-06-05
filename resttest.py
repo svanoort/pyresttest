@@ -108,7 +108,7 @@ class BodyReader:
         endidx = startidx + size
         data = self.data
 
-        if len(data) == 0:
+        if data is None or len(data) == 0:
             return ''
 
         if endidx >= len(data):
