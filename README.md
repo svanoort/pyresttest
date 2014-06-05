@@ -106,14 +106,14 @@ This means by default any defined test call can easily be converted to do microb
 ## Cannot find argparse, pycurl, or yaml
 ```
 sudo su -
-easy_install argparse yaml pycurl
+easy_install argparse pyyaml pycurl
 exit
 ```
 
 OR via pip
 ```
 sudo su -
-pip install argparse yaml pycurl
+pip install argparse pyyaml pycurl
 exit
 ```
 
