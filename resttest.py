@@ -2,6 +2,7 @@ import argparse
 import yaml
 import pycurl
 import json
+import StringIO
 
 #Map HTTP method names to curl methods
 #Kind of obnoxious that it works this way...
@@ -85,29 +86,6 @@ def std_deviation(array):
     return setdev
 
 
-class BodyReader:
-    ''' Read from a data str/byte array into reader function for pyCurl '''
-
-    def __init__(self, data):
-        self.data = data
-        self.loc = 0
-
-    def readfunction(self, size):
-        startidx = self.loc
-        endidx = startidx + size
-        data = self.data
-
-        if len(data) == 0:
-            return ''
-
-        if endidx >= len(data):
-            endidx = len(data) - 1
-
-        result = data[startidx : endidx]
-        self.loc += (endidx-startidx)
-        return result
-
-
 class Test:
     """ Describes a REST test, which may include a benchmark component """
     url  = None
@@ -126,7 +104,7 @@ class Test:
 
 class TestConfig:
     """ Configuration for a test run """
-    timeout = 30  # timeout of tests, in seconds
+    timeout = 10  # timeout of tests, in seconds
     print_bodies = False  # Print response bodies in all cases
     retries = 0  # Retries on failures
     verbose = False
@@ -247,7 +225,7 @@ def safe_to_bool(input):
         return input
     elif isinstance(input,unicode) or isinstance(input,str) and unicode(input,'UTF-8').lower() == u'false':
         return False
-    elif isinstance(nput,unicode) or isinstance(input,str) and unicode(input,'UTF-8').lower() == u'true':
+    elif isinstance(input,unicode) or isinstance(input,str) and unicode(input,'UTF-8').lower() == u'true':
         return True
     else:
         raise TypeError('Input Object is not a boolean or string form of boolean!')
@@ -384,6 +362,7 @@ def run_test(mytest, test_config = TestConfig()):
         raise Exception('Need to input a TestConfig type object for the testconfig')
 
     curl = pycurl.Curl()
+    # curl.setopt(pycurl.VERBOSE, 1)  # Debugging convenience
     curl.setopt(curl.URL, str(mytest.url))
     curl.setopt(curl.TIMEOUT, test_config.timeout)
 
@@ -392,21 +371,24 @@ def run_test(mytest, test_config = TestConfig()):
 
     # Set read function for post/put bodies
     if mytest.method == u'POST' or mytest.method == u'PUT':
-        r = BodyReader(mytest.body)
-        curl.setopt(curl.READFUNCTION, r.readfunction)
+        curl.setopt(curl.READFUNCTION, StringIO.StringIO(mytest.body).read)
 
     if mytest.method == u'POST':
         curl.setopt(HTTP_METHODS[u'POST'], 1)
+        curl.setopt(pycurl.POSTFIELDSIZE, len(mytest.body))  # Required for some servers
     elif mytest.method == u'PUT':
         curl.setopt(HTTP_METHODS[u'PUT'], 1)
+        curl.setopt(pycurl.INFILESIZE, len(mytest.body))  # Required for some servers
     elif mytest.method == u'DELETE':
-        curl.setopt(curl.CUSTOMREQUEST,'DELETE')  # TODO testme, I may not work
+        curl.setopt(curl.CUSTOMREQUEST,'DELETE')
 
+    headers = list()
     if mytest.headers: #Convert headers dictionary to list of header entries, tested and working
-        headers = list()
         for headername, headervalue in mytest.headers.items():
             headers.append(str(headername) + ': ' +str(headervalue))
-        curl.setopt(curl.HTTPHEADER, headers) #Need to read from headers
+    headers.append("Expect:")  # Fix for expecting 100-continue from server, which not all servers will send!
+    headers.append("Connection: close")
+    curl.setopt(curl.HTTPHEADER, headers)
 
     result = TestResponse()
     curl.setopt(pycurl.WRITEFUNCTION, result.body_callback)

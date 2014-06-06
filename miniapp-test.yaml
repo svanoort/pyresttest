@@ -3,25 +3,25 @@
 - config:
     - testset: "Tests using test app"
 
-#- test: # create entity
-#    - name: "Basic get"
-#    - url: "/api/person/"
-#- test: # create entity
-#    - name: "Get single person"
-#    - url: "/api/person/1/"
-#- test: # create entity
-#    - name: "Get single person"
-#    - url: "/api/person/1/"
-#    - method: 'DELETE'
+- test: # create entity
+    - name: "Basic get"
+    - url: "/api/person/"
+- test: # create entity
+    - name: "Get single person"
+    - url: "/api/person/1/"
+- test: # create entity
+    - name: "Get single person"
+    - url: "/api/person/1/"
+    - method: 'DELETE'
 - test: # create entity
     - name: "Create/update person"
     - url: "/api/person/1/"
     - method: "PUT"
-    - body: '{"first_name": "Gaius","id": 5,"last_name": "Baltar","login": "gbaltar"}'
+    - body: '{"first_name": "Gaius","id": 1,"last_name": "Baltar","login": "gbaltar"}'
+    - headers: {'Content-Type': 'application/json'}
+- test: # create entity
+    - name: "Create person"
+    - url: "/api/person/"
+    - method: "POST"
+    - body: '{"first_name": "Willim","last_name": "Adama","login": "theadmiral"}'
     - headers: {Content-Type: application/json}
-#- test: # create entity
-#    - name: "Create person"
-#    - url: "/api/person/"
-#    - method: "POST"
-#    - body: '{"first_name": "Willim","last_name": "Adama","login": "theadmiral"}'
-#    - headers: {Content-Type: application/json}
