@@ -138,7 +138,6 @@ class Test:
 class ValidatorJson:
     """ Validation for a Json document """
     query = None
-    count = None
     expected = None
     operator = "eq"
     passed = None
@@ -147,10 +146,10 @@ class ValidatorJson:
     def __str__(self):
         return json.dumps(self, default=lambda o: o.__dict__)
 
-    def validate(self, jsonDict):
-        """ Uses the query as an XPath like query for JSON to extract a value and check count and/or expected """
+    def validate(self, mydict):
+        """ Uses the query as an XPath like query to extract a value from the dict and verify result against expectation """
         # from http://stackoverflow.com/questions/7320319/xpath-like-query-for-nested-python-dictionaries
-        self.actual = jsonDict 
+        self.actual = mydict 
         try:
             for x in self.query.strip("/").split("/"):
                 try:
@@ -170,10 +169,9 @@ class ValidatorJson:
         elif self.operator is not None and self.operator == "empty":
             # expect no actual value
             output = True if self.actual is None else False
-        elif self.count is not None and (isinstance(self.actual, dict) or isinstance(self.actual, list)):
-            logging.debug("ValidatorJson: " + str(len(self.actual)) + " == " + str(self.count) + " ? " + str(len(self.actual) == self.count))
+        elif self.operator is not None and self.operator == "count":
             self.actual = len(self.actual) # for a count, actual is the count of the collection
-            output = True if self.actual == self.count else False
+            output = True if self.actual == self.expected else False
         elif self.expected is not None and self.operator is not None:
             logging.debug("ValidatorJson: " + str(self.expected) + " " + str(self.operator) + " " + str(self.actual))
             
@@ -415,20 +413,18 @@ def build_test(base_url, node):
                 for var in configvalue:
                     mytype = var.get(u'type')
                     myquery = var.get(u'query')
-                    mycount = var.get(u'count')
                     myexpected = var.get(u'expected')
                     myoperator = var.get(u'operator')
                     if mytype == 'json':
                         if myquery is None:
-                            raise Exception("Query is required for json validator")
-                        if mycount is None and myexpected is None:
-                            raise Exception("One of count or expected is required for json validator")
+                            raise Exception("Required for validator: query")
+                        if myexpected is None:
+                            raise Exception("Required for validator: expected")
                         assert isinstance(myquery,str)
                         if mytest.validators is None:
                             mytest.validators = list()
                         validator = ValidatorJson()
                         validator.query = myquery
-                        validator.count = mycount
                         validator.expected = myexpected
                         # http://stackoverflow.com/questions/394809/does-python-have-a-ternary-conditional-operator
                         validator.operator = myoperator if myoperator is not None else validator.operator
