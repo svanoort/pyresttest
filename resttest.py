@@ -130,6 +130,7 @@ class Test:
     name = u'Unnamed'
     validators = None #Validators for response body, IE regexes, etc
     benchmark = None #Benchmarking config for item
+    stop_on_failure = False
     #In this case, config would be used by all tests following config definition, and in the same scope as tests
 
     def __str__(self):
@@ -324,7 +325,7 @@ def safe_to_bool(input):
         return input
     elif isinstance(input,unicode) or isinstance(input,str) and unicode(input,'UTF-8').lower() == u'false':
         return False
-    elif isinstance(nput,unicode) or isinstance(input,str) and unicode(input,'UTF-8').lower() == u'true':
+    elif isinstance(input,unicode) or isinstance(input,str) and unicode(input,'UTF-8').lower() == u'true':
         return True
     else:
         raise TypeError('Input Object is not a boolean or string form of boolean!')
@@ -459,6 +460,8 @@ def build_test(base_url, node):
             else:
                 expected.append(int(configvalue))
             mytest.expected_status = expected
+        elif configelement == 'stop_on_failure':
+            mytest.stop_on_failure = safe_to_bool(configvalue)
 
     #Next, we adjust defaults to be reasonable, if the user does not specify them
 
@@ -659,6 +662,11 @@ def execute_tests(testset):
 
         #Add results for this test group to the resultset
         group_results[test.group].append(result)
+
+        # handle stop_on_failure flag
+        if not result.passed and test.stop_on_failure is not None and test.stop_on_failure:
+            print 'STOP ON FAILURE!'
+            break
 
     #Print summary results
     total_failures = 0 # will just use number of failures for now
