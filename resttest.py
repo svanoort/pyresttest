@@ -89,14 +89,14 @@ def std_deviation(array):
 class Test:
     """ Describes a REST test, which may include a benchmark component """
     url  = None
-    expected_status = [200] #expected HTTP status code or codes
+    expected_status = [200]  # expected HTTP status code or codes
     body = None #Request body, if any (for POST/PUT methods)
     headers = dict() #HTTP Headers
     method = u'GET'
     group = u'Default'
     name = u'Unnamed'
-    validators = None #Validators for response body, IE regexes, etc
-    benchmark = None #Benchmarking config for item
+    validators = None  # Validators for response body, IE regexes, etc
+    benchmark = None   # Benchmarking config for item
     #In this case, config would be used by all tests following config definition, and in the same scope as tests
 
     def __str__(self):
@@ -353,9 +353,8 @@ def build_test(base_url, node):
 
     return mytest
 
-
-def run_test(mytest, test_config = TestConfig()):
-    """ Run actual test, return results """
+def configure_curl(mytest, test_config = TestConfig()):
+    """ Create and mostly configure a curl object for test """
     if not isinstance(mytest, Test):
         raise Exception('Need to input a Test type object')
     if not isinstance(test_config, TestConfig):
@@ -389,7 +388,12 @@ def run_test(mytest, test_config = TestConfig()):
     headers.append("Expect:")  # Fix for expecting 100-continue from server, which not all servers will send!
     headers.append("Connection: close")
     curl.setopt(curl.HTTPHEADER, headers)
+    return curl
 
+def run_test(mytest, test_config = TestConfig()):
+    """ Put together test pieces: configure & run actual test, return results """
+
+    curl = configure_curl(mytest, test_config)
     result = TestResponse()
     curl.setopt(pycurl.WRITEFUNCTION, result.body_callback)
     curl.setopt(pycurl.HEADERFUNCTION,result.header_callback) #Gets headers
@@ -412,8 +416,6 @@ def run_test(mytest, test_config = TestConfig()):
         print result.body
 
     curl.close()
-
-    result.body = None #Remove the body, we do NOT need to waste the memory anymore
     return result
 
 def benchmark(curl, benchmark_config):
@@ -507,6 +509,7 @@ def execute_tests(testset):
     #Run tests, collecting statistics as needed
     for test in mytests:
         result = run_test(test, test_config = myconfig)
+        result.body = None  # Remove the body, save some memory!
 
         if not result.passed: #Print failure, increase failure counts for that test group
             print 'Test Failed: '+test.name+" URL="+test.url+" Group="+test.group+" HTTP Status Code: "+str(result.response_code)
