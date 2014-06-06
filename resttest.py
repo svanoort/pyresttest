@@ -5,6 +5,7 @@ import argparse
 import yaml
 import pycurl
 import json
+import StringIO
 import logging
 
 LOGGING_LEVELS = {'debug': logging.DEBUG,
@@ -12,7 +13,6 @@ LOGGING_LEVELS = {'debug': logging.DEBUG,
     'warning': logging.WARNING,
     'error': logging.ERROR,
     'critical': logging.CRITICAL}
-
 
 #Map HTTP method names to curl methods
 #Kind of obnoxious that it works this way...
@@ -118,18 +118,17 @@ class BodyReader:
         self.loc += (endidx-startidx)
         return result
 
-
 class Test:
     """ Describes a REST test, which may include a benchmark component """
     url  = None
-    expected_status = [200] #expected HTTP status code or codes
+    expected_status = [200]  # expected HTTP status code or codes
     body = None #Request body, if any (for POST/PUT methods)
     headers = dict() #HTTP Headers
     method = u'GET'
     group = u'Default'
     name = u'Unnamed'
-    validators = None #Validators for response body, IE regexes, etc
-    benchmark = None #Benchmarking config for item
+    validators = None  # Validators for response body, IE regexes, etc
+    benchmark = None   # Benchmarking config for item
     stop_on_failure = False
     #In this case, config would be used by all tests following config definition, and in the same scope as tests
 
@@ -198,7 +197,7 @@ class ValidatorJson:
 
 class TestConfig:
     """ Configuration for a test run """
-    timeout = 30  # timeout of tests, in seconds
+    timeout = 10  # timeout of tests, in seconds
     print_bodies = False  # Print response bodies in all cases
     retries = 0  # Retries on failures
     verbose = False
@@ -446,6 +445,7 @@ def build_test(base_url, node):
             elif isinstance(configvalue, str):
                 mytest.body = configvalue
             else:
+                # TODO add ability to handle input of directories or file lists with wildcards to test against multiple bodies
                 raise Exception('Illegal input to HTTP request body: must be string or map of file -> path')
 
         elif configelement == 'headers': #HTTP headers to use, flattened to a single string-string dictionary
@@ -478,15 +478,15 @@ def build_test(base_url, node):
 
     return mytest
 
-
-def run_test(mytest, test_config = TestConfig()):
-    """ Run actual test, return results """
+def configure_curl(mytest, test_config = TestConfig()):
+    """ Create and mostly configure a curl object for test """
     if not isinstance(mytest, Test):
         raise Exception('Need to input a Test type object')
     if not isinstance(test_config, TestConfig):
         raise Exception('Need to input a TestConfig type object for the testconfig')
 
     curl = pycurl.Curl()
+    # curl.setopt(pycurl.VERBOSE, 1)  # Debugging convenience
     curl.setopt(curl.URL, str(mytest.url))
     curl.setopt(curl.TIMEOUT, test_config.timeout)
 
@@ -495,22 +495,30 @@ def run_test(mytest, test_config = TestConfig()):
 
     # Set read function for post/put bodies
     if mytest.method == u'POST' or mytest.method == u'PUT':
-        r = BodyReader(mytest.body)
-        curl.setopt(curl.READFUNCTION, r.readfunction)
+        curl.setopt(curl.READFUNCTION, StringIO.StringIO(mytest.body).read)
 
     if mytest.method == u'POST':
         curl.setopt(HTTP_METHODS[u'POST'], 1)
+        curl.setopt(pycurl.POSTFIELDSIZE, len(mytest.body))  # Required for some servers
     elif mytest.method == u'PUT':
         curl.setopt(HTTP_METHODS[u'PUT'], 1)
+        curl.setopt(pycurl.INFILESIZE, len(mytest.body))  # Required for some servers
     elif mytest.method == u'DELETE':
-        curl.setopt(curl.CUSTOMREQUEST,'DELETE')  # TODO testme, I may not work
+        curl.setopt(curl.CUSTOMREQUEST,'DELETE')
 
+    headers = list()
     if mytest.headers: #Convert headers dictionary to list of header entries, tested and working
-        headers = list()
         for headername, headervalue in mytest.headers.items():
             headers.append(str(headername) + ': ' +str(headervalue))
-        curl.setopt(curl.HTTPHEADER, headers) #Need to read from headers
+    headers.append("Expect:")  # Fix for expecting 100-continue from server, which not all servers will send!
+    headers.append("Connection: close")
+    curl.setopt(curl.HTTPHEADER, headers)
+    return curl
 
+def run_test(mytest, test_config = TestConfig()):
+    """ Put together test pieces: configure & run actual test, return results """
+
+    curl = configure_curl(mytest, test_config)
     result = TestResponse()
     # reset the body, it holds values from previous runs otherwise
     result.body = bytearray()
@@ -549,8 +557,6 @@ def run_test(mytest, test_config = TestConfig()):
     logging.debug(result)
 
     curl.close()
-
-    result.body = None #Remove the body, we do NOT need to waste the memory anymore
     return result
 
 def benchmark(curl, benchmark_config):
@@ -643,6 +649,7 @@ def execute_tests(testset):
     #Run tests, collecting statistics as needed
     for test in mytests:
         result = run_test(test, test_config = myconfig)
+        result.body = None  # Remove the body, save some memory!
 
         if not result.passed: #Print failure, increase failure counts for that test group
             logging.error('Test Failed: '+test.name+" URL="+test.url+" Group="+test.group+" HTTP Status Code: "+str(result.response_code))
