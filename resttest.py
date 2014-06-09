@@ -142,6 +142,8 @@ class ValidatorJson:
     operator = "eq"
     passed = None
     actual = None
+    query_delimiter = "/"
+    export_as = None
 
     def __str__(self):
         return json.dumps(self, default=lambda o: o.__dict__)
@@ -151,13 +153,16 @@ class ValidatorJson:
         # from http://stackoverflow.com/questions/7320319/xpath-like-query-for-nested-python-dictionaries
         self.actual = mydict 
         try:
-            for x in self.query.strip("/").split("/"):
+            logging.debug("ValidatorJson: pre query: " + str(self.actual))
+            for x in self.query.strip(self.query_delimiter).split(self.query_delimiter):
+                logging.debug("ValidatorJson: x = " + x)
                 try:
                     x = int(x)
                     self.actual = self.actual[x]
                 except ValueError:
                     self.actual = self.actual.get(x)
         except:
+            logging.debug("ValidatorJson: exception applying query")
             pass
 
         # default to false, if we have a check it has to hit either count or expected checks!
@@ -165,18 +170,22 @@ class ValidatorJson:
 
         if self.operator is not None and self.operator == "exists":
             # require actual value
+            logging.debug("ValidatorJson: exists check") 
             output = True if self.actual is not None else False
         elif self.operator is not None and self.operator == "empty":
             # expect no actual value
+            logging.debug("ValidatorJson: empty check" )
             output = True if self.actual is None else False
         elif self.actual is None:
             # all tests beyond here require actual to be set
+            logging.debug("ValidatorJson: actual is None")
             output = False
         elif self.operator is not None and self.operator == "count":
             self.actual = len(self.actual) # for a count, actual is the count of the collection
+            logging.debug("ValidatorJson: count check")
             output = True if self.actual == self.expected else False
         elif self.expected is not None and self.operator is not None:
-            logging.debug("ValidatorJson: " + str(self.expected) + " " + str(self.operator) + " " + str(self.actual))
+            logging.debug("ValidatorJson: operator check: " + str(self.expected) + " " + str(self.operator) + " " + str(self.actual))
             
             # any special case operators here:
             if self.operator == "contains":
@@ -189,6 +198,7 @@ class ValidatorJson:
                 myoperator = getattr(operator, self.operator)
                 output = True if myoperator(self.actual, self.expected) == True else False
         else:
+            logging.debug("ValidatorJson: unable to validate")
             self.actual = "Unable to validate!"
             output = False
 
@@ -205,6 +215,7 @@ class TestConfig:
     retries = 0  # Retries on failures
     verbose = False
     test_parallel = False  # Allow parallel execution of tests in a test set, for speed?
+    validator_query_delimiter = "/"
 
     def __str__(self):
         return json.dumps(self, default=lambda o: o.__dict__)
@@ -348,6 +359,8 @@ def make_configuration(node):
             test_config.retries = int(value)
         elif key == u'verbose':
             test_config.verbose = safe_to_bool(value)
+        elif key == u'validator_query_delimiter':
+            test_config.validator_query_delimiter = str(value)
 
     return test_config
 
@@ -551,6 +564,9 @@ def run_test(mytest, test_config = TestConfig()):
             logging.debug("executing this many validators: " + str(len(mytest.validators)))
             myjson = json.loads(str(result.body))
             for validator in mytest.validators:
+                # pass delimiter from config to validator
+                validator.query_delimiter = test_config.validator_query_delimiter
+                # execute validation
                 mypassed = validator.validate(myjson)
                 if mypassed == False:
                     result.passed = False
