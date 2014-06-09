@@ -204,6 +204,11 @@ class ValidatorJson:
 
         #print "ValidatorJson: output is " + str(output)
 
+        # if export_as is set, export to environ
+        if self.export_as is not None and self.actual is not None:
+            logging.debug("ValidatorJson: export " + self.export_as + " = " + str(self.actual))
+            os.environ[self.export_as] = str(self.actual)
+
         self.passed = output
 
         return output
@@ -431,6 +436,7 @@ def build_test(base_url, node):
                     myquery = var.get(u'query')
                     myexpected = var.get(u'expected')
                     myoperator = var.get(u'operator')
+                    myexportas = var.get(u'export_as')
                     if mytype == 'json':
                         if myquery is None:
                             raise Exception("Required for validator: query")
@@ -444,6 +450,7 @@ def build_test(base_url, node):
                         validator.expected = myexpected
                         # http://stackoverflow.com/questions/394809/does-python-have-a-ternary-conditional-operator
                         validator.operator = myoperator if myoperator is not None else validator.operator
+                        validator.export_as = myexportas if myexportas is not None else validator.export_as
                         mytest.validators.append(validator)
                     else:
                         raise Exception("Unknown validator type: " + var[u'type'])
@@ -508,6 +515,10 @@ def configure_curl(mytest, test_config = TestConfig()):
 
 
     #TODO use CURLOPT_READDATA http://pycurl.sourceforge.net/doc/files.html and lazy-read files if possible
+
+    # HACK: process env vars again, since we have an extract capabilitiy in validation.. this is a complete hack, but I need functionality over beauty
+    if mytest.body is not None:
+        mytest.body = os.path.expandvars(mytest.body)
 
     # Set read function for post/put bodies
     if mytest.method == u'POST' or mytest.method == u'PUT':
