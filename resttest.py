@@ -169,6 +169,9 @@ class ValidatorJson:
         elif self.operator is not None and self.operator == "empty":
             # expect no actual value
             output = True if self.actual is None else False
+        elif self.actual is None:
+            # all tests beyond here require actual to be set
+            output = False
         elif self.operator is not None and self.operator == "count":
             self.actual = len(self.actual) # for a count, actual is the count of the collection
             output = True if self.actual == self.expected else False
