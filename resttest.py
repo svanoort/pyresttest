@@ -552,7 +552,8 @@ def configure_curl(mytest, test_config = TestConfig()):
             curl.setopt(pycurl.POSTFIELDSIZE, len(mytest.body))  # Required for some servers
     elif mytest.method == u'PUT':
         curl.setopt(HTTP_METHODS[u'PUT'], 1)
-        curl.setopt(pycurl.INFILESIZE, len(mytest.body))  # Required for some servers
+        if mytest.body is not None:
+            curl.setopt(pycurl.INFILESIZE, len(mytest.body))  # Required for some servers
     elif mytest.method == u'DELETE':
         curl.setopt(curl.CUSTOMREQUEST,'DELETE')
 
