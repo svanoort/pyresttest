@@ -780,8 +780,8 @@ def main(args):
         interactive  - OPTIONAL - mode that prints info before and after test exectuion and pauses for user input for each test
     """
 
-    if 'logs' in args:
-        logging.basicConfig(level=LOGGING_LEVELS.get(args.log, logging.NOTSET))
+    if 'log' in args and args['log'] is not None:
+        logging.basicConfig(level=LOGGING_LEVELS.get(args['log'], logging.NOTSET))
 
     test_structure = read_test_file(args['test'])
     tests = build_testsets(args['url'], test_structure)
