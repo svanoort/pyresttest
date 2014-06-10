@@ -95,6 +95,19 @@ def std_deviation(array):
     stdev = AGGREGATES['mean_arithmetic'](variance)
     return setdev
 
+class cd:
+    """Context manager for changing the current working directory"""
+    # http://stackoverflow.com/questions/431684/how-do-i-cd-in-python/13197763#13197763
+
+    def __init__(self, newPath):
+        self.newPath = newPath
+
+    def __enter__(self):
+        self.savedPath = os.getcwd()
+        os.chdir(self.newPath)
+
+    def __exit__(self, etype, value, traceback):
+        os.chdir(self.savedPath)
 
 class BodyReader:
     ''' Read from a data str/byte array into reader function for pyCurl '''
@@ -309,6 +322,7 @@ def build_testsets(base_url, test_structure, test_files = set() ):
 
     tests_out = list()
     test_config = TestConfig()
+    testsets = list()
     #returns a testconfig and collection of tests
     for node in test_structure: #Iterate through lists of test and configuration elements
         if isinstance(node,dict): #Each config element is a miniature key-value dictionary
@@ -316,8 +330,13 @@ def build_testsets(base_url, test_structure, test_files = set() ):
             for key in node:
                 if key == u'import':
                     importfile = node[key] #import another file
-                    raise NotImplementedError('Nested test file imports not supported yet')
-                    print u'Importing additional testset: '+importfile
+                    if importfile not in test_files:
+                        logging.debug("Importing test sets: " + importfile)
+                        test_files.add(importfile)
+                        import_test_structure = read_test_file(importfile)
+                        with cd(os.path.dirname(os.path.realpath(importfile))):
+                            import_testsets = build_testsets(base_url, import_test_structure, test_files)
+                            testsets.extend(import_testsets)
                 if key == u'url': #Simple test, just a GET to a URL
                     mytest = Test()
                     val = node[key]
@@ -333,7 +352,8 @@ def build_testsets(base_url, test_structure, test_files = set() ):
     testset = TestSet()
     testset.tests = tests_out
     testset.config = test_config
-    return [testset]
+    testsets.append(testset)
+    return testsets
 
 def safe_to_bool(input):
     """ Safely convert user input to a boolean, throwing exception if not boolean or boolean-appropriate string
@@ -670,7 +690,7 @@ def execute_tests(testset):
 
     #Make sure we actually have tests to execute
     if not mytests:
-        return None
+        return 0
 
     #Initialize the dictionaries to store test fail counts and results
     for test in mytests:
