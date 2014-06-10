@@ -792,10 +792,10 @@ def main(args):
             t.config.verbose = True
 
         if 'print_bodies' in args and args['print_bodies'] is not None:
-            t.config.print_bodies = args['print_bodies']
+            t.config.print_bodies = safe_to_bool(args['print_bodies'])
 
         if 'interactive' in args and args['interactive'] is not None:
-            t.config.interactive = True
+            t.config.interactive = safe_to_bool(args['interactive'])
 
     # Execute all testsets
     failures = execute_testsets(tests)
@@ -812,8 +812,6 @@ if(__name__ == '__main__'):
     parser.add_argument(u"--log", help="Logging level")
     parser.add_argument(u"--interactive", help="Interactive mode")
     args = vars(parser.parse_args())
-
-    print "ARGS: " + str(args)
 
     main(args)
 
