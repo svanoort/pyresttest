@@ -148,8 +148,8 @@ class Test:
     def __str__(self):
         return json.dumps(self, default=lambda o: o.__dict__)
 
-class ValidatorJson:
-    """ Validation for a Json document """
+class Validator:
+    """ Validation for a dictionary """
     query = None
     expected = None
     operator = "eq"
@@ -163,42 +163,54 @@ class ValidatorJson:
 
     def validate(self, mydict):
         """ Uses the query as an XPath like query to extract a value from the dict and verify result against expectation """
+
+        if self.query is None:
+            raise Exception("Validation missing attribute 'query': " + str(self))
+
+        if not isinstance(self.query, str):
+            raise Exception("Validation attribute 'query' type is not str: " + type(self.query).__name__)
+
+        if self.operator is None:
+            raise Exception("Validation missing attribute 'operator': " + str(self))
+
         # from http://stackoverflow.com/questions/7320319/xpath-like-query-for-nested-python-dictionaries
         self.actual = mydict 
         try:
-            logging.debug("ValidatorJson: pre query: " + str(self.actual))
+            logging.debug("Validator: pre query: " + str(self.actual))
             for x in self.query.strip(self.query_delimiter).split(self.query_delimiter):
-                logging.debug("ValidatorJson: x = " + x)
+                logging.debug("Validator: x = " + x)
                 try:
                     x = int(x)
                     self.actual = self.actual[x]
                 except ValueError:
                     self.actual = self.actual.get(x)
         except:
-            logging.debug("ValidatorJson: exception applying query")
+            logging.debug("Validator: exception applying query")
             pass
 
         # default to false, if we have a check it has to hit either count or expected checks!
         output = False
 
-        if self.operator is not None and self.operator == "exists":
+        if self.operator == "exists":
             # require actual value
-            logging.debug("ValidatorJson: exists check") 
+            logging.debug("Validator: exists check") 
             output = True if self.actual is not None else False
-        elif self.operator is not None and self.operator == "empty":
+        elif self.operator == "empty":
             # expect no actual value
-            logging.debug("ValidatorJson: empty check" )
+            logging.debug("Validator: empty check" )
             output = True if self.actual is None else False
         elif self.actual is None:
             # all tests beyond here require actual to be set
-            logging.debug("ValidatorJson: actual is None")
+            logging.debug("Validator: actual is None")
             output = False
-        elif self.operator is not None and self.operator == "count":
+        elif self.expected is None:
+            raise Exception("Validation missing attribute 'expected': " + str(self))
+        elif self.operator == "count":
             self.actual = len(self.actual) # for a count, actual is the count of the collection
-            logging.debug("ValidatorJson: count check")
+            logging.debug("Validator: count check")
             output = True if self.actual == self.expected else False
-        elif self.expected is not None and self.operator is not None:
-            logging.debug("ValidatorJson: operator check: " + str(self.expected) + " " + str(self.operator) + " " + str(self.actual))
+        else:
+            logging.debug("Validator: operator check: " + str(self.expected) + " " + str(self.operator) + " " + str(self.actual))
             
             # any special case operators here:
             if self.operator == "contains":
@@ -210,16 +222,12 @@ class ValidatorJson:
                 # operator list: https://docs.python.org/2/library/operator.html
                 myoperator = getattr(operator, self.operator)
                 output = True if myoperator(self.actual, self.expected) == True else False
-        else:
-            logging.debug("ValidatorJson: unable to validate")
-            self.actual = "Unable to validate!"
-            output = False
 
-        #print "ValidatorJson: output is " + str(output)
+        #print "Validator: output is " + str(output)
 
         # if export_as is set, export to environ
         if self.export_as is not None and self.actual is not None:
-            logging.debug("ValidatorJson: export " + self.export_as + " = " + str(self.actual))
+            logging.debug("Validator: export " + self.export_as + " = " + str(self.actual))
             os.environ[self.export_as] = str(self.actual)
 
         self.passed = output
@@ -452,28 +460,21 @@ def build_test(base_url, node):
             #TODO implement more validators: regex, file/schema match, etc
             if isinstance(configvalue, list):
                 for var in configvalue:
-                    mytype = var.get(u'type')
                     myquery = var.get(u'query')
-                    myexpected = var.get(u'expected')
                     myoperator = var.get(u'operator')
+                    myexpected = var.get(u'expected')
                     myexportas = var.get(u'export_as')
-                    if mytype == 'json':
-                        if myquery is None:
-                            raise Exception("Required for validator: query")
-                        if myexpected is None:
-                            raise Exception("Required for validator: expected")
-                        assert isinstance(myquery,str)
-                        if mytest.validators is None:
-                            mytest.validators = list()
-                        validator = ValidatorJson()
-                        validator.query = myquery
-                        validator.expected = myexpected
-                        # http://stackoverflow.com/questions/394809/does-python-have-a-ternary-conditional-operator
-                        validator.operator = myoperator if myoperator is not None else validator.operator
-                        validator.export_as = myexportas if myexportas is not None else validator.export_as
-                        mytest.validators.append(validator)
-                    else:
-                        raise Exception("Unknown validator type: " + var[u'type'])
+
+                    # NOTE structure is checked by use of validator, do not verify attributes here
+                    # create validator and add to list of validators
+                    if mytest.validators is None:
+                        mytest.validators = list()
+                    validator = Validator()
+                    validator.query = myquery
+                    validator.expected = myexpected
+                    validator.operator = myoperator if myoperator is not None else validator.operator
+                    validator.export_as = myexportas if myexportas is not None else validator.export_as
+                    mytest.validators.append(validator)
             else:
                 raise Exception('Misconfigured validator, requires type property')
         elif configelement == u'benchmark':
