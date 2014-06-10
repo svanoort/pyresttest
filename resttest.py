@@ -242,6 +242,7 @@ class TestConfig:
     verbose = False
     test_parallel = False  # Allow parallel execution of tests in a test set, for speed?
     validator_query_delimiter = "/"
+    interactive = False
 
     def __str__(self):
         return json.dumps(self, default=lambda o: o.__dict__)
@@ -574,6 +575,16 @@ def run_test(mytest, test_config = TestConfig()):
     curl.setopt(pycurl.WRITEFUNCTION, result.body_callback)
     curl.setopt(pycurl.HEADERFUNCTION,result.header_callback) #Gets headers
 
+    if test_config.interactive:
+        print "==================================="
+        print "%s" % mytest.name
+        print "-----------------------------------"
+        print "REQUEST:"
+        print "%s %s" % (mytest.method, mytest.url)
+        if mytest.body is not None:
+            print "\n%s" % mytest.body
+        raw_input("Press ENTER when ready: ")
+
     try:
         curl.perform() #Run the actual call
     except Exception as e:
@@ -588,6 +599,8 @@ def run_test(mytest, test_config = TestConfig()):
 
     #Print response body if override is set to print all *OR* if test failed (to capture maybe a stack trace)
     if test_config.print_bodies:
+        if test_config.interactive:
+            print "RESPONSE:"
         print result.body
 
     # execute validator on body
@@ -603,6 +616,10 @@ def run_test(mytest, test_config = TestConfig()):
                 if mypassed == False:
                     result.passed = False
                     # do NOT break, collect all validation data!
+                if test_config.interactive:
+                    # expected isn't really required, so accomidate with prepending space if it is set, else make it empty (for formatting)
+                    myexpected = " " + str(validator.expected) if validator.expected is not None else ""
+                    print "VALIDATOR: " + validator.query + " " + validator.operator + myexpected + " = " + str(validator.passed)
         else:
             logging.debug("no validators found")
 
@@ -687,6 +704,7 @@ def execute_testsets(testsets):
     group_results = dict() #results, by group
     group_failure_counts = dict()
     total_failures = 0
+    myinteractive = False
 
     for testset in testsets:
         mytests = testset.tests
@@ -696,6 +714,8 @@ def execute_testsets(testsets):
         if not mytests:
             # no tests in this test set, probably just imports.. skip to next test set
             break
+
+        myinteractive = True if myinteractive or myconfig.interactive else False
 
         #Run tests, collecting statistics as needed
         for test in mytests:
@@ -731,6 +751,10 @@ def execute_testsets(testsets):
                 print 'STOP ON FAILURE! stopping test set execution, continuing with other test sets'
                 break
 
+    if myinteractive:
+        # a break for when interactive bits are complete, before summary data
+        print "==================================="
+
     #Print summary results
     for group in sorted(group_results.keys()):
         test_count = len(group_results[group])
@@ -753,6 +777,7 @@ def main(args):
         verbose      - OPTIONAL - turn on verbose logging (deprecated?)
         print_bodies - OPTIONAL - print response body
         log          - OPTIONAL - set logging level {debug,info,warning,error,critical} (default=warning)
+        interactive  - OPTIONAL - mode that prints info before and after test exectuion and pauses for user input for each test
     """
 
     if 'logs' in args:
@@ -763,11 +788,14 @@ def main(args):
 
     # Override configs from command line if config set
     for t in tests:
-        if 'verbose' in args:
+        if 'verbose' in args and args['verbose'] is not None:
             t.config.verbose = True
 
-        if 'print_bodies' in args:
+        if 'print_bodies' in args and args['print_bodies'] is not None:
             t.config.print_bodies = args['print_bodies']
+
+        if 'interactive' in args and args['interactive'] is not None:
+            t.config.interactive = True
 
     # Execute all testsets
     failures = execute_testsets(tests)
@@ -782,7 +810,10 @@ if(__name__ == '__main__'):
     parser.add_argument(u"--verbose", help="Verbose output")
     parser.add_argument(u"--print-bodies", help="Print all response bodies", type=bool)
     parser.add_argument(u"--log", help="Logging level")
+    parser.add_argument(u"--interactive", help="Interactive mode")
     args = vars(parser.parse_args())
+
+    print "ARGS: " + str(args)
 
     main(args)
 
