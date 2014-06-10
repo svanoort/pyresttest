@@ -743,14 +743,31 @@ def execute_testsets(testsets):
 
     return total_failures 
 
-def main(url, test, logging_level):
-    """ Execute a test against the given base url """
+def main(args):
+    """
+    Execute a test against the given base url.
 
-    if logging_level is not None:
-        logging.basicConfig(level=LOGGING_LEVELS.get(logging_level, logging.NOTSET))
+    Keys allowed for args:
+        url          - REQUIRED - Base URL
+        test         - REQUIRED - Test file (yaml)
+        verbose      - OPTIONAL - turn on verbose logging (deprecated?)
+        print_bodies - OPTIONAL - print response body
+        log          - OPTIONAL - set logging level {debug,info,warning,error,critical} (default=warning)
+    """
 
-    test_structure = read_test_file(test)
-    tests = build_testsets(url, test_structure)
+    if 'logs' in args:
+        logging.basicConfig(level=LOGGING_LEVELS.get(args.log, logging.NOTSET))
+
+    test_structure = read_test_file(args['test'])
+    tests = build_testsets(args['url'], test_structure)
+
+    # Override configs from command line if config set
+    for t in tests:
+        if 'verbose' in args:
+            t.config.verbose = True
+
+        if 'print_bodies' in args:
+            t.config.print_bodies = args['print_bodies']
 
     # Execute all testsets
     failures = execute_testsets(tests)
@@ -765,16 +782,7 @@ if(__name__ == '__main__'):
     parser.add_argument(u"--verbose", help="Verbose output")
     parser.add_argument(u"--print-bodies", help="Print all response bodies", type=bool)
     parser.add_argument(u"--log", help="Logging level")
-    args = parser.parse_args()
+    args = vars(parser.parse_args())
 
-
-    # Override configs from command line if config set
-    for t in tests:
-        if args.verbose:
-            t.config.verbose = True
-
-        if args.print_bodies:
-            t.config.print_bodies = args.print_bodies
-
-    main(args.url, args.test, args.log)
+    main(args)
 
