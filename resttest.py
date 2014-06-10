@@ -681,53 +681,56 @@ def benchmark(curl, benchmark_config):
 
     return output
 
-def execute_tests(testset):
-    """ Execute a set of tests, using given TestSet input """
-    mytests = testset.tests
-    myconfig = testset.config
+def execute_testsets(testsets):
+    """ Execute a set of tests, using given TestSet list input """
     group_results = dict() #results, by group
     group_failure_counts = dict()
+    total_failures = 0
 
-    #Make sure we actually have tests to execute
-    if not mytests:
-        return 0
+    for testset in testsets:
+        mytests = testset.tests
+        myconfig = testset.config
 
-    #Initialize the dictionaries to store test fail counts and results
-    for test in mytests:
-        group_results[test.group] = list()
-        group_failure_counts[test.group] = 0
-
-    #Run tests, collecting statistics as needed
-    for test in mytests:
-        result = run_test(test, test_config = myconfig)
-        result.body = None  # Remove the body, save some memory!
-
-        if not result.passed: #Print failure, increase failure counts for that test group
-            logging.error('Test Failed: '+test.name+" URL="+test.url+" Group="+test.group+" HTTP Status Code: "+str(result.response_code))
-
-            if test.validators is not None:
-                for validator in test.validators:
-                    if validator.passed == False:
-                        logging.warning("   Validation Failed: " + str(validator))
-
-            #Increment test failure counts for that group (adding an entry if not present)
-            failures = group_failure_counts[test.group]
-            failures = failures + 1
-            group_failure_counts[test.group] = failures
-
-        else: #Test passed, print results
-            logging.info('Test Succeeded: '+test.name+" URL="+test.url+" Group="+test.group)
-
-        #Add results for this test group to the resultset
-        group_results[test.group].append(result)
-
-        # handle stop_on_failure flag
-        if not result.passed and test.stop_on_failure is not None and test.stop_on_failure:
-            print 'STOP ON FAILURE!'
+        #Make sure we actually have tests to execute
+        if not mytests:
+            # no tests in this test set, probably just imports.. skip to next test set
             break
 
+        #Run tests, collecting statistics as needed
+        for test in mytests:
+            #Initialize the dictionaries to store test fail counts and results
+            if test.group not in group_results:
+                group_results[test.group] = list()
+                group_failure_counts[test.group] = 0
+
+            result = run_test(test, test_config = myconfig)
+            result.body = None  # Remove the body, save some memory!
+
+            if not result.passed: #Print failure, increase failure counts for that test group
+                logging.error('Test Failed: '+test.name+" URL="+test.url+" Group="+test.group+" HTTP Status Code: "+str(result.response_code))
+
+                if test.validators is not None:
+                    for validator in test.validators:
+                        if validator.passed == False:
+                            logging.warning("   Validation Failed: " + str(validator))
+
+                #Increment test failure counts for that group (adding an entry if not present)
+                failures = group_failure_counts[test.group]
+                failures = failures + 1
+                group_failure_counts[test.group] = failures
+
+            else: #Test passed, print results
+                logging.info('Test Succeeded: '+test.name+" URL="+test.url+" Group="+test.group)
+
+            #Add results for this test group to the resultset
+            group_results[test.group].append(result)
+
+            # handle stop_on_failure flag
+            if not result.passed and test.stop_on_failure is not None and test.stop_on_failure:
+                print 'STOP ON FAILURE! stopping test set execution, continuing with other test sets'
+                break
+
     #Print summary results
-    total_failures = 0 # will just use number of failures for now
     for group in sorted(group_results.keys()):
         test_count = len(group_results[group])
         failures = group_failure_counts[group]
@@ -748,10 +751,8 @@ def main(url, test, logging_level):
     test_structure = read_test_file(test)
     tests = build_testsets(url, test_structure)
 
-    #Execute batches of testsets
-    failures = 0
-    for testset in tests:
-        failures = failures + execute_tests(testset)
+    # Execute all testsets
+    failures = execute_testsets(tests)
 
     sys.exit(failures)
 
