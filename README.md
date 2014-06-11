@@ -9,6 +9,12 @@ pyresttest
 # License
 Apache License, Version 2.0
 
+# Features
+* Easily define sets of tests in YAML files.
+* Ability to import test sets into other test sets.
+* Optional interactive mode for debugging and demonstrations.
+* Benchmarking!
+
 # Examples
 
 ## Simple Test
@@ -29,6 +35,19 @@ python resttest.py https://api.github.com github_api_test.yaml
 ```
 
 (For help: python resttest.py  --help )
+
+## Interactive Mode
+Same as the other test but running in interactive mode.
+
+```
+python resttest.py https://api.github.com github_api_test.yaml --interactive true --print-bodies true
+```
+
+## Verbose Output
+
+```
+python resttest.py https://api.github.com github_api_test.yaml --log debug
+```
 
 # Test Configuration
 
