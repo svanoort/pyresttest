@@ -43,8 +43,6 @@ python resttest.py https://api.github.com github_api_test.yaml
     # Print full response bodies
     - print_bodies: 'False'
 
-    - verbose: 'True'
-
     # Not implemented yet, will allow retrying test on failure
     - retries: 7
 

@@ -239,7 +239,6 @@ class TestConfig:
     timeout = 10  # timeout of tests, in seconds
     print_bodies = False  # Print response bodies in all cases
     retries = 0  # Retries on failures
-    verbose = False
     test_parallel = False  # Allow parallel execution of tests in a test set, for speed?
     validator_query_delimiter = "/"
     interactive = False
@@ -391,8 +390,6 @@ def make_configuration(node):
             test_config.print_bodies = safe_to_bool(value)
         elif key == u'retries':
             test_config.retries = int(value)
-        elif key == u'verbose':
-            test_config.verbose = safe_to_bool(value)
         elif key == u'validator_query_delimiter':
             test_config.validator_query_delimiter = str(value)
 
@@ -775,7 +772,6 @@ def main(args):
     Keys allowed for args:
         url          - REQUIRED - Base URL
         test         - REQUIRED - Test file (yaml)
-        verbose      - OPTIONAL - turn on verbose logging (deprecated?)
         print_bodies - OPTIONAL - print response body
         log          - OPTIONAL - set logging level {debug,info,warning,error,critical} (default=warning)
         interactive  - OPTIONAL - mode that prints info before and after test exectuion and pauses for user input for each test
@@ -789,9 +785,6 @@ def main(args):
 
     # Override configs from command line if config set
     for t in tests:
-        if 'verbose' in args and args['verbose'] is not None:
-            t.config.verbose = True
-
         if 'print_bodies' in args and args['print_bodies'] is not None:
             t.config.print_bodies = safe_to_bool(args['print_bodies'])
 
@@ -808,7 +801,6 @@ if(__name__ == '__main__'):
     parser = argparse.ArgumentParser()
     parser.add_argument(u"url", help="Base URL to run tests against")
     parser.add_argument(u"test", help="Test file to use")
-    parser.add_argument(u"--verbose", help="Verbose output")
     parser.add_argument(u"--print-bodies", help="Print all response bodies", type=bool)
     parser.add_argument(u"--log", help="Logging level")
     parser.add_argument(u"--interactive", help="Interactive mode")
