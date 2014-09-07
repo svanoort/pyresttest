@@ -3,14 +3,14 @@ pyresttest
 
 # What?
 - Python utility for testing and benchmarking RESTful services.
-- Tests are defined with YAML config files
+- Tests are defined with YAML or JSON config files
 
 
 # License
 Apache License, Version 2.0
 
 # Features
-* Easily define sets of tests in YAML files.
+* Easily define sets of tests in YAML or JSON files
 * Ability to import test sets into other test sets.
 * Optional interactive mode for debugging and demonstrations.
 * Benchmarking (soon)!
@@ -143,4 +143,4 @@ This is intended for use in an environment where Python isn't the primary langua
 ## Why YAML and not XML/JSON?
 - It's human readable and human editable
 - XML is extremely verbose, reducing readability, and tests are supposed to be written by people
-- JSON is actually a subset of YAML, so you still can use JSON to define tests, it's just more verbose
+- JSON is actually a subset of YAML, so you still can use JSON to define tests, it's just more verbose. See miniapp-test.json for an example.  Just remember that you have to escape quotes when giving JSON input to request bodies.

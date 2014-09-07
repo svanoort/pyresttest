@@ -1,0 +1,37 @@
+# Test using included Django test app
+# First install python-django
+# Then launch the app in another terminal by doing
+#   cd testapp
+#   python manage.py testserver test_data.json
+# Once launched, tests can be executed via:
+# 	python resttest.py http://localhost:8000 miniapp-test.yaml
+[
+ {"config":
+    {"testset": "Tests using test app"}
+ },
+ {"test": {
+    "name": "Basic get", "url": "/api/person/"}
+ },
+ { "test":
+    {"name": "Get single person", "url": "/api/person/1/"}
+ },
+ {"test": {
+    "name": "Get single person",
+    "url": "/api/person/1/",
+    "method": "DELETE"
+ }},
+ {"test": {
+    "name": "Create/update person",
+    "url": "/api/person/1/",
+    "method": "PUT",
+    "body": "{\"first_name\": \"Gaius\",\"id\": 1,\"last_name\": \"Baltar\",\"login\": \"gbaltar\"}",
+    "headers": {"Content-Type": "application/json"}
+  }},
+ {"test": {
+    "name": "Create person",
+    "url": "/api/person/",
+    "method": "POST",
+    "body": "{\"first_name\": \"Willim\",\"last_name\": \"Adama\",\"login\": \"theadmiral\"}",
+    "headers": {"Content-Type": "application/json"}
+ }}
+]
