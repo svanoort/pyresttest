@@ -174,7 +174,7 @@ class Validator:
             raise Exception("Validation missing attribute 'operator': " + str(self))
 
         # from http://stackoverflow.com/questions/7320319/xpath-like-query-for-nested-python-dictionaries
-        self.actual = mydict 
+        self.actual = mydict
         try:
             logging.debug("Validator: pre query: " + str(self.actual))
             for x in self.query.strip(self.query_delimiter).split(self.query_delimiter):
@@ -193,7 +193,7 @@ class Validator:
 
         if self.operator == "exists":
             # require actual value
-            logging.debug("Validator: exists check") 
+            logging.debug("Validator: exists check")
             output = True if self.actual is not None else False
         elif self.operator == "empty":
             # expect no actual value
@@ -211,7 +211,7 @@ class Validator:
             output = True if self.actual == self.expected else False
         else:
             logging.debug("Validator: operator check: " + str(self.expected) + " " + str(self.operator) + " " + str(self.actual))
-            
+
             # any special case operators here:
             if self.operator == "contains":
                 if isinstance(self.actual, dict) or isinstance(self.actual, list):
@@ -301,7 +301,7 @@ class TestResponse:
         self.body.extend(buf)
 
     def unicode_body(self):
-        return unicode(body,'UTF-8')
+        return unicode(self.body.decode('UTF-8'))
 
     def header_callback(self,buf):
         """ Write headers by pyCurl callback """
@@ -571,7 +571,7 @@ def run_test(mytest, test_config = TestConfig()):
     # reset the body, it holds values from previous runs otherwise
     result.body = bytearray()
     curl.setopt(pycurl.WRITEFUNCTION, result.body_callback)
-    curl.setopt(pycurl.HEADERFUNCTION,result.header_callback) #Gets headers
+    curl.setopt(pycurl.HEADERFUNCTION, result.header_callback) #Gets headers
 
     if test_config.interactive:
         print "==================================="
@@ -592,6 +592,7 @@ def run_test(mytest, test_config = TestConfig()):
     response_code = curl.getinfo(pycurl.RESPONSE_CODE)
     result.response_code = response_code
     result.passed = response_code in mytest.expected_status
+    logging.debug("Initial Test Result, based on expected response code: "+str(result.passed))
 
     #print str(test_config.print_bodies) + ',' + str(not result.passed) + ' , ' + str(test_config.print_bodies or not result.passed)
 
@@ -763,7 +764,7 @@ def execute_testsets(testsets):
         else:
             print u'Test Group '+group+u' SUCCEEDED: '+ str((test_count-failures))+'/'+str(test_count) + u' Tests Passed!'
 
-    return total_failures 
+    return total_failures
 
 def main(args):
     """
