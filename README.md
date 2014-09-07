@@ -83,7 +83,7 @@ python resttest.py https://api.github.com github_api_test.yaml --log debug
         - Content-Encoding: lzf
 - test:
     - url: "/cheese"
-    # Yes, you can do PUT/POST/DELETE when impl is finished
+    # Yes, you can do PUT/POST/DELETE, and by default they'll look for 200/204 and 201/202 status codes
     - method: "DELETE"
     - headers: {Content-Type: application/xml, "Content-Encoding": "gzip"}
 - test:
