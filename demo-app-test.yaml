@@ -1,4 +1,6 @@
-#Sample test file
+# Sample test file
+# Intended to work with the REST demo-app from this project:
+# https://github.com/svanoort/rest-compress
 ---
 #- config: 
 #    - print_bodies: True

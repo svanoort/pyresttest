@@ -1,6 +1,8 @@
-#Sample test file
+# Sample test file
+# Intended to work with the REST demo-app from this project:
+# https://github.com/svanoort/rest-compress
 ---
-- config: 
+- config:
     - testset: "Sample Tests" #Name test sets
 - url: "/ping" #Basic test, just a simple GET
 - test: {url: "/ping", method: "GET"} #Specify method, in-line version
@@ -10,17 +12,17 @@
       name: "Test complex object"
       method: "GET"
       expected_status: 200
-- test: 
+- test:
     - url: "/object"
     - method: "GET"
-    - headers: 
+    - headers:
         - Accept: application/json
         - Content-Encoding: lzf
-- test: 
+- test:
     - url: "/cheese"
     - method: "POST"
     - headers: {Content-Type: application/xml, "Content-Encoding": "gzip"}
-- test: 
+- test:
     - url: "/complex/100"
     - method: "POST"
     - body: "<xmlhere><tag>contents</tag></xmlhere>" #Body for the POST method

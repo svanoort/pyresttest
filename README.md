@@ -13,7 +13,7 @@ Apache License, Version 2.0
 * Easily define sets of tests in YAML files.
 * Ability to import test sets into other test sets.
 * Optional interactive mode for debugging and demonstrations.
-* Benchmarking!
+* Benchmarking (soon)!
 
 # Examples
 
@@ -142,6 +142,5 @@ This is intended for use in an environment where Python isn't the primary langua
 
 ## Why YAML and not XML/JSON?
 - It's human readable and human editable
-- XML is extremely verbose, reducing readability
-- JSON was considered -- it may be added eventually, once core features are filled in
-
+- XML is extremely verbose, reducing readability, and tests are supposed to be written by people
+- JSON is actually a subset of YAML, so you still can use JSON to define tests, it's just more verbose

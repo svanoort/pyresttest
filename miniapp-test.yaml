@@ -1,4 +1,10 @@
-# Test using test app fixture
+# Test using included Django test app 
+# First install python-django
+# Then launch the app in another terminal by doing 
+#   cd testapp
+#   python manage.py testserver test_data.json
+# Once launched, tests can be executed via: 
+# 	python resttest.py http://localhost:8000 miniapp-test.yaml
 ---
 - config:
     - testset: "Tests using test app"

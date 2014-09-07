@@ -522,6 +522,7 @@ def build_test(base_url, node):
 
 def configure_curl(mytest, test_config = TestConfig()):
     """ Create and mostly configure a curl object for test """
+
     if not isinstance(mytest, Test):
         raise Exception('Need to input a Test type object')
     if not isinstance(test_config, TestConfig):
