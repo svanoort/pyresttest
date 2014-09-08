@@ -2,6 +2,7 @@ import resttest
 import unittest
 import json
 import yaml
+import math
 
 class TestRestTest(unittest.TestCase):
     """ Tests to test a REST testing framework, how meta is that? """
@@ -125,6 +126,105 @@ class TestRestTest(unittest.TestCase):
         output = resttest.flatten_dictionaries(array)
         self.assertTrue(isinstance(output,dict))
         self.assertFalse( len(set(output.items()) ^ set(expected.items())) ) #Test that expected output matches actual
+
+
+    def test_median(self):
+        """ Test median computation, using a few samples """
+        result = resttest.median([0.1])
+        result2 = resttest.median([1])
+        self.assertEqual(0.1, result)
+        self.assertEqual(1, result2)
+
+        # Test multiple eelments
+        result = resttest.median([0.1, 0.2, 0.3])
+        self.assertEqual(0.2, result)
+
+        # Test averages of 2 values, with different orderings
+        result = resttest.median([0.1, 0.2, 0.2, 0.3])
+        result2 = resttest.median([0.2, 0.3, 0.2, 0.1])
+        self.assertTrue(math.fabs(result - 0.2) < 0.001)
+        self.assertTrue(math.fabs(result2 - 0.2) < 0.001)
+
+        # Test averages of integers
+        result = resttest.median([1, 2, 3, 4])
+        self.assertTrue(math.fabs(float(result) - 2.5) < 0.001)
+
+
+    def test_std_deviation(self):
+        """ Test std deviation computation """
+        result = resttest.std_deviation([2, 4, 4, 4, 5, 5, 7, 9])
+        self.assertTrue(math.fabs(result - 2.0) < 0.001)
+
+        # Test shuffled
+        result2 = resttest.std_deviation([9, 4, 5, 4, 5, 4, 7, 2])
+        self.assertTrue(math.fabs(float(result) - float(result2)) < 0.001)
+
+        # Test single value
+        result = resttest.std_deviation([1])
+        self.assertTrue(math.fabs(float(result) - 0.0) < 0.001)
+
+    def test_harmonic_mean(self):
+        """ Test harmonic mean computation """
+        function = resttest.AGGREGATES['mean_harmonic']
+        result = function([1, 100])
+        self.assertTrue(math.fabs(float(result) - float(1.98019802)) < 0.001)
+
+
+    def test_aggregate_computations(self):
+        """ Test running all the aggregates, just to see if they error """
+        array = [-1, 5, 2.245, 7]
+        for function in resttest.AGGREGATES.values():
+            value = function(array)
+            self.assertTrue(isinstance(value, int) or isinstance(value, float))
+
+
+    def test_add_metric(self):
+        """ Test the add-metric method for benchmarks """
+        benchmark_config = resttest.BenchmarkConfig()
+        benchmark_config.add_metric('total_time')
+        self.assertTrue('total_time' in benchmark_config.metrics)
+        self.assertTrue('total_time' in benchmark_config.raw_metrics)
+        self.assertTrue('total_time' not in benchmark_config.aggregated_metrics)
+
+        # Check that adding an aggregate works correctly
+        benchmark_config.add_metric('total_time', 'median')
+        self.assertTrue('total_time' in benchmark_config.aggregated_metrics)
+
+        benchmark_config.add_metric('total_time', 'mean')
+        self.assertEqual(2, len(benchmark_config.aggregated_metrics['total_time']))
+
+        # Check that we don't add raw metrics if we do not have to
+        benchmark_config.add_metric('connect_time', 'mean')
+        self.assertEqual(1, len(benchmark_config.raw_metrics))
+        self.assertEqual(2, len(benchmark_config.aggregated_metrics.keys()))
+        self.assertEqual(1, len(benchmark_config.aggregated_metrics['connect_time']))
+
+
+    def test_analyze_benchmark(self):
+        """ Test analyzing benchmarks to compute aggregates """
+        benchmark_result = resttest.BenchmarkResult()
+        benchmark_config = resttest.BenchmarkConfig()
+        benchmark_config.add_metric('request_size').add_metric('request_size','median')
+        benchmark_config.add_metric('connect_time')
+        benchmark_config.add_metric('total_time', 'mean_harmonic')
+        benchmark_config.add_metric('total_time', 'std_deviation')
+
+        benchmark_result.results = {
+            'connect_time': [1, 4, 7],
+            'request_size': [7, 8, 10],
+            'total_time': [0.5, 0.7, 0.9]
+        }
+
+        analyzed = resttest.analyze_benchmark_results(benchmark_result, benchmark_config)
+        print str(analyzed)
+        self.assertEqual(2, len(analyzed.results.keys()));
+
+        # Check that number of measurements is sane
+        distinct_metrics = set([x[0] for x in analyzed.aggregates])
+        distinct_aggregates = set([x[1] for x in analyzed.aggregates])
+        self.assertEqual(2, len(distinct_metrics))
+        self.assertEqual(3, len(distinct_aggregates))
+        self.assertEqual(3, len(analyzed.aggregates))
 
 
 if __name__ == '__main__':

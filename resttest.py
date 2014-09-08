@@ -1,5 +1,6 @@
 import sys
 import os
+import math
 import operator
 import argparse
 import yaml
@@ -68,9 +69,11 @@ METRICS = {
 #Map statistical aggregate to the function to use to perform the aggregation on an array
 AGGREGATES = {
     'mean_arithmetic': #AKA the average, good for many things
-        lambda x: float(sum(x))/len(x),
+        lambda x: float(sum(x))/float(len(x)),
+    'mean':  # Alias for arithmetic mean
+        lambda x: float(sum(x))/float(len(x)),
     'mean_harmonic': #Harmonic mean, better predicts average of rates: http://en.wikipedia.org/wiki/Harmonic_mean
-        lambda x: 1/( sum([1/float(y) for y in x]) / len(x)),
+        lambda x: 1/( sum([1/float(y) for y in x]) / float(len(x))),
     'median':  lambda x: median(x),
     'std_deviation': lambda x: std_deviation(x)
 }
@@ -78,12 +81,12 @@ AGGREGATES = {
 def median(array):
     """ Get the median of an array """
     sorted = [x for x in array]
-    sort(sorted)
-    floor = math.floor(len(sorted)/2) #Gets the middle element, if present
+    sorted.sort()
+    middle = len(sorted)/2 #Gets the middle element, if present
     if len(sorted) % 2 == 0: #Even, so need to average together the middle two values
-        return float((sorted[floor]+sorted[floor-1]))/2
+        return float((sorted[middle]+sorted[middle-1]))/2
     else:
-        return sorted[floor]
+        return sorted[middle]
 
 def std_deviation(array):
     """ Compute the standard deviation of an array of numbers """
@@ -93,7 +96,7 @@ def std_deviation(array):
     average = AGGREGATES['mean_arithmetic'](array)
     variance = map(lambda x: (x-average)**2,array)
     stdev = AGGREGATES['mean_arithmetic'](variance)
-    return setdev
+    return math.sqrt(stdev)
 
 class cd:
     """Context manager for changing the current working directory"""
@@ -144,6 +147,10 @@ class Test:
     benchmark = None   # Benchmarking config for item
     stop_on_failure = False
     #In this case, config would be used by all tests following config definition, and in the same scope as tests
+
+    def __init__(self):
+        self.headers = dict()
+        self.expected_status = [200]
 
     def __str__(self):
         return json.dumps(self, default=lambda o: o.__dict__)
@@ -251,14 +258,25 @@ class TestSet:
     tests = list()
     config = TestConfig()
 
+    def __init__(self):
+        self.config = TestConfig()
+        self.tests = list()
+
     def __str__(self):
         return json.dumps(self, default=lambda o: o.__dict__)
 
 class BenchmarkResult:
     """ Stores results from a benchmark for reporting use """
-    aggregates = dict() #Aggregation recult, maps metricname to dictionary of aggregate --> result
-    results = dict() #Benchmark output, map the metric to the result array for that metric
-    failures = 0 #Track call count that failed
+
+    aggregates = list()
+    """ List of aggregates, as tuples of (metricname, aggregate, result) """
+
+    results = dict()  # Benchmark output, map the metric to the result array for that metric
+    failures = 0  # Track call count that failed
+
+    def __init__(self):
+        self.aggregates = list()
+        self.results = list()
 
     def __str__(self):
         return json.dumps(self, default=lambda o: o.__dict__)
@@ -276,10 +294,43 @@ class BenchmarkConfig:
     warmup_runs = 100 #Times call is executed to warm up
     benchmark_runs = 1000 #Times call is executed to generate benchmark results
 
-    #Metrics to gather, must have one of them!
-    metrics = dict()
+    #Metrics to gather, both raw and aggregated
+    metrics = set()
+
+    raw_metrics = set()  # Metrics that do not have any aggregation performed
+    aggregated_metrics = dict()  # Metrics where an aggregate is computed, maps key(metric name) -> list(aggregates to use)
+
+    def add_metric(self, metric_name, aggregate=None):
+        """ Add a metric-aggregate pair to the benchmark, where metric is a number to measure from curl, and aggregate is an aggregation function
+            (See METRICS and AGGREGATES)
+            If aggregate is not defined (False,empty, or None), then the raw number is reported
+            Returns self, for fluent-syle construction of config """
+
+        clean_metric = metric_name.lower().strip()
+
+        if clean_metric.lower() not in METRICS:
+            raise Exception("Metric named: " + metric_name + " is not a valid benchmark metric.")
+        self.metrics.add(clean_metric)
+
+        if not aggregate:
+            self.raw_metrics.add(clean_metric)
+        elif aggregate.lower().strip() in AGGREGATES:
+            # Add aggregate to this metric
+            clean_aggregate = aggregate.lower().strip()
+            current_aggregates = self.aggregated_metrics.get(clean_metric, list())
+            current_aggregates.append(clean_aggregate)
+            self.aggregated_metrics[clean_metric]  = current_aggregates
+        else:
+            raise Exception("Aggregate function " + aggregate + " is not a legal aggregate function name");
+
+        return self;
 
     #TODO output of full response set to CSV / JSON
+
+    def __init__(self):
+        self.metrics = set()
+        self.raw_metrics = set()
+        self.aggregated_metrics = dict()
 
     def __str__(self):
         return json.dumps(self, default=lambda o: o.__dict__)
@@ -630,7 +681,8 @@ def run_test(mytest, test_config = TestConfig()):
 
 def benchmark(curl, benchmark_config):
     """ Perform a benchmark, (re)using a given, configured CURL call to do so
-    This is surprisingly complex, because benchmark allows storing metric to aggregate """
+        The actual analysis of metrics is performed separately, to allow for testing
+    """
 
     warmup_runs = benchmark_config.warmup_runs
     benchmark_runs = benchmark_config.benchmark_runs
@@ -643,9 +695,9 @@ def benchmark(curl, benchmark_config):
 
     #Initialize variables to store output
     output = BenchmarkResult()
-    metricnames = list(benchmark_config.metrics.keys())
-    metricvalues = [METRICS[name] for name in metricnames] #Metric variable for curl, to avoid hash lookup for every metric name
-    results = [list() for x in xrange(0, len(metricnames))] #Initialize arrays to store results for each metric
+    metricnames = list(benchmark_config.metrics)
+    metricvalues = [METRICS[name] for name in metricnames]  # Metric variable for curl, to avoid hash lookup for every metric name
+    results = [list() for x in xrange(0, len(metricnames))]  # Initialize arrays to store results for each metric
 
     curl.setopt(pycurl.WRITEFUNCTION, lambda x: None) #Do not store actual response body at all.
 
@@ -657,13 +709,13 @@ def benchmark(curl, benchmark_config):
 
     logging.info('Benchmark: ' + message + ' starting')
 
-    for x in xrange(0, benchmark_runs): #Run the actual benchmarks
+    for x in xrange(0, benchmark_runs):  # Run the actual benchmarks
 
-        try: #Run the curl call, if it errors, then add to failure counts for benchmark
+        try:  # Run the curl call, if it errors, then add to failure counts for benchmark
             curl.perform()
         except Exception:
             output.failures = output.failures + 1
-            continue #Skip metrics collection
+            continue  # Skip metrics collection
 
         # Get all metrics values for this run, and store to metric lists
         for i in xrange(0, len(metricnames)):
@@ -671,33 +723,41 @@ def benchmark(curl, benchmark_config):
 
     logging.info('Benchmark: ' + message + ' ending')
 
+    temp_results = dict()
+    for i in xrange(0, len(metricnames)):
+        temp_results[metricnames[i]] = results[i]
+    output.results = temp_results
 
-    #Compute aggregates from results, and add to BenchmarkResult
-    # If it's storing all values (aggregate 'all'), it is added to BenchmarkResult.results arrays
-    # Otherwise, a dict {aggregate1:value1, aggregate2:value2...} is added to BenchmarkResult.aggregates[metricname]
-    for i in xrange(0,len(metricnames)):
-        metric = metricnames[i]
-        aggregates = benchmark_config.metrics[metric]
-        result_array = results[i]
+    return analyze_benchmark_results(output, benchmark_config)
 
-        #Convert aggregates to list, so we can iterate over them, even if single element
-        if not isinstance(aggregates,list) or isinstance(aggregates,set):
-            aggregates = [aggregates]
 
-        aggregate_results = dict()
+def analyze_benchmark_results(benchmark_result, benchmark_config):
+    """ Take a benchmark result containing raw benchmark results, and do aggregation by applying functions """
 
-        #Compute values for all aggregates, apply aggregation function to the results array and store
-        for aggregate_name in aggregates:
-            aggregate_function = AGGREGATES[aggregate_name]
-            if aggregate_name == 'all': #Add to the results arrays storing full results
-                output.results[metric]=result_array
+    output = BenchmarkResult()
+    output.failures = benchmark_result.failures
+
+    # Copy raw metric arrays over where necessary
+    raw_results = benchmark_result.results
+    temp = dict()
+    for metric in benchmark_config.raw_metrics:
+        temp[metric] = raw_results[metric]
+    output.results = temp
+
+    # Compute aggregates for each metric, and add tuples to aggregate results
+    aggregate_results = list()
+    for metricname, aggregate_list in benchmark_config.aggregated_metrics.iteritems():
+        numbers = raw_results[metricname]
+        for aggregate_name in aggregate_list:
+            if numbers:  # Only compute aggregates if numbers exist
+                aggregate_function = AGGREGATES[aggregate_name]
+                aggregate_results.append( (metricname, aggregate_name, aggregate_function(numbers)) )
             else:
-                aggregate_results[aggregate_name] = aggregate_function(result_array)
+                aggregate_results.append( (metricname, aggregate_name, None) )
 
-        #Add aggregate-value mappings for this metric to output
-        output.aggregates[metric] = vals
-
+    output.aggregates = aggregate_results
     return output
+
 
 def execute_testsets(testsets):
     """ Execute a set of tests, using given TestSet list input """
