@@ -82,12 +82,40 @@ class TestRestTest(unittest.TestCase):
 
 
     def test_make_configuration(self):
+        """ Test basic configuration parsing """
         input = {"url": "/ping", "method": "DELETE", "NAME":"foo", "group":"bar", "body":"<xml>input</xml>","headers":{"Accept":"Application/json"}}
         test = resttest.make_configuration(input)
 
         input = {"url": "/ping", "method": "DELETE", "NAME":"foo", "group":"bar", "body":"<xml>input</xml>","headers":{"Accept":"Application/json"}}
 
         pass
+
+    def test_benchmark_configuration(self):
+        """ Test basic parsing of benchmark configuration from YAML """
+
+        struct = [
+            {'warmup_runs': 7},
+            {'benchmark_runs': '101'},
+            {'metrics': ['total_time',
+                        {'total_time': 'mean'},
+                        {'total_time': 'median'},
+                        {'pretransfer_time': 'mean_harmonic'}]
+            }];
+
+        cfg = resttest.build_benchmark_config(struct)
+
+        self.assertEqual(7, cfg.warmup_runs)
+        self.assertEqual(101, cfg.benchmark_runs)
+        self.assertEqual(2, len(cfg.metrics))
+        self.assertTrue(len(set(['total_time','pretransfer_time']) ^ cfg.metrics) == 0, msg="Wrong metrics set generated")
+
+        self.assertEqual(1, len(cfg.raw_metrics))
+        self.assertTrue(len(set(['total_time']) ^ cfg.raw_metrics) == 0, msg="Wrong raw_metrics generated")
+
+        self.assertEqual(2, len(cfg.aggregated_metrics))
+        self.assertEqual(2, len(cfg.aggregated_metrics['total_time']))
+        self.assertEqual(1, len(cfg.aggregated_metrics['pretransfer_time']))
+
 
     def test_flatten(self):
         """ Test flattening of lists of dictionaries to single dictionaries """
@@ -188,6 +216,7 @@ class TestRestTest(unittest.TestCase):
 
         # Check that adding an aggregate works correctly
         benchmark_config.add_metric('total_time', 'median')
+        self.assertTrue('total_time' in benchmark_config.raw_metrics)
         self.assertTrue('total_time' in benchmark_config.aggregated_metrics)
 
         benchmark_config.add_metric('total_time', 'mean')
@@ -198,6 +227,13 @@ class TestRestTest(unittest.TestCase):
         self.assertEqual(1, len(benchmark_config.raw_metrics))
         self.assertEqual(2, len(benchmark_config.aggregated_metrics.keys()))
         self.assertEqual(1, len(benchmark_config.aggregated_metrics['connect_time']))
+
+        # Check adding next raw metric in doesn't break things
+        benchmark_config.add_metric('redirect_time')
+        self.assertEqual(3, len(benchmark_config.metrics))
+        self.assertEqual(2, len(benchmark_config.raw_metrics))
+        self.assertEqual(2, len(benchmark_config.aggregated_metrics.keys()))
+
 
 
     def test_analyze_benchmark(self):
@@ -216,7 +252,6 @@ class TestRestTest(unittest.TestCase):
         }
 
         analyzed = resttest.analyze_benchmark_results(benchmark_result, benchmark_config)
-        print str(analyzed)
         self.assertEqual(2, len(analyzed.results.keys()));
 
         # Check that number of measurements is sane

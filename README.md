@@ -111,6 +111,8 @@ and fail early if configuration is nonsensical.
 
 We're all responsible adults: don't try to give a boolean or list where an integer is expected and it'll play nice.
 
+One caveat: if you define the same element (example, URL) twice in the same enclosing element, the last value will be used.  This is because of internal conversion to key-value dictionaries (they both map to the same key).
+
 
 # Benchmarking?
 No, not yet.  When this is done being implemented and tested, benchmarking will be done by a special configuration element underneath the test configuration.

@@ -451,12 +451,12 @@ def flatten_dictionaries(input):
       Dictionary comprehensions can do this, but would like to allow for pre-Python 2.7 use
       If input isn't a list, just return it.... """
     output = dict()
-    if isinstance(input,list):
+    if isinstance(input, list):
         for map in input:
-            if not isinstance(map,dict):
+            if not isinstance(map, dict):
                 raise Exception('Tried to flatten a list of NON-dictionaries into a single dictionary. Whoops!')
             for key in map.keys(): #Add keys into output
-                    output[key]=map[key]
+                output[key]=map[key]
     else: #Not a list of dictionaries
         output = input;
     return output
@@ -527,8 +527,7 @@ def build_test(base_url, node):
             else:
                 raise Exception('Misconfigured validator, requires type property')
         elif configelement == u'benchmark':
-            raise NotImplementedError('Benchmark input parsing not supported yet') #TODO implement benchmarking parsing
-
+            mytest.benchmark = build_benchmark_config(configvalue)
         elif configelement == u'body': #Read request body, either as inline input or from file
             #Body is either {'file':'myFilePath'} or inline string with file contents
             if isinstance(configvalue, dict) and u'file' in lowercase_keys(configvalue):
@@ -570,6 +569,49 @@ def build_test(base_url, node):
             mytest.expected_status = [200,202,204]
 
     return mytest
+
+def build_benchmark_config(node):
+    """ Try building a benchmark configuration from samples """
+    node = lowercase_keys(flatten_dictionaries(node))  # Make it usable
+
+    benchmark_config = BenchmarkConfig()
+
+    # Complex parsing because of list/dictionary/singleton legal cases
+    for key, value in node.items():
+        if key == u'warmup_runs':
+            benchmark_config.warmup_runs = int(value)
+        elif key == u'benchmark_runs':
+            benchmark_config.benchmark_runs = int(value)
+        elif key == u'metrics':
+            if isinstance(value, unicode) or isinstance(value,str):
+                # Single value
+                benchmark_config.add_metric(unicode(value, 'UTF-8'))
+            elif isinstance(value, list) or isinstance(value, set):
+            # List of single values or list of {metric:aggregate, ...}
+                for metric in value:
+                    if isinstance(metric, dict):
+                        for metricname, aggregate in metric.items():
+                            if not isinstance(metricname, basestring):
+                                raise Exception("Invalid metric input: non-string metric name")
+                            if not isinstance(aggregate, basestring):
+                                raise Exception("Invalid aggregate input: non-string aggregate name")
+                            # TODO unicode-safe this
+                            benchmark_config.add_metric(unicode(metricname,'UTF-8'), unicode(aggregate,'UTF-8'))
+
+                    elif isinstance(metric, unicode) or isinstance(metric, str):
+                        benchmark_config.add_metric(unicode(metric,'UTF-8'))
+            elif isinstance(value, dict):
+                # Dictionary of metric-aggregate pairs
+                for metricname, aggregate in value.items():
+                    if not isinstance(metricname, basestring):
+                        raise Exception("Invalid metric input: non-string metric name")
+                    if not isinstance(aggregate, basestring):
+                        raise Exception("Invalid aggregate input: non-string aggregate name")
+                    benchmark_config.add_metric(unicode(metricname,'UTF-8'), unicode(aggregate,'UTF-8'))
+            else:
+                raise Exception("Invalid benchmark metric datatype: "+str(value))
+
+    return benchmark_config
 
 def configure_curl(mytest, test_config = TestConfig()):
     """ Create and mostly configure a curl object for test """
@@ -869,4 +911,3 @@ if(__name__ == '__main__'):
     args = vars(parser.parse_args())
 
     main(args)
-

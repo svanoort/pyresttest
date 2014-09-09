@@ -1,0 +1,27 @@
+# Test using included Django test app
+# First install python-django
+# Then launch the app in another terminal by doing
+#   cd testapp
+#   python manage.py testserver test_data.json
+# Once launched, tests can be executed via:
+# 	python resttest.py http://localhost:8000 miniapp-test.yaml
+---
+- config:
+    - testset: "Benchmark tests using test app"
+
+- test: # create entity
+    - name: "Basic get"
+    - url: "/api/person/"
+    - benchmark:
+        - warmup_runs: 7
+        - 'benchmark_runs': '101'
+        - metrics:
+            - total_time
+            - total_time: mean
+            - total_time: median
+
+- test: # create entity
+    - name: "Get single person"
+    - url: "/api/person/1/"
+    - benchmark:
+        - metrics: {speed_upload: median, speed_download: median, redirect_time: mean}
