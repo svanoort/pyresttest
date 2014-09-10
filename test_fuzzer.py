@@ -1,6 +1,6 @@
 import unittest
 import fuzzer
-
+import string
 
 
 class GeneratorTest(unittest.TestCase):
@@ -48,6 +48,17 @@ class GeneratorTest(unittest.TestCase):
         gen = fuzzer.generator_random_int32()
         print gen.next()
         self.generator_test(gen)
+
+    def test_factory_text(self):
+        charsets = [string.letters, string.digits, string.uppercase, string.hexdigits]
+        # Test multiple charsets and string lengths
+        for charset in charsets:
+            # Test different lengths for charset
+            for my_length in xrange(1,17):
+                gen = fuzzer.factory_generate_text(legal_characters = charset, length=my_length)()
+                for x in xrange(0,10):
+                    val = gen.next()
+                    self.assertEqual(my_length, len(val))
 
 if __name__ == '__main__':
     unittest.main()
