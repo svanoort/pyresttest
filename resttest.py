@@ -73,7 +73,7 @@ AGGREGATES = {
     'mean':  # Alias for arithmetic mean
         lambda x: float(sum(x))/float(len(x)),
     'mean_harmonic': #Harmonic mean, better predicts average of rates: http://en.wikipedia.org/wiki/Harmonic_mean
-        lambda x: 1/( sum([1/float(y) for y in x]) / float(len(x))),
+        lambda x: 1.0/( sum([1.0/float(y) for y in x]) / float(len(x))),
     'median':  lambda x: median(x),
     'std_deviation': lambda x: std_deviation(x)
 }
@@ -134,8 +134,8 @@ class BodyReader:
         self.loc += (endidx-startidx)
         return result
 
-class Test:
-    """ Describes a REST test, which may include a benchmark component """
+class Test(object):
+    """ Describes a REST test """
     url  = None
     expected_status = [200]  # expected HTTP status code or codes
     body = None #Request body, if any (for POST/PUT methods)
@@ -144,7 +144,6 @@ class Test:
     group = u'Default'
     name = u'Unnamed'
     validators = None  # Validators for response body, IE regexes, etc
-    benchmark = None   # Benchmarking config for item
     stop_on_failure = False
     #In this case, config would be used by all tests following config definition, and in the same scope as tests
 
@@ -256,11 +255,13 @@ class TestConfig:
 class TestSet:
     """ Encapsulates a set of tests and test configuration for them """
     tests = list()
+    benchmarks = list()
     config = TestConfig()
 
     def __init__(self):
         self.config = TestConfig()
         self.tests = list()
+        self.benchmarks = list()
 
     def __str__(self):
         return json.dumps(self, default=lambda o: o.__dict__)
@@ -281,18 +282,18 @@ class BenchmarkResult:
     def __str__(self):
         return json.dumps(self, default=lambda o: o.__dict__)
 
-class BenchmarkConfig:
-    """ Holds configuration specific to benchmarking of method
+class BenchmarkConfig(Test):
+    """ Extends test with configuration for benchmarking
         warmup_runs and benchmark_runs behave like you'd expect
 
         Metrics are a bit tricky:
-            - Key is metric name from Metric
+            - Key is metric name from METRICS
             - Value is either a single value or a list:
                 - list contains aggregagate name from AGGREGATES
                 - value of 'all' returns everything
     """
-    warmup_runs = 100 #Times call is executed to warm up
-    benchmark_runs = 1000 #Times call is executed to generate benchmark results
+    warmup_runs = 10 #Times call is executed to warm up
+    benchmark_runs = 100 #Times call is executed to generate benchmark results
 
     #Metrics to gather, both raw and aggregated
     metrics = set()
@@ -325,12 +326,12 @@ class BenchmarkConfig:
 
         return self;
 
-    #TODO output of full response set to CSV / JSON
 
     def __init__(self):
         self.metrics = set()
         self.raw_metrics = set()
         self.aggregated_metrics = dict()
+        super(BenchmarkConfig, self).__init__()
 
     def __str__(self):
         return json.dumps(self, default=lambda o: o.__dict__)
@@ -342,7 +343,6 @@ class TestResponse:
     body = bytearray() #Response body, if tracked
     passed = False
     response_headers = bytearray()
-    statistics = None #Used for benchmark stats on the method
 
     def __str__(self):
         return json.dumps(self, default=lambda o: str(o) if isinstance(o, bytearray) else o.__dict__)
@@ -382,6 +382,7 @@ def build_testsets(base_url, test_structure, test_files = set() ):
     tests_out = list()
     test_config = TestConfig()
     testsets = list()
+    benchmarks = list()
     #returns a testconfig and collection of tests
     for node in test_structure: #Iterate through lists of test and configuration elements
         if isinstance(node,dict): #Each config element is a miniature key-value dictionary
@@ -396,21 +397,25 @@ def build_testsets(base_url, test_structure, test_files = set() ):
                         with cd(os.path.dirname(os.path.realpath(importfile))):
                             import_testsets = build_testsets(base_url, import_test_structure, test_files)
                             testsets.extend(import_testsets)
-                if key == u'url': #Simple test, just a GET to a URL
+                elif key == u'url': #Simple test, just a GET to a URL
                     mytest = Test()
                     val = node[key]
                     assert isinstance(val,str) or isinstance(val,unicode)
                     mytest.url = base_url + val
                     tests_out.append(mytest)
-                if key == u'test': #Complex test with additional parameters
+                elif key == u'test': #Complex test with additional parameters
                     child = node[key]
                     mytest = build_test(base_url, child)
                     tests_out.append(mytest)
-                if key == u'config' or key == u'configuration':
+                elif key == u'benchmark':
+                    benchmark = build_benchmark_config(base_url, node[key])
+                    benchmarks.append(benchmark)
+                elif key == u'config' or key == u'configuration':
                     test_config = make_configuration(node[key])
     testset = TestSet()
     testset.tests = tests_out
     testset.config = test_config
+    testset.benchmarks = benchmarks
     testsets.append(testset)
     return testsets
 
@@ -479,14 +484,21 @@ def read_file(path): #TODO implementme, handling paths more intelligently
     f.close()
     return string
 
-def build_test(base_url, node):
-    """ Create a test using explicitly specified elements from the test input structure
+def build_test(base_url, node, input_test = None):
+    """ Create or modify a test, input_test, using configuration in node, and base_url
+     If no input_test is given, creates a new one
+
+     Uses explicitly specified elements from the test input structure
      to make life *extra* fun, we need to handle list <-- > dict transformations.
 
      This is to say: list(dict(),dict()) or dict(key,value) -->  dict() for some elements
 
      Accepted structure must be a single dictionary of key-value pairs for test configuration """
-    mytest = Test()
+
+    mytest = input_test
+    if not mytest:
+        mytest = Test()
+
     node = lowercase_keys(flatten_dictionaries(node)) #Clean up for easy parsing
 
     #Copy/convert input elements into appropriate form for a test object
@@ -526,8 +538,6 @@ def build_test(base_url, node):
                     mytest.validators.append(validator)
             else:
                 raise Exception('Misconfigured validator, requires type property')
-        elif configelement == u'benchmark':
-            mytest.benchmark = build_benchmark_config(configvalue)
         elif configelement == u'body': #Read request body, either as inline input or from file
             #Body is either {'file':'myFilePath'} or inline string with file contents
             if isinstance(configvalue, dict) and u'file' in lowercase_keys(configvalue):
@@ -570,11 +580,14 @@ def build_test(base_url, node):
 
     return mytest
 
-def build_benchmark_config(node):
-    """ Try building a benchmark configuration from samples """
+def build_benchmark_config(base_url, node):
+    """ Try building a benchmark configuration from deserialized configuration root node """
     node = lowercase_keys(flatten_dictionaries(node))  # Make it usable
 
     benchmark_config = BenchmarkConfig()
+
+    # Read & set basic test parameters
+    benchmark_config = build_test(base_url, node, benchmark_config)
 
     # Complex parsing because of list/dictionary/singleton legal cases
     for key, value in node.items():
@@ -800,7 +813,6 @@ def analyze_benchmark_results(benchmark_result, benchmark_config):
     output.aggregates = aggregate_results
     return output
 
-
 def execute_testsets(testsets):
     """ Execute a set of tests, using given TestSet list input """
     group_results = dict() #results, by group
@@ -811,6 +823,7 @@ def execute_testsets(testsets):
     for testset in testsets:
         mytests = testset.tests
         myconfig = testset.config
+        mybenchmarks = testset.benchmarks
 
         #Make sure we actually have tests to execute
         if not mytests:
@@ -852,6 +865,7 @@ def execute_testsets(testsets):
             if not result.passed and test.stop_on_failure is not None and test.stop_on_failure:
                 print 'STOP ON FAILURE! stopping test set execution, continuing with other test sets'
                 break
+
 
     if myinteractive:
         # a break for when interactive bits are complete, before summary data
