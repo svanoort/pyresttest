@@ -49,7 +49,6 @@ class TestRestTest(unittest.TestCase):
         input = [{"url": "/ping"},{"name": "cheese"},{"expected_status":["200",204,"202"]}]
         test = resttest.build_test('',input)
         self.assertTrue(test.name == "cheese")
-        print test.expected_status
         self.assertTrue(test.expected_status == [200,204,202])
 
     def test_safe_boolean(self):
@@ -80,16 +79,6 @@ class TestRestTest(unittest.TestCase):
         except TypeError:
             pass #Good
 
-
-    def test_make_configuration(self):
-        """ Test basic configuration parsing """
-        input = {"url": "/ping", "method": "DELETE", "NAME":"foo", "group":"bar", "body":"<xml>input</xml>","headers":{"Accept":"Application/json"}}
-        test = resttest.make_configuration(input)
-
-        input = {"url": "/ping", "method": "DELETE", "NAME":"foo", "group":"bar", "body":"<xml>input</xml>","headers":{"Accept":"Application/json"}}
-
-        pass
-
     def test_benchmark_configuration(self):
         """ Test basic parsing of benchmark configuration from YAML """
 
@@ -102,7 +91,7 @@ class TestRestTest(unittest.TestCase):
                         {'pretransfer_time': 'mean_harmonic'}]
             }];
 
-        cfg = resttest.build_benchmark_config(struct)
+        cfg = resttest.build_benchmark_config('what', struct)
 
         self.assertEqual(7, cfg.warmup_runs)
         self.assertEqual(101, cfg.benchmark_runs)
@@ -260,6 +249,28 @@ class TestRestTest(unittest.TestCase):
         self.assertEqual(2, len(distinct_metrics))
         self.assertEqual(3, len(distinct_aggregates))
         self.assertEqual(3, len(analyzed.aggregates))
+
+    def test_metrics_to_tuples(self):
+        """ Test method to build list(tuples) from raw metrics """
+        array1 = [-1, 5.6, 0]
+        array2 = [3.2, -81, 800]
+        array3 = [97, -3.4, 'cheese']
+        keys = sorted(['blah', 'foo', 'bar'])
+        metrics = {keys[0]: array1, keys[1]: array2, keys[2]: array3}
+
+        packed = resttest.metrics_to_tuples(metrics)
+        headers = packed[0]
+
+        # Check header generation
+        for x in xrange(0, len(keys)):
+            self.assertEqual(keys[x], headers[x])
+
+        # Check data was correctly converted to 2D format, in order of input
+        for x in xrange(1, len(array1)+1):
+            my_tuple = packed[x]
+            self.assertEqual(array1[x-1], my_tuple[0])
+            self.assertEqual(array2[x-1], my_tuple[1])
+            self.assertEqual(array3[x-1], my_tuple[2])
 
 
 if __name__ == '__main__':

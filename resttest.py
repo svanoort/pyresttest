@@ -813,6 +813,33 @@ def analyze_benchmark_results(benchmark_result, benchmark_config):
     output.aggregates = aggregate_results
     return output
 
+def metrics_to_tuples(raw_metrics):
+    """ Converts metric dictionary of name:values_array into list of tuples
+        Use case: writing out benchmark to CSV, etc
+
+        Input:
+        {'metric':[value1,value2...], 'metric2':[value1,value2,...]...}
+
+        Output: list, with tuple header row, then list of tuples of values
+        [('metric','metric',...), (metric1_value1,metric2_value1, ...) ... ]
+    """
+    if not isinstance(raw_metrics, dict):
+        raise TypeError("Input must be dictionary!")
+
+    metrics = sorted(raw_metrics.keys())
+    arrays = [raw_metrics[metric] for metric in metrics]
+    num_rows = len(arrays[0])  # Assume all same size or this fails
+
+    output = list()
+    output.append(tuple(metrics))  # Add headers
+
+    # Create list of tuples mimicking 2D array from input
+    for row in xrange(0, num_rows):
+        new_row = tuple([arrays[col][row] for col in xrange(0, len(arrays))])
+        output.append(new_row)
+    return output
+
+
 def execute_testsets(testsets):
     """ Execute a set of tests, using given TestSet list input """
     group_results = dict() #results, by group
