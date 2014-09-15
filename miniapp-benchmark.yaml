@@ -14,12 +14,17 @@
     - url: "/api/person/"
     - warmup_runs: 7
     - 'benchmark_runs': '101'
+    - output_file: 'miniapp-benchmark.csv'
     - metrics:
         - total_time
         - total_time: mean
         - total_time: median
+        - size_download
+        - speed_download: median
 
 - benchmark: # create entity
     - name: "Get single person"
     - url: "/api/person/1/"
     - metrics: {speed_upload: median, speed_download: median, redirect_time: mean}
+    - ouput_format: json
+    - output_file: 'miniapp-single.json'
