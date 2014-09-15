@@ -64,8 +64,6 @@ METRICS = {
     #Connection counts
     'redirect_count' : pycurl.REDIRECT_COUNT,
     'num_connects' : pycurl.NUM_CONNECTS
-
-    #TODO custom implementation for requests per second and server processing time, separate from previous?
 }
 
 #Map statistical aggregate to the function to use to perform the aggregation on an array
@@ -775,13 +773,16 @@ def run_benchmark(curl, benchmark, test_config = TestConfig()):
     #Benchmark warm-up to allow for caching, JIT compiling, on client
     logging.info('Warmup: ' + message + ' started')
     for x in xrange(0, warmup_runs):
+        if benchmark.method == u'POST' or benchmark.method == u'PUT':
+            curl.setopt(curl.READFUNCTION, StringIO.StringIO(benchmark.body).read)
         curl.perform()
     logging.info('Warmup: ' + message + ' finished')
 
     logging.info('Benchmark: ' + message + ' starting')
 
     for x in xrange(0, benchmark_runs):  # Run the actual benchmarks
-        # TODO re-configure body reader for POST/PUT cases to re-run them?
+        if benchmark.method == u'POST' or benchmark.method == u'PUT':
+            curl.setopt(curl.READFUNCTION, StringIO.StringIO(benchmark.body).read)
 
         try:  # Run the curl call, if it errors, then add to failure counts for benchmark
             curl.perform()
