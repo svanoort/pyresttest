@@ -6,6 +6,7 @@ import argparse
 import yaml
 import pycurl
 import json
+import csv
 import StringIO
 import logging
 
@@ -55,6 +56,7 @@ METRICS = {
 
     #Transfer sizes and speeds
     'size_download' : pycurl.SIZE_DOWNLOAD,
+    'size_upload' : pycurl.SIZE_UPLOAD,
     'request_size' : pycurl.REQUEST_SIZE,
     'speed_download' : pycurl.SPEED_DOWNLOAD,
     'speed_upload' : pycurl.SPEED_UPLOAD,
@@ -268,11 +270,11 @@ class TestSet:
 
 class BenchmarkResult:
     """ Stores results from a benchmark for reporting use """
-
-    aggregates = list()
-    """ List of aggregates, as tuples of (metricname, aggregate, result) """
+    group = None
+    name = u'unnamed'
 
     results = dict()  # Benchmark output, map the metric to the result array for that metric
+    aggregates = list()  # List of aggregates, as tuples of (metricname, aggregate, result)
     failures = 0  # Track call count that failed
 
     def __init__(self):
@@ -282,7 +284,7 @@ class BenchmarkResult:
     def __str__(self):
         return json.dumps(self, default=lambda o: o.__dict__)
 
-class BenchmarkConfig(Test):
+class Benchmark(Test):
     """ Extends test with configuration for benchmarking
         warmup_runs and benchmark_runs behave like you'd expect
 
@@ -294,6 +296,8 @@ class BenchmarkConfig(Test):
     """
     warmup_runs = 10 #Times call is executed to warm up
     benchmark_runs = 100 #Times call is executed to generate benchmark results
+    output_format = u'csv'
+    output_file = None
 
     #Metrics to gather, both raw and aggregated
     metrics = set()
@@ -331,7 +335,7 @@ class BenchmarkConfig(Test):
         self.metrics = set()
         self.raw_metrics = set()
         self.aggregated_metrics = dict()
-        super(BenchmarkConfig, self).__init__()
+        super(Benchmark, self).__init__()
 
     def __str__(self):
         return json.dumps(self, default=lambda o: o.__dict__)
@@ -408,7 +412,7 @@ def build_testsets(base_url, test_structure, test_files = set() ):
                     mytest = build_test(base_url, child)
                     tests_out.append(mytest)
                 elif key == u'benchmark':
-                    benchmark = build_benchmark_config(base_url, node[key])
+                    benchmark = build_benchmark(base_url, node[key])
                     benchmarks.append(benchmark)
                 elif key == u'config' or key == u'configuration':
                     test_config = make_configuration(node[key])
@@ -580,25 +584,35 @@ def build_test(base_url, node, input_test = None):
 
     return mytest
 
-def build_benchmark_config(base_url, node):
+def build_benchmark(base_url, node):
     """ Try building a benchmark configuration from deserialized configuration root node """
     node = lowercase_keys(flatten_dictionaries(node))  # Make it usable
 
-    benchmark_config = BenchmarkConfig()
+    benchmark = Benchmark()
 
     # Read & set basic test parameters
-    benchmark_config = build_test(base_url, node, benchmark_config)
+    benchmark = build_test(base_url, node, benchmark)
 
     # Complex parsing because of list/dictionary/singleton legal cases
     for key, value in node.items():
         if key == u'warmup_runs':
-            benchmark_config.warmup_runs = int(value)
+            benchmark.warmup_runs = int(value)
         elif key == u'benchmark_runs':
-            benchmark_config.benchmark_runs = int(value)
+            benchmark.benchmark_runs = int(value)
+        elif key == u'output_format':
+            format = value.lower()
+            if format in OUTPUT_FORMATS:
+                benchmark.output_format = format
+            else:
+                raise Exception('Invalid benchmark output format: ' + format)
+        elif key == u'output_file':
+            if not isinstance(value, basestring):
+                raise Exception("Invalid output file format")
+            benchmark.output_file = value
         elif key == u'metrics':
             if isinstance(value, unicode) or isinstance(value,str):
                 # Single value
-                benchmark_config.add_metric(unicode(value, 'UTF-8'))
+                benchmark.add_metric(unicode(value, 'UTF-8'))
             elif isinstance(value, list) or isinstance(value, set):
             # List of single values or list of {metric:aggregate, ...}
                 for metric in value:
@@ -609,10 +623,10 @@ def build_benchmark_config(base_url, node):
                             if not isinstance(aggregate, basestring):
                                 raise Exception("Invalid aggregate input: non-string aggregate name")
                             # TODO unicode-safe this
-                            benchmark_config.add_metric(unicode(metricname,'UTF-8'), unicode(aggregate,'UTF-8'))
+                            benchmark.add_metric(unicode(metricname,'UTF-8'), unicode(aggregate,'UTF-8'))
 
                     elif isinstance(metric, unicode) or isinstance(metric, str):
-                        benchmark_config.add_metric(unicode(metric,'UTF-8'))
+                        benchmark.add_metric(unicode(metric,'UTF-8'))
             elif isinstance(value, dict):
                 # Dictionary of metric-aggregate pairs
                 for metricname, aggregate in value.items():
@@ -620,11 +634,11 @@ def build_benchmark_config(base_url, node):
                         raise Exception("Invalid metric input: non-string metric name")
                     if not isinstance(aggregate, basestring):
                         raise Exception("Invalid aggregate input: non-string aggregate name")
-                    benchmark_config.add_metric(unicode(metricname,'UTF-8'), unicode(aggregate,'UTF-8'))
+                    benchmark.add_metric(unicode(metricname,'UTF-8'), unicode(aggregate,'UTF-8'))
             else:
                 raise Exception("Invalid benchmark metric datatype: "+str(value))
 
-    return benchmark_config
+    return benchmark
 
 def configure_curl(mytest, test_config = TestConfig()):
     """ Create and mostly configure a curl object for test """
@@ -734,13 +748,13 @@ def run_test(mytest, test_config = TestConfig()):
     curl.close()
     return result
 
-def benchmark(curl, benchmark_config):
+def run_benchmark(curl, benchmark, test_config = TestConfig()):
     """ Perform a benchmark, (re)using a given, configured CURL call to do so
         The actual analysis of metrics is performed separately, to allow for testing
     """
 
-    warmup_runs = benchmark_config.warmup_runs
-    benchmark_runs = benchmark_config.benchmark_runs
+    warmup_runs = benchmark.warmup_runs
+    benchmark_runs = benchmark.benchmark_runs
     message = ''  #Message is name of benchmark... print it?
 
     if (warmup_runs <= 0):
@@ -750,7 +764,9 @@ def benchmark(curl, benchmark_config):
 
     #Initialize variables to store output
     output = BenchmarkResult()
-    metricnames = list(benchmark_config.metrics)
+    output.name = benchmark.name
+    output.group = benchmark.group
+    metricnames = list(benchmark.metrics)
     metricvalues = [METRICS[name] for name in metricnames]  # Metric variable for curl, to avoid hash lookup for every metric name
     results = [list() for x in xrange(0, len(metricnames))]  # Initialize arrays to store results for each metric
 
@@ -765,6 +781,7 @@ def benchmark(curl, benchmark_config):
     logging.info('Benchmark: ' + message + ' starting')
 
     for x in xrange(0, benchmark_runs):  # Run the actual benchmarks
+        # TODO re-configure body reader for POST/PUT cases to re-run them?
 
         try:  # Run the curl call, if it errors, then add to failure counts for benchmark
             curl.perform()
@@ -783,25 +800,29 @@ def benchmark(curl, benchmark_config):
         temp_results[metricnames[i]] = results[i]
     output.results = temp_results
 
-    return analyze_benchmark_results(output, benchmark_config)
+    curl.close()
+    return analyze_benchmark_results(output, benchmark)
 
 
-def analyze_benchmark_results(benchmark_result, benchmark_config):
-    """ Take a benchmark result containing raw benchmark results, and do aggregation by applying functions """
+def analyze_benchmark_results(benchmark_result, benchmark):
+    """ Take a benchmark result containing raw benchmark results, and do aggregation by
+    applying functions """
 
     output = BenchmarkResult()
+    output.name = benchmark_result.name
+    output.group = benchmark_result.group
     output.failures = benchmark_result.failures
 
     # Copy raw metric arrays over where necessary
     raw_results = benchmark_result.results
     temp = dict()
-    for metric in benchmark_config.raw_metrics:
+    for metric in benchmark.raw_metrics:
         temp[metric] = raw_results[metric]
     output.results = temp
 
     # Compute aggregates for each metric, and add tuples to aggregate results
     aggregate_results = list()
-    for metricname, aggregate_list in benchmark_config.aggregated_metrics.iteritems():
+    for metricname, aggregate_list in benchmark.aggregated_metrics.iteritems():
         numbers = raw_results[metricname]
         for aggregate_name in aggregate_list:
             if numbers:  # Only compute aggregates if numbers exist
@@ -812,6 +833,7 @@ def analyze_benchmark_results(benchmark_result, benchmark_config):
 
     output.aggregates = aggregate_results
     return output
+
 
 def metrics_to_tuples(raw_metrics):
     """ Converts metric dictionary of name:values_array into list of tuples
@@ -828,8 +850,8 @@ def metrics_to_tuples(raw_metrics):
 
     metrics = sorted(raw_metrics.keys())
     arrays = [raw_metrics[metric] for metric in metrics]
-    num_rows = len(arrays[0])  # Assume all same size or this fails
 
+    num_rows = len(arrays[0])  # Assume all same size or this fails
     output = list()
     output.append(tuple(metrics))  # Add headers
 
@@ -838,6 +860,30 @@ def metrics_to_tuples(raw_metrics):
         new_row = tuple([arrays[col][row] for col in xrange(0, len(arrays))])
         output.append(new_row)
     return output
+
+def write_benchmark_json(file_out, benchmark_result, benchmark, test_config = TestConfig()):
+    """ Writes benchmark to file as json"""
+    json.dump(benchmark_result, file_out)
+
+def write_benchmark_csv(file_out, benchmark_result, benchmark, test_config = TestConfig()):
+    """ Writes benchmark to file as csv """
+    writer = csv.writer(file_out)
+    writer.writerow(('Benchmark', benchmark_result.name))
+    writer.writerow(('Benchmark Group', benchmark_result.group))
+    writer.writerow(('Failures', benchmark_result.failures))
+
+    # Write result arrays
+    if benchmark_result.results:
+        writer.writerow(('Results',''))
+        writer.writerows(metrics_to_tuples(benchmark_result.results))
+    if benchmark_result.aggregates:
+        writer.writerow(('Aggregates',''))
+        writer.writerows(benchmark_result.aggregates)
+
+OUTPUT_FORMATS = [u'csv', u'json']
+
+# Method to call when writing benchmark file
+OUTPUT_METHODS = {u'csv' : write_benchmark_csv, u'json': write_benchmark_json}
 
 
 def execute_testsets(testsets):
@@ -853,7 +899,7 @@ def execute_testsets(testsets):
         mybenchmarks = testset.benchmarks
 
         #Make sure we actually have tests to execute
-        if not mytests:
+        if not mytests and not mybenchmarks:
             # no tests in this test set, probably just imports.. skip to next test set
             break
 
@@ -893,6 +939,23 @@ def execute_testsets(testsets):
                 print 'STOP ON FAILURE! stopping test set execution, continuing with other test sets'
                 break
 
+        for benchmark in mybenchmarks:  # Run benchmarks, analyze, write
+            if not benchmark.metrics:
+                logging.debug('Skipping benchmark, no metrics to collect')
+                continue
+
+            logging.info("Benchmark Starting: "+benchmark.name+" Group: "+benchmark.group)
+            curl = configure_curl(benchmark, myconfig)
+            benchmark_result = run_benchmark(curl, benchmark, myconfig)
+            print benchmark_result
+            logging.info("Benchmark Done: "+benchmark.name+" Group: "+benchmark.group)
+
+            if benchmark.output_file:  # Write file
+                write_method = OUTPUT_METHODS[benchmark.output_format]
+                my_file =  open(benchmark.output_file, 'w')  # Overwrites file
+                logging.debug("Benchmark writing to file: " + benchmark.output_file)
+                write_method(my_file, benchmark_result, benchmark, test_config = myconfig)
+                my_file.close()
 
     if myinteractive:
         # a break for when interactive bits are complete, before summary data
@@ -923,7 +986,7 @@ def main(args):
     """
 
     if 'log' in args and args['log'] is not None:
-        logging.basicConfig(level=LOGGING_LEVELS.get(args['log'], logging.NOTSET))
+        logging.basicConfig(level=LOGGING_LEVELS.get(args['log'].lower(), logging.NOTSET))
 
     test_structure = read_test_file(args['test'])
     tests = build_testsets(args['url'], test_structure)
