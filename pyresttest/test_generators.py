@@ -1,10 +1,10 @@
 import unittest
-import fuzzer
+import generators
 import string
 
 
 class GeneratorTest(unittest.TestCase):
-    """ Tests for fuzzers/generators """
+    """ Tests for generators """
 
     def generator_test(self, generator_input):
         """ Basic test of a configured generator """
@@ -17,9 +17,9 @@ class GeneratorTest(unittest.TestCase):
             val = val2
 
     def test_factory_ids(self):
-        f = fuzzer.factory_generate_ids(1)()
-        f2 = fuzzer.factory_generate_ids(101)()
-        f3 = fuzzer.factory_generate_ids(1)()
+        f = generators.factory_generate_ids(1)()
+        f2 = generators.factory_generate_ids(101)()
+        f3 = generators.factory_generate_ids(1)()
 
         vals = [f.next(), f.next()]
         vals2 = [f2.next(), f2.next()]
@@ -37,15 +37,15 @@ class GeneratorTest(unittest.TestCase):
 
     def test_basic_ids(self):
         """ Test starting ids """
-        ids1 = fuzzer.generator_basic_ids()
-        ids2 = fuzzer.generator_basic_ids()
+        ids1 = generators.generator_basic_ids()
+        ids2 = generators.generator_basic_ids()
         self.generator_test(ids1)
         self.generator_test(ids2)
         self.assertEqual(ids1.next(), ids2.next())
 
     def test_random_ids(self):
         """ Test random in ids generator """
-        gen = fuzzer.generator_random_int32()
+        gen = generators.generator_random_int32()
         print gen.next()
         self.generator_test(gen)
 
@@ -55,7 +55,7 @@ class GeneratorTest(unittest.TestCase):
         for charset in charsets:
             # Test different lengths for charset
             for my_length in xrange(1,17):
-                gen = fuzzer.factory_generate_text(legal_characters = charset, length=my_length)()
+                gen = generators.factory_generate_text(legal_characters = charset, length=my_length)()
                 for x in xrange(0,10):
                     val = gen.next()
                     self.assertEqual(my_length, len(val))

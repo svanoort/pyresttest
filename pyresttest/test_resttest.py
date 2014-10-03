@@ -91,7 +91,7 @@ class TestRestTest(unittest.TestCase):
                         {'pretransfer_time': 'mean_harmonic'}]
             }];
 
-        cfg = resttest.build_benchmark_config('what', struct)
+        cfg = resttest.build_benchmark('what', struct)
 
         self.assertEqual(7, cfg.warmup_runs)
         self.assertEqual(101, cfg.benchmark_runs)
@@ -197,7 +197,7 @@ class TestRestTest(unittest.TestCase):
 
     def test_add_metric(self):
         """ Test the add-metric method for benchmarks """
-        benchmark_config = resttest.BenchmarkConfig()
+        benchmark_config = resttest.Benchmark()
         benchmark_config.add_metric('total_time')
         self.assertTrue('total_time' in benchmark_config.metrics)
         self.assertTrue('total_time' in benchmark_config.raw_metrics)
@@ -228,7 +228,7 @@ class TestRestTest(unittest.TestCase):
     def test_analyze_benchmark(self):
         """ Test analyzing benchmarks to compute aggregates """
         benchmark_result = resttest.BenchmarkResult()
-        benchmark_config = resttest.BenchmarkConfig()
+        benchmark_config = resttest.Benchmark()
         benchmark_config.add_metric('request_size').add_metric('request_size','median')
         benchmark_config.add_metric('connect_time')
         benchmark_config.add_metric('total_time', 'mean_harmonic')

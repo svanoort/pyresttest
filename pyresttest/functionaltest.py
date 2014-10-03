@@ -11,8 +11,9 @@ from django.core.management import call_command
 
 #Django testing settings, initial configuration
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "testapp.settings")
-djangopath = os.path.join(os.getcwd(), 'testapp')
+djangopath = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'testapp')
 sys.path.append(djangopath)
+
 logging.basicConfig(level=logging.WARNING)
 
 """ Full functional testing of REST test suite, using a basic Django-tastypie REST app """
@@ -136,7 +137,7 @@ class RestTestCase(unittest.TestCase):
         test = resttest.Test()
         test.url = self.prefix + '/api/person/'
         curl = resttest.configure_curl(test)
-        benchmark_config = resttest.BenchmarkConfig();
+        benchmark_config = resttest.Benchmark();
         benchmark_config.add_metric('total_time').add_metric('total_time','median')
         benchmark_result = resttest.benchmark(curl, benchmark_config)
         print "Benchmark - median request time: " + str(benchmark_result.aggregates[0])
