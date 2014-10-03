@@ -9,4 +9,4 @@ setup(name='pyresttest',
     py_modules=['resttest','test_resttest'],
     license='Apache License, Version 2.0',
     requires=['argparse','yaml','pycurl']
-    )
+)
