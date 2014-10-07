@@ -1,6 +1,7 @@
 import unittest
 import generators
 import string
+import os
 
 
 class GeneratorTest(unittest.TestCase):
@@ -48,6 +49,26 @@ class GeneratorTest(unittest.TestCase):
         gen = generators.generator_random_int32()
         print gen.next()
         self.generator_test(gen)
+
+    def test_system_variables(self):
+        """ Test generator for binding system variables """
+        variable = 'FOOBARBAZ'
+        value = 'myTestVal'
+        old_val = os.environ.get(variable)
+
+        generator = generators.factory_env_variable(variable)()
+        self.assertTrue(generator.next() is None)
+
+        os.environ[variable] = value
+        self.assertEqual(value, generator.next())
+        self.assertEqual(generator.next(), os.path.expandvars('$'+variable))
+
+        # Restore environment
+        if old_val is not None:
+            os.environ[variable] = old_val
+        else:
+            del os.environ[variable]
+
 
     def test_factory_text(self):
         charsets = [string.letters, string.digits, string.uppercase, string.hexdigits]

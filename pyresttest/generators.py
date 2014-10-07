@@ -1,7 +1,12 @@
 import random
 import string
+import os
 
-""" Generator system for random inputs to templates, for testing via fuzzing """
+""" Collection of generators to be used in templating for test data
+
+Plans: extend these by allowing generators that take generators for input
+Example: generators that case-swap
+"""
 
 INT32_MAX_VALUE = 2147483647  # Max of 32 bit unsigned int
 
@@ -41,4 +46,12 @@ def factory_generate_text(legal_characters=string.ascii_letters, length=8):
     return generate_text
 
 
+def factory_env_variable(env_variable):
+    """ Return a generator function that reads from an environment variable """
 
+    def return_variable():
+        variable_name = env_variable
+        while(True):
+            yield os.environ.get(variable_name)
+
+    return return_variable
