@@ -2,7 +2,7 @@ import sys
 import os
 import math
 import operator
-import argparse
+from optparse import OptionParser
 import yaml
 import pycurl
 import json
@@ -995,7 +995,7 @@ def main(args):
 
     # Override configs from command line if config set
     for t in tests:
-        if 'print_bodies' in args and args['print_bodies'] is not None:
+        if 'print_bodies' in args and args['print_bodies'] is not None and not bool(args['print_bodies']):
             t.config.print_bodies = safe_to_bool(args['print_bodies'])
 
         if 'interactive' in args and args['interactive'] is not None:
@@ -1008,12 +1008,19 @@ def main(args):
 
 #Allow import into another module without executing the main method
 if(__name__ == '__main__'):
-    parser = argparse.ArgumentParser()
-    parser.add_argument(u"url", help="Base URL to run tests against")
-    parser.add_argument(u"test", help="Test file to use")
-    parser.add_argument(u"--print-bodies", help="Print all response bodies", type=bool)
-    parser.add_argument(u"--log", help="Logging level")
-    parser.add_argument(u"--interactive", help="Interactive mode")
-    args = vars(parser.parse_args())
+    parser = OptionParser(usage="usage: %prog base_url test_filename.yaml [options] ")
+    parser.add_option(u"--print-bodies", help="Print all response bodies", action="store", type="string", dest="print_bodies")
+    parser.add_option(u"--log", help="Logging level", action="store", type="string")
+    parser.add_option(u"--interactive", help="Interactive mode", action="store", type="string")
+    parser.add_option(u"--url", help="Base URL to run tests against", action="store", type="string")
+    parser.add_option(u"--test", help="Test file to use", action="store", type="string")
 
-    main(args)
+    (args, unparsed_args) = parser.parse_args()
+    args = vars(args)
+
+    if len(unparsed_args) != 2:
+        parser.error("wrong number of arguments, need both url and filename ")
+    else:
+        args[u'url'] = unparsed_args[0]
+        args[u'test'] = unparsed_args[1]
+        main(args)
