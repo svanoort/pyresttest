@@ -55,3 +55,10 @@ def factory_env_variable(env_variable):
             yield os.environ.get(variable_name)
 
     return return_variable
+
+
+class GeneratorFactory:
+    """ Builds generators from configuration elements """
+    def parse(configuration):
+        """ Parses a configuration built from yaml and returns a generator """
+        pass

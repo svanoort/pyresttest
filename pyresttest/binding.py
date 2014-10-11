@@ -17,6 +17,10 @@ class Context(object):
         self.variables[str(variable_name)] = variable_value
         logging.debug('Context: Set variable named {0} to value {1}'.format(variable_name, variable_value))
 
+    def bind_variables(self, variable_map):
+        for key, value in variable_map.items():
+            self.bind_variable(key, value)
+
     def add_generator(self, generator_name, generator):
         """ Adds a generator to the context, this can be used to set values for a variable
             Once created, you can set values with the generator via bind_generator_next """

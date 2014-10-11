@@ -2,13 +2,15 @@ import sys
 import os
 import math
 import operator
-from optparse import OptionParser
 import yaml
 import pycurl
 import json
 import csv
 import StringIO
 import logging
+from optparse import OptionParser
+from binding import Context
+from generators import GeneratorFactory
 
 
 LOGGING_LEVELS = {'debug': logging.DEBUG,
@@ -146,7 +148,34 @@ class Test(object):
     name = u'Unnamed'
     validators = None  # Validators for response body, IE regexes, etc
     stop_on_failure = False
+
+    # Bind variables, generators, and contexts
+    variable_binds = None
+    generator_binds = None  # Dict of variable name and then generator name
+    extract_binds = None
+
     #In this case, config would be used by all tests following config definition, and in the same scope as tests
+
+    def update_context_before(self, context):
+        """ Make pre-test context updates, by applying variable and generator updates """
+        if self.variable_binds:
+            context.bind_variables(self.variable_binds)
+        if self.generator_binds:
+            for key, value in self.generator_binds:
+                context.bind_generator_next(key, value)
+
+    def isContextModifier(self):
+        """ Returns true if context can be modified by this test
+            (disallows caching of templated test bodies) """
+        return self.variable_binds or self.generator_binds or self.extract_binds
+
+    def isDynamic(self):
+        """ Returns true if this test does templating """
+        return False
+
+    def realize(self, context):
+        """ Return a fully-templated test object """
+        return self
 
     def __init__(self):
         self.headers = dict()
@@ -249,6 +278,10 @@ class TestConfig:
     test_parallel = False  # Allow parallel execution of tests in a test set, for speed?
     validator_query_delimiter = "/"
     interactive = False
+
+    # Binding and creation of genenerators
+    variable_binds = None
+    generators = None  # Map of generator name to generator function
 
     def __str__(self):
         return json.dumps(self, default=lambda o: o.__dict__)
@@ -451,6 +484,15 @@ def make_configuration(node):
             test_config.retries = int(value)
         elif key == u'validator_query_delimiter':
             test_config.validator_query_delimiter = str(value)
+        elif key == u'variable_binds':
+            test_config.variable_binds = flatten_dictionaries(value)
+        elif key == u'generators':
+            flat = flatten_dictionaries(value)
+            gen_map = dict()
+            for generator_name, generator_config in flat:
+                gen = GeneratorFactory.parse(generator_config)
+                gen_map[str(generator_name)] = gen
+            test_config.generators = gen_map
 
     return test_config
 
@@ -461,10 +503,7 @@ def flatten_dictionaries(input):
     output = dict()
     if isinstance(input, list):
         for map in input:
-            if not isinstance(map, dict):
-                raise Exception('Tried to flatten a list of NON-dictionaries into a single dictionary. Whoops!')
-            for key in map.keys(): #Add keys into output
-                output[key]=map[key]
+            output.update(map)
     else: #Not a list of dictionaries
         output = input;
     return output
@@ -565,6 +604,14 @@ def build_test(base_url, node, input_test = None):
             else:
                 expected.append(int(configvalue))
             mytest.expected_status = expected
+        elif configelement == 'variable_binds':
+            mytest.variable_binds = flatten_dictionaries(configvalue)
+        elif configelement == 'generator_binds':
+            output = flatten_dictionaries(configvalue)
+            output2 = dict()
+            for key, value in output.items:
+                output2[str(key)] = str(value)
+            mytest.generator_binds = output2
         elif configelement == 'stop_on_failure':
             mytest.stop_on_failure = safe_to_bool(configvalue)
 
@@ -639,13 +686,18 @@ def build_benchmark(base_url, node):
 
     return benchmark
 
-def configure_curl(mytest, test_config = TestConfig()):
+def configure_curl(mytest, test_config = TestConfig(), context=None):
     """ Create and mostly configure a curl object for test """
 
     if not isinstance(mytest, Test):
         raise Exception('Need to input a Test type object')
     if not isinstance(test_config, TestConfig):
         raise Exception('Need to input a TestConfig type object for the testconfig')
+
+    # Initialize new context if absent
+    my_context = context
+    if my_context is not None:
+        my_context = Context()
 
     curl = pycurl.Curl()
     # curl.setopt(pycurl.VERBOSE, 1)  # Debugging convenience
@@ -683,11 +735,18 @@ def configure_curl(mytest, test_config = TestConfig()):
     curl.setopt(curl.HTTPHEADER, headers)
     return curl
 
-def run_test(mytest, test_config = TestConfig()):
+def run_test(mytest, test_config = TestConfig(), context = None):
     """ Put together test pieces: configure & run actual test, return results """
 
-    curl = configure_curl(mytest, test_config)
+    # Initialize a context if not supplied
+    my_context = context
+    if my_context is not None:
+        my_context = Context()
+
+    mytest.update_context_before(my_context)
+    curl = configure_curl(mytest, test_config, context = my_context)
     result = TestResponse()
+
     # reset the body, it holds values from previous runs otherwise
     result.body = bytearray()
     curl.setopt(pycurl.WRITEFUNCTION, result.body_callback)
@@ -864,7 +923,7 @@ def metrics_to_tuples(raw_metrics):
     return output
 
 def write_benchmark_json(file_out, benchmark_result, benchmark, test_config = TestConfig()):
-    """ Writes benchmark to file as json"""
+    """ Writes benchmark to file as json """
     json.dump(benchmark_result, file_out)
 
 def write_benchmark_csv(file_out, benchmark_result, benchmark, test_config = TestConfig()):
@@ -899,6 +958,14 @@ def execute_testsets(testsets):
         mytests = testset.tests
         myconfig = testset.config
         mybenchmarks = testset.benchmarks
+        context = Context()
+
+        # Bind variables & add generators if pertinent
+        if myconfig.variable_binds:
+            context.bind_variables(myconfig.variable_binds)
+        if myconfig.generators:
+            for key, value in myconfig.generators.items():
+                context.add_generator(key, value)
 
         #Make sure we actually have tests to execute
         if not mytests and not mybenchmarks:
@@ -914,7 +981,7 @@ def execute_testsets(testsets):
                 group_results[test.group] = list()
                 group_failure_counts[test.group] = 0
 
-            result = run_test(test, test_config = myconfig)
+            result = run_test(test, test_config = myconfig, context=context)
             result.body = None  # Remove the body, save some memory!
 
             if not result.passed: #Print failure, increase failure counts for that test group

@@ -3,6 +3,7 @@ import unittest
 import json
 import yaml
 import math
+from binding import Context
 
 class TestRestTest(unittest.TestCase):
     """ Tests to test a REST testing framework, how meta is that? """
@@ -50,6 +51,26 @@ class TestRestTest(unittest.TestCase):
         test = resttest.build_test('',input)
         self.assertTrue(test.name == "cheese")
         self.assertTrue(test.expected_status == [200,204,202])
+        self.assertFalse(test.isContextModifier())
+
+
+    def test_variable_binding(self):
+        """ Test that tests successfully bind variables """
+        element = 3
+        input = [{"url": "/ping"},{"name": "cheese"},{"expected_status":["200",204,"202"]}]
+        input.append({"variable_binds":{'var':'value'}})
+
+        test = resttest.build_test('', input)
+        binds = test.variable_binds
+        self.assertEqual(1, len(binds))
+        self.assertEqual('value', binds['var'])
+
+        # Test that updates context correctly
+        context = Context()
+        test.update_context_before(context)
+        self.assertEqual('value', context.get_value('var'))
+        self.assertTrue(test.isContextModifier())
+
 
     def test_safe_boolean(self):
         """ Test safe conversion to boolean """
