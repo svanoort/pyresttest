@@ -4,6 +4,7 @@ import json
 import yaml
 import math
 from binding import Context
+from resttest import Test
 
 class TestRestTest(unittest.TestCase):
     """ Tests to test a REST testing framework, how meta is that? """
@@ -16,7 +17,7 @@ class TestRestTest(unittest.TestCase):
 
         #Most basic case
         input = {"url": "/ping", "method": "DELETE", "NAME":"foo", "group":"bar", "body":"<xml>input</xml>","headers":{"Accept":"Application/json"}}
-        test = resttest.build_test('',input)
+        test = Test.build_test('',input)
         self.assertTrue(test.url == input['url'])
         self.assertTrue(test.method == input['method'])
         self.assertTrue(test.name == input['NAME'])
@@ -27,14 +28,14 @@ class TestRestTest(unittest.TestCase):
 
         #Happy path, only gotcha is that it's a POST, so must accept 200 or 204 response code
         input = {"url": "/ping", "meThod": "POST"}
-        test = resttest.build_test('',input)
+        test = Test.build_test('',input)
         self.assertTrue(test.url == input['url'])
         self.assertTrue(test.method == input['meThod'])
         self.assertTrue(test.expected_status == [200,201,204])
 
         #Test that headers propagate
         input = {"url": "/ping", "method": "GET", "headers" : [{"Accept":"application/json"},{"Accept-Encoding":"gzip"}] }
-        test = resttest.build_test('',input)
+        test = Test.build_test('',input)
         expected_headers = {"Accept":"application/json","Accept-Encoding":"gzip"}
 
         self.assertTrue(test.url == input['url'])
@@ -48,7 +49,7 @@ class TestRestTest(unittest.TestCase):
 
         #Test expected status propagates and handles conversion to integer
         input = [{"url": "/ping"},{"name": "cheese"},{"expected_status":["200",204,"202"]}]
-        test = resttest.build_test('',input)
+        test = Test.build_test('',input)
         self.assertTrue(test.name == "cheese")
         self.assertTrue(test.expected_status == [200,204,202])
         self.assertFalse(test.isContextModifier())
@@ -60,7 +61,7 @@ class TestRestTest(unittest.TestCase):
         input = [{"url": "/ping"},{"name": "cheese"},{"expected_status":["200",204,"202"]}]
         input.append({"variable_binds":{'var':'value'}})
 
-        test = resttest.build_test('', input)
+        test = Test.build_test('', input)
         binds = test.variable_binds
         self.assertEqual(1, len(binds))
         self.assertEqual('value', binds['var'])

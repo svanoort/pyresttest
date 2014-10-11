@@ -12,6 +12,7 @@ from optparse import OptionParser
 from binding import Context
 from generators import GeneratorFactory
 
+DEFAULT_TIMEOUT = 10  # Seconds
 
 LOGGING_LEVELS = {'debug': logging.DEBUG,
     'info': logging.INFO,
@@ -184,6 +185,155 @@ class Test(object):
     def __str__(self):
         return json.dumps(self, default=lambda o: o.__dict__)
 
+    def configure_curl(self, timeout=DEFAULT_TIMEOUT, context=None):
+        """ Create and mostly configure a curl object for test """
+
+        # Initialize new context if absent
+        my_context = context
+        if my_context is not None:
+            my_context = Context()
+
+        curl = pycurl.Curl()
+        # curl.setopt(pycurl.VERBOSE, 1)  # Debugging convenience
+        curl.setopt(curl.URL, str(self.url))
+        curl.setopt(curl.TIMEOUT, timeout)
+
+
+        #TODO use CURLOPT_READDATA http://pycurl.sourceforge.net/doc/files.html and lazy-read files if possible
+
+        # HACK: process env vars again, since we have an extract capabilitiy in validation.. this is a complete hack, but I need functionality over beauty
+        if self.body is not None:
+            self.body = os.path.expandvars(self.body)
+
+        # Set read function for post/put bodies
+        if self.method == u'POST' or self.method == u'PUT':
+            curl.setopt(curl.READFUNCTION, StringIO.StringIO(self.body).read)
+
+        if self.method == u'POST':
+            curl.setopt(HTTP_METHODS[u'POST'], 1)
+            if self.body is not None:
+                curl.setopt(pycurl.POSTFIELDSIZE, len(self.body))  # Required for some servers
+        elif self.method == u'PUT':
+            curl.setopt(HTTP_METHODS[u'PUT'], 1)
+            if self.body is not None:
+                curl.setopt(pycurl.INFILESIZE, len(self.body))  # Required for some servers
+        elif self.method == u'DELETE':
+            curl.setopt(curl.CUSTOMREQUEST,'DELETE')
+
+        headers = list()
+        if self.headers: #Convert headers dictionary to list of header entries, tested and working
+            for headername, headervalue in self.headers.items():
+                headers.append(str(headername) + ': ' +str(headervalue))
+        headers.append("Expect:")  # Fix for expecting 100-continue from server, which not all servers will send!
+        headers.append("Connection: close")
+        curl.setopt(curl.HTTPHEADER, headers)
+        return curl
+
+    @classmethod
+    def build_test(cls, base_url, node, input_test = None):
+        """ Create or modify a test, input_test, using configuration in node, and base_url
+        If no input_test is given, creates a new one
+
+        Uses explicitly specified elements from the test input structure
+        to make life *extra* fun, we need to handle list <-- > dict transformations.
+
+        This is to say: list(dict(),dict()) or dict(key,value) -->  dict() for some elements
+
+        Accepted structure must be a single dictionary of key-value pairs for test configuration """
+
+        mytest = input_test
+        if not mytest:
+            mytest = Test()
+
+        node = lowercase_keys(flatten_dictionaries(node)) #Clean up for easy parsing
+
+        #Copy/convert input elements into appropriate form for a test object
+        for configelement, configvalue in node.items():
+            #Configure test using configuration elements
+            if configelement == u'url':
+                assert isinstance(configvalue,str) or isinstance(configvalue,unicode) or isinstance(configvalue,int)
+                mytest.url = base_url + unicode(configvalue,'UTF-8').encode('ascii','ignore')
+            elif configelement == u'method': #Http method, converted to uppercase string
+                var = unicode(configvalue,'UTF-8').upper()
+                assert var in HTTP_METHODS
+                mytest.method = var
+            elif configelement == u'group': #Test group
+                assert isinstance(configvalue,str) or isinstance(configvalue,unicode) or isinstance(configvalue,int)
+                mytest.group = unicode(configvalue,'UTF-8')
+            elif configelement == u'name': #Test name
+                assert isinstance(configvalue,str) or isinstance(configvalue,unicode) or isinstance(configvalue,int)
+                mytest.name = unicode(configvalue,'UTF-8')
+            elif configelement == u'validators':
+                #TODO implement more validators: regex, file/schema match, etc
+                if isinstance(configvalue, list):
+                    for var in configvalue:
+                        myquery = var.get(u'query')
+                        myoperator = var.get(u'operator')
+                        myexpected = var.get(u'expected')
+                        myexportas = var.get(u'export_as')
+
+                        # NOTE structure is checked by use of validator, do not verify attributes here
+                        # create validator and add to list of validators
+                        if mytest.validators is None:
+                            mytest.validators = list()
+                        validator = Validator()
+                        validator.query = myquery
+                        validator.expected = myexpected
+                        validator.operator = myoperator if myoperator is not None else validator.operator
+                        validator.export_as = myexportas if myexportas is not None else validator.export_as
+                        mytest.validators.append(validator)
+                else:
+                    raise Exception('Misconfigured validator, requires type property')
+            elif configelement == u'body': #Read request body, either as inline input or from file
+                #Body is either {'file':'myFilePath'} or inline string with file contents
+                if isinstance(configvalue, dict) and u'file' in lowercase_keys(configvalue):
+                    var = lowercase_keys(configvalue)
+                    assert isinstance(var[u'file'],str) or isinstance(var[u'file'],unicode)
+                    mytest.body = os.path.expandvars(read_file(var[u'file'])) #TODO change me to pass in a file handle, rather than reading all bodies into RAM
+                elif isinstance(configvalue, str):
+                    mytest.body = configvalue
+                else:
+                    # TODO add ability to handle input of directories or file lists with wildcards to test against multiple bodies
+                    raise Exception('Illegal input to HTTP request body: must be string or map of file -> path')
+
+            elif configelement == 'headers': #HTTP headers to use, flattened to a single string-string dictionary
+                mytest.headers = flatten_dictionaries(configvalue)
+            elif configelement == 'expected_status': #List of accepted HTTP response codes, as integers
+                expected = list()
+                #If item is a single item, convert to integer and make a list of 1
+                #Otherwise, assume item is a list and convert to a list of integers
+                if isinstance(configvalue,list):
+                    for item in configvalue:
+                        expected.append(int(item))
+                else:
+                    expected.append(int(configvalue))
+                mytest.expected_status = expected
+            elif configelement == 'variable_binds':
+                mytest.variable_binds = flatten_dictionaries(configvalue)
+            elif configelement == 'generator_binds':
+                output = flatten_dictionaries(configvalue)
+                output2 = dict()
+                for key, value in output.items:
+                    output2[str(key)] = str(value)
+                mytest.generator_binds = output2
+            elif configelement == 'stop_on_failure':
+                mytest.stop_on_failure = safe_to_bool(configvalue)
+
+        #Next, we adjust defaults to be reasonable, if the user does not specify them
+
+        #For non-GET requests, accept additional response codes indicating success
+        # (but only if not expected statuses are not explicitly specified)
+        #  this is per HTTP spec: http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.5
+        if 'expected_status' not in node.keys():
+            if mytest.method == 'POST':
+                mytest.expected_status = [200,201,204]
+            elif mytest.method == 'PUT':
+                mytest.expected_status = [200,201,204]
+            elif mytest.method == 'DELETE':
+                mytest.expected_status = [200,202,204]
+
+        return mytest
+
 class Validator:
     """ Validation for a dictionary """
     query = None
@@ -272,7 +422,7 @@ class Validator:
 
 class TestConfig:
     """ Configuration for a test run """
-    timeout = 10  # timeout of tests, in seconds
+    timeout = DEFAULT_TIMEOUT  # timeout of tests, in seconds
     print_bodies = False  # Print response bodies in all cases
     retries = 0  # Retries on failures
     test_parallel = False  # Allow parallel execution of tests in a test set, for speed?
@@ -441,7 +591,7 @@ def build_testsets(base_url, test_structure, test_files = set() ):
                     tests_out.append(mytest)
                 elif key == u'test': #Complex test with additional parameters
                     child = node[key]
-                    mytest = build_test(base_url, child)
+                    mytest = Test.build_test(base_url, child)
                     tests_out.append(mytest)
                 elif key == u'benchmark':
                     benchmark = build_benchmark(base_url, node[key])
@@ -526,110 +676,6 @@ def read_file(path): #TODO implementme, handling paths more intelligently
     f.close()
     return string
 
-def build_test(base_url, node, input_test = None):
-    """ Create or modify a test, input_test, using configuration in node, and base_url
-     If no input_test is given, creates a new one
-
-     Uses explicitly specified elements from the test input structure
-     to make life *extra* fun, we need to handle list <-- > dict transformations.
-
-     This is to say: list(dict(),dict()) or dict(key,value) -->  dict() for some elements
-
-     Accepted structure must be a single dictionary of key-value pairs for test configuration """
-
-    mytest = input_test
-    if not mytest:
-        mytest = Test()
-
-    node = lowercase_keys(flatten_dictionaries(node)) #Clean up for easy parsing
-
-    #Copy/convert input elements into appropriate form for a test object
-    for configelement, configvalue in node.items():
-        #Configure test using configuration elements
-        if configelement == u'url':
-            assert isinstance(configvalue,str) or isinstance(configvalue,unicode) or isinstance(configvalue,int)
-            mytest.url = base_url + unicode(configvalue,'UTF-8').encode('ascii','ignore')
-        elif configelement == u'method': #Http method, converted to uppercase string
-            var = unicode(configvalue,'UTF-8').upper()
-            assert var in HTTP_METHODS
-            mytest.method = var
-        elif configelement == u'group': #Test group
-            assert isinstance(configvalue,str) or isinstance(configvalue,unicode) or isinstance(configvalue,int)
-            mytest.group = unicode(configvalue,'UTF-8')
-        elif configelement == u'name': #Test name
-            assert isinstance(configvalue,str) or isinstance(configvalue,unicode) or isinstance(configvalue,int)
-            mytest.name = unicode(configvalue,'UTF-8')
-        elif configelement == u'validators':
-            #TODO implement more validators: regex, file/schema match, etc
-            if isinstance(configvalue, list):
-                for var in configvalue:
-                    myquery = var.get(u'query')
-                    myoperator = var.get(u'operator')
-                    myexpected = var.get(u'expected')
-                    myexportas = var.get(u'export_as')
-
-                    # NOTE structure is checked by use of validator, do not verify attributes here
-                    # create validator and add to list of validators
-                    if mytest.validators is None:
-                        mytest.validators = list()
-                    validator = Validator()
-                    validator.query = myquery
-                    validator.expected = myexpected
-                    validator.operator = myoperator if myoperator is not None else validator.operator
-                    validator.export_as = myexportas if myexportas is not None else validator.export_as
-                    mytest.validators.append(validator)
-            else:
-                raise Exception('Misconfigured validator, requires type property')
-        elif configelement == u'body': #Read request body, either as inline input or from file
-            #Body is either {'file':'myFilePath'} or inline string with file contents
-            if isinstance(configvalue, dict) and u'file' in lowercase_keys(configvalue):
-                var = lowercase_keys(configvalue)
-                assert isinstance(var[u'file'],str) or isinstance(var[u'file'],unicode)
-                mytest.body = os.path.expandvars(read_file(var[u'file'])) #TODO change me to pass in a file handle, rather than reading all bodies into RAM
-            elif isinstance(configvalue, str):
-                mytest.body = configvalue
-            else:
-                # TODO add ability to handle input of directories or file lists with wildcards to test against multiple bodies
-                raise Exception('Illegal input to HTTP request body: must be string or map of file -> path')
-
-        elif configelement == 'headers': #HTTP headers to use, flattened to a single string-string dictionary
-            mytest.headers = flatten_dictionaries(configvalue)
-        elif configelement == 'expected_status': #List of accepted HTTP response codes, as integers
-            expected = list()
-            #If item is a single item, convert to integer and make a list of 1
-            #Otherwise, assume item is a list and convert to a list of integers
-            if isinstance(configvalue,list):
-                for item in configvalue:
-                    expected.append(int(item))
-            else:
-                expected.append(int(configvalue))
-            mytest.expected_status = expected
-        elif configelement == 'variable_binds':
-            mytest.variable_binds = flatten_dictionaries(configvalue)
-        elif configelement == 'generator_binds':
-            output = flatten_dictionaries(configvalue)
-            output2 = dict()
-            for key, value in output.items:
-                output2[str(key)] = str(value)
-            mytest.generator_binds = output2
-        elif configelement == 'stop_on_failure':
-            mytest.stop_on_failure = safe_to_bool(configvalue)
-
-    #Next, we adjust defaults to be reasonable, if the user does not specify them
-
-    #For non-GET requests, accept additional response codes indicating success
-    # (but only if not expected statuses are not explicitly specified)
-    #  this is per HTTP spec: http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.5
-    if 'expected_status' not in node.keys():
-        if mytest.method == 'POST':
-            mytest.expected_status = [200,201,204]
-        elif mytest.method == 'PUT':
-            mytest.expected_status = [200,201,204]
-        elif mytest.method == 'DELETE':
-            mytest.expected_status = [200,202,204]
-
-    return mytest
-
 def build_benchmark(base_url, node):
     """ Try building a benchmark configuration from deserialized configuration root node """
     node = lowercase_keys(flatten_dictionaries(node))  # Make it usable
@@ -637,7 +683,7 @@ def build_benchmark(base_url, node):
     benchmark = Benchmark()
 
     # Read & set basic test parameters
-    benchmark = build_test(base_url, node, benchmark)
+    benchmark = Test.build_test(base_url, node, benchmark)
 
     # Complex parsing because of list/dictionary/singleton legal cases
     for key, value in node.items():
@@ -686,55 +732,6 @@ def build_benchmark(base_url, node):
 
     return benchmark
 
-def configure_curl(mytest, test_config = TestConfig(), context=None):
-    """ Create and mostly configure a curl object for test """
-
-    if not isinstance(mytest, Test):
-        raise Exception('Need to input a Test type object')
-    if not isinstance(test_config, TestConfig):
-        raise Exception('Need to input a TestConfig type object for the testconfig')
-
-    # Initialize new context if absent
-    my_context = context
-    if my_context is not None:
-        my_context = Context()
-
-    curl = pycurl.Curl()
-    # curl.setopt(pycurl.VERBOSE, 1)  # Debugging convenience
-    curl.setopt(curl.URL, str(mytest.url))
-    curl.setopt(curl.TIMEOUT, test_config.timeout)
-
-
-    #TODO use CURLOPT_READDATA http://pycurl.sourceforge.net/doc/files.html and lazy-read files if possible
-
-    # HACK: process env vars again, since we have an extract capabilitiy in validation.. this is a complete hack, but I need functionality over beauty
-    if mytest.body is not None:
-        mytest.body = os.path.expandvars(mytest.body)
-
-    # Set read function for post/put bodies
-    if mytest.method == u'POST' or mytest.method == u'PUT':
-        curl.setopt(curl.READFUNCTION, StringIO.StringIO(mytest.body).read)
-
-    if mytest.method == u'POST':
-        curl.setopt(HTTP_METHODS[u'POST'], 1)
-        if mytest.body is not None:
-            curl.setopt(pycurl.POSTFIELDSIZE, len(mytest.body))  # Required for some servers
-    elif mytest.method == u'PUT':
-        curl.setopt(HTTP_METHODS[u'PUT'], 1)
-        if mytest.body is not None:
-            curl.setopt(pycurl.INFILESIZE, len(mytest.body))  # Required for some servers
-    elif mytest.method == u'DELETE':
-        curl.setopt(curl.CUSTOMREQUEST,'DELETE')
-
-    headers = list()
-    if mytest.headers: #Convert headers dictionary to list of header entries, tested and working
-        for headername, headervalue in mytest.headers.items():
-            headers.append(str(headername) + ': ' +str(headervalue))
-    headers.append("Expect:")  # Fix for expecting 100-continue from server, which not all servers will send!
-    headers.append("Connection: close")
-    curl.setopt(curl.HTTPHEADER, headers)
-    return curl
-
 def run_test(mytest, test_config = TestConfig(), context = None):
     """ Put together test pieces: configure & run actual test, return results """
 
@@ -744,7 +741,7 @@ def run_test(mytest, test_config = TestConfig(), context = None):
         my_context = Context()
 
     mytest.update_context_before(my_context)
-    curl = configure_curl(mytest, test_config, context = my_context)
+    curl = mytest.configure_curl(timeout=test_config.timeout, context=my_context)
     result = TestResponse()
 
     # reset the body, it holds values from previous runs otherwise
@@ -806,10 +803,15 @@ def run_test(mytest, test_config = TestConfig(), context = None):
     curl.close()
     return result
 
-def run_benchmark(curl, benchmark, test_config = TestConfig()):
+def run_benchmark(benchmark, test_config = TestConfig(), context = None):
     """ Perform a benchmark, (re)using a given, configured CURL call to do so
         The actual analysis of metrics is performed separately, to allow for testing
     """
+
+    # Context handling
+    my_context = context
+    if my_context is not None:
+        my_context = Context()
 
     warmup_runs = benchmark.warmup_runs
     benchmark_runs = benchmark.benchmark_runs
@@ -820,6 +822,14 @@ def run_benchmark(curl, benchmark, test_config = TestConfig()):
     if (benchmark_runs <= 0):
         raise Exception("Invalid number of benchmark runs, must be > 0 :" + benchmark_runs)
 
+    # TODO create and use a curl-returning configuration function
+    # TODO create and use a post-benchmark cleanup function
+    # They should use isDynamic/isContextModifier to determine if they need to
+    #  worry about context and re-reading/retemplating and only do it if needed
+    #    - Also, they will need to be smart enough to handle extraction functions
+    #  For performance reasons, we don't want to re-run templating/extraction if
+    #   we do not need to, and do not want to save request bodies.
+
     #Initialize variables to store output
     output = BenchmarkResult()
     output.name = benchmark.name
@@ -828,19 +838,25 @@ def run_benchmark(curl, benchmark, test_config = TestConfig()):
     metricvalues = [METRICS[name] for name in metricnames]  # Metric variable for curl, to avoid hash lookup for every metric name
     results = [list() for x in xrange(0, len(metricnames))]  # Initialize arrays to store results for each metric
 
-    curl.setopt(pycurl.WRITEFUNCTION, lambda x: None) #Do not store actual response body at all.
-
     #Benchmark warm-up to allow for caching, JIT compiling, on client
     logging.info('Warmup: ' + message + ' started')
     for x in xrange(0, warmup_runs):
+        benchmark.update_context_before(my_context)
+        curl = benchmark.configure_curl(timeout=test_config.timeout, context=my_context)
+        curl.setopt(pycurl.WRITEFUNCTION, lambda x: None) #Do not store actual response body at all.
         if benchmark.method == u'POST' or benchmark.method == u'PUT':
             curl.setopt(curl.READFUNCTION, StringIO.StringIO(benchmark.body).read)
         curl.perform()
+        curl.close()
     logging.info('Warmup: ' + message + ' finished')
 
     logging.info('Benchmark: ' + message + ' starting')
 
     for x in xrange(0, benchmark_runs):  # Run the actual benchmarks
+        # Setup benchmark
+        benchmark.update_context_before(my_context)
+        curl = benchmark.configure_curl(timeout=test_config.timeout, context=my_context)
+        curl.setopt(pycurl.WRITEFUNCTION, lambda x: None) #Do not store actual response body at all.
         if benchmark.method == u'POST' or benchmark.method == u'PUT':
             curl.setopt(curl.READFUNCTION, StringIO.StringIO(benchmark.body).read)
 
@@ -848,11 +864,13 @@ def run_benchmark(curl, benchmark, test_config = TestConfig()):
             curl.perform()
         except Exception:
             output.failures = output.failures + 1
+            curl.close()
             continue  # Skip metrics collection
 
         # Get all metrics values for this run, and store to metric lists
         for i in xrange(0, len(metricnames)):
             results[i].append( curl.getinfo(metricvalues[i]) )
+        curl.close()
 
     logging.info('Benchmark: ' + message + ' ending')
 
@@ -860,8 +878,6 @@ def run_benchmark(curl, benchmark, test_config = TestConfig()):
     for i in xrange(0, len(metricnames)):
         temp_results[metricnames[i]] = results[i]
     output.results = temp_results
-
-    curl.close()
     return analyze_benchmark_results(output, benchmark)
 
 
@@ -1014,8 +1030,7 @@ def execute_testsets(testsets):
                 continue
 
             logging.info("Benchmark Starting: "+benchmark.name+" Group: "+benchmark.group)
-            curl = configure_curl(benchmark, myconfig)
-            benchmark_result = run_benchmark(curl, benchmark, myconfig)
+            benchmark_result = run_benchmark(benchmark, myconfig, context=context)
             print benchmark_result
             logging.info("Benchmark Done: "+benchmark.name+" Group: "+benchmark.group)
 
