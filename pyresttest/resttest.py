@@ -1,6 +1,7 @@
 import sys
 import os
 import math
+import copy
 import operator
 import yaml
 import pycurl
@@ -8,6 +9,7 @@ import json
 import csv
 import StringIO
 import logging
+import string
 from optparse import OptionParser
 from binding import Context
 from generators import GeneratorFactory
@@ -140,9 +142,9 @@ class BodyReader:
 
 class Test(object):
     """ Describes a REST test """
-    url  = None
+    _url  = None
     expected_status = [200]  # expected HTTP status code or codes
-    body = None #Request body, if any (for POST/PUT methods)
+    _body = None
     headers = dict() #HTTP Headers
     method = u'GET'
     group = u'Default'
@@ -150,10 +152,73 @@ class Test(object):
     validators = None  # Validators for response body, IE regexes, etc
     stop_on_failure = False
 
+    templates = None  # Dictionary of template to compiled template
+
     # Bind variables, generators, and contexts
     variable_binds = None
     generator_binds = None  # Dict of variable name and then generator name
     extract_binds = None  # Dict of variable name and extract function to run
+
+    # Template handling logic
+    def set_template(self, variable_name, template_string):
+        """ Add a templating instance for variable given """
+        if self.templates is None:
+            self.templates = dict()
+        self.templates[variable_name] = string.Template(template_string)
+
+    def del_template(self, variable_name):
+        """ Remove template instance, so we no longer use one for this test """
+        if self.templates is not None and variable_name in self.templates:
+            del self.templates[variable_name]
+
+    def realize_template(self, variable_name, context):
+        """ Realize a templated value, using variables from context
+            Returns None if no template is set for that variable """
+        val = None
+        if context is None:
+            return None
+        if self.templates is not None:
+            val = self.templates.get(variable_name)
+        if val is not None:
+            val = val.safe_substitute(context)
+        return val
+
+    # These are variables that can be templated
+    NAME_BODY = 'body'
+    def set_body(self, value, isTemplate=False):
+        """ Set body, passing flag if using a template """
+        if isTemplate:
+            self.set_template(NAME_BODY, value)
+        else:
+            self.del_template(NAME_BODY)
+        self._body = value
+
+    def get_body(self, context=None):
+        """ Read body from file, applying template if pertinent """
+        val = self.realize_template(NAME_BODY, context)
+        if val is None:
+            val = self._body
+        return val
+
+    body = property(get_body, set_body, None, 'Request body, if any (for POST/PUT methods)')
+
+    NAME_URL = 'url'
+    def set_url(self, value, isTemplate=False):
+        """ Set URL, passing flag if using a template """
+        if isTemplate:
+            self.set_template(NAME_URL, value)
+        else:
+            self.del_template(NAME_URL)
+        self._url = value
+
+    def get_url(self, context=None):
+        """ Get URL, applying template if pertinent """
+        val = self.realize_template(NAME_URL, context)
+        if val is None:
+            val = self._url
+        return val
+    url = property(get_url, set_url, None, 'URL fragment for request')
+
 
     def update_context_before(self, context):
         """ Make pre-test context updates, by applying variable and generator updates """
@@ -178,15 +243,26 @@ class Test(object):
 
     def isDynamic(self):
         """ Returns true if this test does templating """
-        return False
+        return self.templates is not None and len(self.templates) > 0
 
     def realize(self, context):
-        """ Return a fully-templated test object """
-        return self
+        """ Return a fully-templated test object, for configuring curl
+            Warning: this is a SHALLOW copy, mutation of fields will cause problems """
+        if not isDynamic:
+            return self
+        else:
+            selfcopy = copy.copy(self)
+            selfcopy.templates = None
+            if NAME_URL in self.templates:
+                selfcopy._body = self.get_body(context=context)
+            if NAME_BODY in self.templates:
+                selfcopy._url = self.get_url(context=context)
+            return selfcopy
 
     def __init__(self):
         self.headers = dict()
         self.expected_status = [200]
+        self.templated = dict()
 
     def __str__(self):
         return json.dumps(self, default=lambda o: o.__dict__)
@@ -257,8 +333,16 @@ class Test(object):
         for configelement, configvalue in node.items():
             #Configure test using configuration elements
             if configelement == u'url':
-                assert isinstance(configvalue,str) or isinstance(configvalue,unicode) or isinstance(configvalue,int)
-                mytest.url = base_url + unicode(configvalue,'UTF-8').encode('ascii','ignore')
+                temp = configvalue
+                if isinstance(configvalue, dict):
+                    # Template is used for URL
+                    val = lowercase_keys(configvalue)[u'template']
+                    assert isinstance(val,str) or isinstance(val,unicode) or isinstance(val,int)
+                    url = base_url + unicode(val,'UTF-8').encode('ascii','ignore')
+                    mytest.set_url(url, isTemplate=True)
+                else:
+                    assert isinstance(configvalue,str) or isinstance(configvalue,unicode) or isinstance(configvalue,int)
+                    mytest.url = base_url + unicode(configvalue,'UTF-8').encode('ascii','ignore')
             elif configelement == u'method': #Http method, converted to uppercase string
                 var = unicode(configvalue,'UTF-8').upper()
                 assert var in HTTP_METHODS
@@ -292,6 +376,7 @@ class Test(object):
                     raise Exception('Misconfigured validator, requires type property')
             elif configelement == u'body': #Read request body, either as inline input or from file
                 #Body is either {'file':'myFilePath'} or inline string with file contents
+                # TODO add template reads!
                 if isinstance(configvalue, dict) and u'file' in lowercase_keys(configvalue):
                     var = lowercase_keys(configvalue)
                     assert isinstance(var[u'file'],str) or isinstance(var[u'file'],unicode)
@@ -299,7 +384,6 @@ class Test(object):
                 elif isinstance(configvalue, str):
                     mytest.body = configvalue
                 else:
-                    # TODO add ability to handle input of directories or file lists with wildcards to test against multiple bodies
                     raise Exception('Illegal input to HTTP request body: must be string or map of file -> path')
 
             elif configelement == 'headers': #HTTP headers to use, flattened to a single string-string dictionary
@@ -831,15 +915,6 @@ def run_benchmark(benchmark, test_config = TestConfig(), context = None):
         raise Exception("Invalid number of benchmark runs, must be > 0 :" + benchmark_runs)
 
     result = TestResponse()
-
-    # Functions called before/after benchmark to deal with dynamicness & context
-    def pre_benchmark(curl_obj):
-        if benchmark.extract_binds:
-
-        pass
-
-    def post_benchmark(curl_obj):
-        pass
 
     # TODO create and use a curl-returning configuration function
     # TODO create and use a post-benchmark cleanup function
