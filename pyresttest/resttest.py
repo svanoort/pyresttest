@@ -153,9 +153,7 @@ class Test(object):
     # Bind variables, generators, and contexts
     variable_binds = None
     generator_binds = None  # Dict of variable name and then generator name
-    extract_binds = None
-
-    #In this case, config would be used by all tests following config definition, and in the same scope as tests
+    extract_binds = None  # Dict of variable name and extract function to run
 
     def update_context_before(self, context):
         """ Make pre-test context updates, by applying variable and generator updates """
@@ -164,6 +162,14 @@ class Test(object):
         if self.generator_binds:
             for key, value in self.generator_binds:
                 context.bind_generator_next(key, value)
+
+    def update_context_after(self, response_body, context):
+        """ Run the extraction routines to update variables based on HTTP response body """
+        if self.extract_binds:
+            for key, value in extract_binds:
+                result = value(response_body)
+                context.bind_variable(key, result)
+
 
     def isContextModifier(self):
         """ Returns true if context can be modified by this test
@@ -762,12 +768,14 @@ def run_test(mytest, test_config = TestConfig(), context = None):
     try:
         curl.perform() #Run the actual call
     except Exception as e:
+        result.passed = False
         print e  #TODO figure out how to handle failures where no output is generated IE connection refused
 
+    mytest.update_context_after(result.body, my_context)
     result.test = mytest
     response_code = curl.getinfo(pycurl.RESPONSE_CODE)
     result.response_code = response_code
-    result.passed = response_code in mytest.expected_status
+    result.passed = result.passed and response_code in mytest.expected_status
     logging.debug("Initial Test Result, based on expected response code: "+str(result.passed))
 
     #print str(test_config.print_bodies) + ',' + str(not result.passed) + ' , ' + str(test_config.print_bodies or not result.passed)
@@ -821,6 +829,17 @@ def run_benchmark(benchmark, test_config = TestConfig(), context = None):
         raise Exception("Invalid number of warmup runs, must be > 0 :" + warmup_runs)
     if (benchmark_runs <= 0):
         raise Exception("Invalid number of benchmark runs, must be > 0 :" + benchmark_runs)
+
+    result = TestResponse()
+
+    # Functions called before/after benchmark to deal with dynamicness & context
+    def pre_benchmark(curl_obj):
+        if benchmark.extract_binds:
+
+        pass
+
+    def post_benchmark(curl_obj):
+        pass
 
     # TODO create and use a curl-returning configuration function
     # TODO create and use a post-benchmark cleanup function
