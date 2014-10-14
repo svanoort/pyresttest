@@ -188,14 +188,14 @@ class Test(object):
     def set_body(self, value, isTemplate=False):
         """ Set body, passing flag if using a template """
         if isTemplate:
-            self.set_template(NAME_BODY, value)
+            self.set_template(self.NAME_BODY, value)
         else:
-            self.del_template(NAME_BODY)
+            self.del_template(self.NAME_BODY)
         self._body = value
 
     def get_body(self, context=None):
         """ Read body from file, applying template if pertinent """
-        val = self.realize_template(NAME_BODY, context)
+        val = self.realize_template(self.NAME_BODY, context)
         if val is None:
             val = self._body
         return val
@@ -206,14 +206,14 @@ class Test(object):
     def set_url(self, value, isTemplate=False):
         """ Set URL, passing flag if using a template """
         if isTemplate:
-            self.set_template(NAME_URL, value)
+            self.set_template(self.NAME_URL, value)
         else:
-            self.del_template(NAME_URL)
+            self.del_template(self.NAME_URL)
         self._url = value
 
     def get_url(self, context=None):
         """ Get URL, applying template if pertinent """
-        val = self.realize_template(NAME_URL, context)
+        val = self.realize_template(self.NAME_URL, context)
         if val is None:
             val = self._url
         return val
