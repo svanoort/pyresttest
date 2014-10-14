@@ -977,7 +977,9 @@ def run_benchmark(benchmark, test_config = TestConfig(), context = None):
 
 def analyze_benchmark_results(benchmark_result, benchmark):
     """ Take a benchmark result containing raw benchmark results, and do aggregation by
-    applying functions """
+    applying functions
+
+    Aggregates come out in format of metricname, aggregate_name, result """
 
     output = BenchmarkResult()
     output.name = benchmark_result.name
@@ -1034,7 +1036,7 @@ def metrics_to_tuples(raw_metrics):
 
 def write_benchmark_json(file_out, benchmark_result, benchmark, test_config = TestConfig()):
     """ Writes benchmark to file as json """
-    json.dump(benchmark_result, file_out)
+    json.dump(benchmark_result, file_out, default=lambda o: o.__dict__)
 
 def write_benchmark_csv(file_out, benchmark_result, benchmark, test_config = TestConfig()):
     """ Writes benchmark to file as csv """
@@ -1129,6 +1131,7 @@ def execute_testsets(testsets):
             logging.info("Benchmark Done: "+benchmark.name+" Group: "+benchmark.group)
 
             if benchmark.output_file:  # Write file
+                logging.debug('Writing benchmark to file in format: '+benchmark.output_format)
                 write_method = OUTPUT_METHODS[benchmark.output_format]
                 my_file =  open(benchmark.output_file, 'w')  # Overwrites file
                 logging.debug("Benchmark writing to file: " + benchmark.output_file)
