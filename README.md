@@ -98,9 +98,10 @@ python resttest.py https://api.github.com github_api_test.yaml --log debug
 ## Basic Test Set Syntax
 As you can see, tests are defined in [YAML](http://en.wikipedia.org/wiki/YAML) format.
 
-There are 3 top level test syntax elements:
+There are 5 top level test syntax elements:
 - *url:* a simple test, fetches given url via GET request and checks for good response code
 - *test*: a fully defined test (see below)
+- *benchmark*: a fully defined benchmark (see below)
 - *config* or *configuration*: overall test configuration
 - *import*: (not implemented yet) import test set into another test so you Don't Repeat Yourself
 
@@ -111,16 +112,104 @@ and fail early if configuration is nonsensical.
 
 We're all responsible adults: don't try to give a boolean or list where an integer is expected and it'll play nice.
 
-One caveat: if you define the same element (example, URL) twice in the same enclosing element, the last value will be used.  This is because of internal conversion to key-value dictionaries (they both map to the same key).
+One caveat: *if you define the same element (example, URL) twice in the same enclosing element, the last value will be used.*  In order to preserve sanity, I use last-value wins.
 
 
 # Benchmarking?
-No, not yet.  When this is done being implemented and tested, benchmarking will be done by a special configuration element underneath the test configuration.
+Oh, yes please! PyRestTest is now benchmark-enabled, allowing you to collect low-level network performance metrics from Curl itself.
 
-This means by default any defined test call can easily be converted to do microbenchmark too, with the ability to report statistics
+Benchmarks are based off of tests: they extend the configuration elements in a test, allowing you to configure the REST call similarly.
+However, they do not perform validation on the HTTP response, instead they collect metrics.
+
+There are a few custom configuration options specific to benchmarks:
+- *warmup_runs*: (default 10 if unspecified) run the benchmark calls this many times before starting to collect data, to allow for JVM warmup, caching, etc
+- *benchmark_runs*: (default 100 if unspecified) run the benchmark this many times to collect data
+- *output_file*: file name to write benchmark output to (MUST be defined), will get overwritten with each run
+- *output_format*: (default CSV if unspecified) format to write the results in ('json' or 'csv'). More on this below.
+- *metrics*: which metrics to gather (explained below), MUST be specified or benchmark will do nothing
 
 
-# Troubleshoot
+## Metrics
+There are two ways to collect performance metrics: raw data, and aggregated stats.
+Each metric may yield raw data, plus one or more aggregate values.
+- *Raw Data*: returns an array of values, one for each benchmark run
+- *Aggregates*: runs a reduction function to return a single value over the entire benchmark run
+
+To return raw data, in the 'metrics' configuration element, simply input the metric name in a list of values.
+The example below will return raw data for total time and size of download (101 values each).
+
+```
+- benchmark: # create entity
+    - name: "Basic get"
+    - url: "/api/person/"
+    - warmup_runs: 7
+    - 'benchmark_runs': '101'
+    - output_file: 'miniapp-benchmark.csv'
+    - metrics:
+        - total_time
+        - size_download
+```
+
+Aggregates are pretty straightforward:
+- *mean* or *mean_arithmetic*: arithmetic mean of data (normal 'average')
+- *mean_harmonic*: harmonic mean of data (useful for rates)
+- *median*: median, the value in the middle of sorted result set
+- *std_deviation*: standard deviation of values, useful for measuring how consistent they are
+
+Currently supported metrics are listed below, and these are a subset of Curl get_info variables.
+These variables are explained here (with the CURLINFO_ prefix removed): [curl_easy_get_info documentation](http://curl.haxx.se/libcurl/c/curl_easy_getinfo.html)
+
+*Metrics:*
+'appconnect_time', 'connect_time', 'namelookup_time', 'num_connects', 'pretransfer_time', 'redirect_count', 'redirect_time', 'request_size', 'size_download', 'size_upload', 'speed_download', 'speed_upload', 'starttransfer_time', 'total_time'
+
+
+## Benchmark report formats:
+CSV is the default report format.  CSV ouput will include:
+- Benchmark name
+- Benchmark group
+- Benchmark failure count (raw HTTP failures)
+- Raw data arrays, as a table, with headers being the metric name, sorted alphabetically
+- Aggregates: a table of results in the format of (metricname, aggregate_name, result)
+
+In JSON, the data is structured slightly differently:
+```
+{"failures": 0,
+"aggregates":
+    [["metric_name", "aggregate", "aggregateValue"] ...],
+"failures": failureCount,
+"group": "Default",
+"results": {"total_time": [value1, value2, etc], "metric2":[value1, value2, etc], ... }
+}
+```
+
+Samples:
+```
+---
+- config:
+    - testset: "Benchmark tests using test app"
+
+- benchmark: # create entity
+    - name: "Basic get"
+    - url: "/api/person/"
+    - warmup_runs: 7
+    - 'benchmark_runs': '101'
+    - output_file: 'miniapp-benchmark.csv'
+    - metrics:
+        - total_time
+        - total_time: mean
+        - total_time: median
+        - size_download
+        - speed_download: median
+
+- benchmark: # create entity
+    - name: "Get single person"
+    - url: "/api/person/1/"
+    - metrics: {speed_upload: median, speed_download: median, redirect_time: mean}
+    - ouput_format: json
+    - output_file: 'miniapp-single.json'
+```
+
+# Troubleshooting
 
 ## Cannot find argparse, pycurl, or yaml
 ```
@@ -140,6 +229,8 @@ exit
 
 ## Why not pure-python tests?
 This is intended for use in an environment where Python isn't the primary language.  You only need to know a little YAML to be able to throw together a working test for a REST API written in Java, Ruby, Python, node.js, etc.
+
+That said, there's nothing stopping you from doing the tests in python.
 
 
 ## Why YAML and not XML/JSON?
