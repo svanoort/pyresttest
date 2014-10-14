@@ -205,7 +205,7 @@ Samples:
     - name: "Get single person"
     - url: "/api/person/1/"
     - metrics: {speed_upload: median, speed_download: median, redirect_time: mean}
-    - ouput_format: json
+    - output_format: json
     - output_file: 'miniapp-single.json'
 ```
 
