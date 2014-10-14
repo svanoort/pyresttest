@@ -103,7 +103,7 @@ There are 5 top level test syntax elements:
 - *test*: a fully defined test (see below)
 - *benchmark*: a fully defined benchmark (see below)
 - *config* or *configuration*: overall test configuration
-- *import*: (not implemented yet) import test set into another test so you Don't Repeat Yourself
+- *import*: import another test set file so you Don't Repeat Yourself
 
 
 ## Syntax Limitations
