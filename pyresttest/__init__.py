@@ -1,1 +1,1 @@
-__all__ = ["resttest","generators"]
+__all__ = ["resttest","generators","binding"]
