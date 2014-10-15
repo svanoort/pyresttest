@@ -81,7 +81,9 @@ AGGREGATES = {
     'mean_harmonic': #Harmonic mean, better predicts average of rates: http://en.wikipedia.org/wiki/Harmonic_mean
         lambda x: 1.0/( sum([1.0/float(y) for y in x]) / float(len(x))),
     'median':  lambda x: median(x),
-    'std_deviation': lambda x: std_deviation(x)
+    'std_deviation': lambda x: std_deviation(x),
+    'sum' : lambda x: sum(x),
+    'total' : lambda x: sum(x)
 }
 
 def median(array):

@@ -124,7 +124,7 @@ However, they do not perform validation on the HTTP response, instead they colle
 There are a few custom configuration options specific to benchmarks:
 - *warmup_runs*: (default 10 if unspecified) run the benchmark calls this many times before starting to collect data, to allow for JVM warmup, caching, etc
 - *benchmark_runs*: (default 100 if unspecified) run the benchmark this many times to collect data
-- *output_file*: file name to write benchmark output to (MUST be defined), will get overwritten with each run
+- *output_file*: (default is None) file name to write benchmark output to, will get overwritten with each run, if none given, will write to terminal only
 - *output_format*: (default CSV if unspecified) format to write the results in ('json' or 'csv'). More on this below.
 - *metrics*: which metrics to gather (explained below), MUST be specified or benchmark will do nothing
 
@@ -155,6 +155,7 @@ Aggregates are pretty straightforward:
 - *mean_harmonic*: harmonic mean of data (useful for rates)
 - *median*: median, the value in the middle of sorted result set
 - *std_deviation*: standard deviation of values, useful for measuring how consistent they are
+- *total* or *sum*: total up the values given
 
 Currently supported metrics are listed below, and these are a subset of Curl get_info variables.
 These variables are explained here (with the CURLINFO_ prefix removed): [curl_easy_get_info documentation](http://curl.haxx.se/libcurl/c/curl_easy_getinfo.html)
