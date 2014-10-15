@@ -909,8 +909,6 @@ def run_benchmark(benchmark, test_config = TestConfig(), context = None):
     benchmark_runs = benchmark.benchmark_runs
     message = ''  #Message is name of benchmark... print it?
 
-    if (warmup_runs <= 0):
-        raise Exception("Invalid number of warmup runs, must be > 0 :" + warmup_runs)
     if (benchmark_runs <= 0):
         raise Exception("Invalid number of benchmark runs, must be > 0 :" + benchmark_runs)
 
