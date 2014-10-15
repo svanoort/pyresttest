@@ -120,6 +120,97 @@ class cd:
     def __exit__(self, etype, value, traceback):
         os.chdir(self.savedPath)
 
+class ContentHandler:
+    """ Handles content that may be (lazily) read from filesystem and/or templated to various degrees
+    Also creates pixie dust and unicorn farts on demand
+    This is pulled out because logic gets complex rather fast
+
+    Covers 6 states:
+        - Inline body content, no templating
+        - Inline body content, with templating
+        - File path to content, NO templating
+        - File path to content, content gets templated
+        - Templated path to file content (path itself is templated), file content UNtemplated
+        - Templated path to file content (path itself is templated), file content TEMPLATED
+    """
+
+    content = None  # Inline content
+    is_file = False
+    is_template_path = False
+    is_template_content = False
+    encoding = 'utf-8'
+
+    def isDynamic():
+        """ Is templating used? """
+        return is_template_path or is_template_content
+
+    def getContent(context=None):
+        """ Does all context binding and pathing to get content, templated out """
+        my_context = context
+        if not my_context:
+            my_context = Context()
+
+        if is_file:
+            path = self.content
+            if self.is_template_path:
+                path = string.Template(path).safe_substitute(my_context)
+            data = None
+            with open(path, 'r') as f:
+                data = f.read()
+
+            # Handle encoding and apply templating if pertinent
+            data = unicode(data, encoding)
+            if self.is_template_content:
+                return string.Template(data).safe_substitute(my_context)
+            else:
+                return data
+        else:
+            if self.is_template_content:
+                return string.Template(self.content).safe_substitute(my_context.get_values)
+            else:
+                return self.content
+
+    def setup(input, is_file=False, is_template_path=False, is_template_content=False, encoding='utf-8'):
+        """ Self explanatory, input is inline content or file path. Note: encoding is only used for file reads """
+        if not isinstance(input, basestring):
+            raise TypeError("Input is not a string")
+        self.content = input
+        self.is_file = is_file
+        self.is_template_path = is_template_path
+        self.is_template_content = is_template_content
+        self.encoding = encoding
+
+    @staticmethod
+    def parse_content(node):
+        """ Parse content from input node and returns ContentHandler object
+        it'll look like:
+
+            - template:
+                - file:
+                    - temple: path
+
+            or something
+
+        """
+
+        output = ContentHandler()
+        if isinstance(node, dict) or isinstance(node, list):
+            flat = lowercase_keys(flatten_dictionaries(node))
+            for key, value in flat.items():
+                if key = u'template':
+                    temp = parse_content(value)
+                elif key = u'file':
+                    if not isinstance(value, list) and not isinstance(value, dict):
+                        temp = parse_content(value)
+                        # HALP!
+                    # TODO add encoding configuration
+                pass # TODO finish parsing static content object
+        else:
+            output.setup(node)
+
+        return output
+
+
 class BodyReader:
     ''' Read from a data str/byte array into reader function for pyCurl '''
 
@@ -854,14 +945,13 @@ def run_test(mytest, test_config = TestConfig(), context = None):
     try:
         curl.perform() #Run the actual call
     except Exception as e:
-        result.passed = False
         print e  #TODO figure out how to handle failures where no output is generated IE connection refused
 
     mytest.update_context_after(result.body, my_context)
     result.test = mytest
     response_code = curl.getinfo(pycurl.RESPONSE_CODE)
     result.response_code = response_code
-    result.passed = result.passed and response_code in mytest.expected_status
+    result.passed = response_code in mytest.expected_status
     logging.debug("Initial Test Result, based on expected response code: "+str(result.passed))
 
     #print str(test_config.print_bodies) + ',' + str(not result.passed) + ' , ' + str(test_config.print_bodies or not result.passed)

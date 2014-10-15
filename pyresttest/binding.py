@@ -10,12 +10,17 @@ class Context(object):
 
     variables = dict()  # Maps variable name to current value
     generators = dict()  # Maps generator name to generator function
+    variable_change_count = 0  # Lets us see if something has been altered, avoiding needless retemplating
 
     def bind_variable(self, variable_name, variable_value):
         """ Bind a named variable to a value within the context
             This allows for passing in variables in testing """
-        self.variables[str(variable_name)] = variable_value
-        logging.debug('Context: Set variable named {0} to value {1}'.format(variable_name, variable_value))
+        str_name = str(variable_name)
+        prev = self.variables.get(str_name)
+        if prev != variable_value:
+            self.variables[str(variable_name)] = variable_value
+            self.variable_change_count = self.variable_change_count + 1
+            logging.debug('Context: altered variable named {0} to value {1}'.format(str_name, variable_value))
 
     def bind_variables(self, variable_map):
         for key, value in variable_map.items():
@@ -33,9 +38,15 @@ class Context(object):
 
     def bind_generator_next(self, variable_name, generator_name):
         """ Binds the next value for generator_name to variable_name and return value used """
-        val = self.generators[str(generator_name)].next()
-        self.variables[variable_name] = val
-        logging.debug('Context: Set variable named {0} to next value {1} from generator named {2}'.format(variable_name, val, generator_name))
+        str_gen_name = str(generator_name)
+        str_name = str(variable_name)
+        val = self.generators[str_gen_name].next()
+
+        prev = self.variables.get(str_name)
+        if prev != val:
+            self.variables[str_name] = val
+            self.variable_change_count = self.variable_change_count + 1
+            logging.debug('Context: Set variable named {0} to next value {1} from generator named {2}'.format(variable_name, val, generator_name))
         return val
 
     def get_values(self):

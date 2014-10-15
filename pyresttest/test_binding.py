@@ -15,13 +15,16 @@ class BindingTest(unittest.TestCase):
 
         context = Context()
         self.assertTrue(context.get_value('foo') is None)
+        self.assertEqual(0, context.variable_change_count)
 
         context.bind_variable('foo','bar')
         self.assertEqual('bar', context.get_value('foo'))
         self.assertEqual('bar', context.get_values()['foo'])
+        self.assertEqual(1, context.variable_change_count)
 
         context.bind_variable('foo','bar2')
         self.assertEqual('bar2', context.get_value('foo'))
+        self.assertEqual(2, context.variable_change_count)
 
     def test_generator(self):
         """ Test adding a generator """
@@ -42,6 +45,7 @@ class BindingTest(unittest.TestCase):
         context.add_generator('gen', my_gen)
 
         context.bind_generator_next('foo', 'gen')
+        self.assertEqual(1, context.variable_change_count)
         self.assertEqual(1, context.get_value('foo'))
         self.assertTrue(2, context.get_generator('gen').next())
         self.assertTrue(3, my_gen.next())
@@ -51,10 +55,10 @@ class BindingTest(unittest.TestCase):
         context = Context()
         context.add_generator('gen', count_gen())
         context.bind_variable('foo', '100')
+        self.assertEqual(1, context.variable_change_count)
         context.bind_generator_next('foo', 'gen')
         self.assertEqual(1, context.get_value('foo'))
-
-
+        self.assertEqual(2, context.variable_change_count)
 
 if __name__ == '__main__':
     unittest.main()
