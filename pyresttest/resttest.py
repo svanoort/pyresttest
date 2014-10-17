@@ -197,9 +197,9 @@ class ContentHandler:
         if isinstance(node, dict) or isinstance(node, list):
             flat = lowercase_keys(flatten_dictionaries(node))
             for key, value in flat.items():
-                if key = u'template':
+                if key == u'template':
                     temp = parse_content(value)
-                elif key = u'file':
+                elif key == u'file':
                     if not isinstance(value, list) and not isinstance(value, dict):
                         temp = parse_content(value)
                         # HALP!
