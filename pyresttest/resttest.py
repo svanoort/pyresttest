@@ -11,8 +11,11 @@ import StringIO
 import logging
 import string
 from optparse import OptionParser
+
+from parsing import flatten_dictionaries, lowercase_keys, safe_to_bool
 from binding import Context
 from generators import GeneratorFactory
+
 
 DEFAULT_TIMEOUT = 10  # Seconds
 
@@ -788,20 +791,6 @@ def build_testsets(base_url, test_structure, test_files = set() ):
     testsets.append(testset)
     return testsets
 
-def safe_to_bool(input):
-    """ Safely convert user input to a boolean, throwing exception if not boolean or boolean-appropriate string
-      For flexibility, we allow case insensitive string matching to false/true values
-      If it's not a boolean or string that matches 'false' or 'true' when ignoring case, throws an exception """
-    if isinstance(input,bool):
-        return input
-    elif isinstance(input,unicode) or isinstance(input,str) and unicode(input,'UTF-8').lower() == u'false':
-        return False
-    elif isinstance(input,unicode) or isinstance(input,str) and unicode(input,'UTF-8').lower() == u'true':
-        return True
-    else:
-        raise TypeError('Input Object is not a boolean or string form of boolean!')
-
-
 def make_configuration(node):
     """ Convert input object to configuration information """
     test_config = TestConfig()
@@ -828,29 +817,6 @@ def make_configuration(node):
             test_config.generators = gen_map
 
     return test_config
-
-def flatten_dictionaries(input):
-    """ Flatten a list of dictionaries into a single dictionary, to allow flexible YAML use
-      Dictionary comprehensions can do this, but would like to allow for pre-Python 2.7 use
-      If input isn't a list, just return it.... """
-    output = dict()
-    if isinstance(input, list):
-        for map in input:
-            output.update(map)
-    else: #Not a list of dictionaries
-        output = input;
-    return output
-
-def lowercase_keys(input_dict):
-    """ Take input and if a dictionary, return version with keys all lowercase """
-    if not isinstance(input_dict,dict):
-        return input_dict
-
-    safe = dict()
-    for key,value in input_dict.items():
-        safe[str(key).lower()] = value
-    return safe
-
 
 def read_file(path): #TODO implementme, handling paths more intelligently
     """ Read an input into a file, doing necessary conversions around relative path handling """

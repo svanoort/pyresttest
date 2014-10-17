@@ -1,2 +1,2 @@
 #!/usr/bin/bash
-python -m unittest pyresttest.test_resttest pyresttest.test_generators pyresttest.test_binding
+python -m unittest pyresttest.test_resttest pyresttest.test_generators pyresttest.test_binding pyresttest.test_parsing

@@ -73,34 +73,6 @@ class TestRestTest(unittest.TestCase):
         self.assertTrue(test.isContextModifier())
 
 
-    def test_safe_boolean(self):
-        """ Test safe conversion to boolean """
-        self.assertFalse(resttest.safe_to_bool(False))
-        self.assertTrue(resttest.safe_to_bool(True))
-        self.assertTrue(resttest.safe_to_bool('True'))
-        self.assertTrue(resttest.safe_to_bool('true'))
-        self.assertTrue(resttest.safe_to_bool('truE'))
-        self.assertFalse(resttest.safe_to_bool('false'))
-
-        #Try things that should throw exceptions
-        try:
-            boolean = resttest.safe_to_bool('fail')
-            raise AssertionError('Failed to throw type error that should have')
-        except TypeError:
-            pass #Good
-
-        try:
-            boolean = resttest.safe_to_bool([])
-            raise AssertionError('Failed to throw type error that should have')
-        except TypeError:
-            pass #Good
-
-        try:
-            boolean = resttest.safe_to_bool(None)
-            raise AssertionError('Failed to throw type error that should have')
-        except TypeError:
-            pass #Good
-
     def test_benchmark_configuration(self):
         """ Test basic parsing of benchmark configuration from YAML """
 
@@ -126,45 +98,6 @@ class TestRestTest(unittest.TestCase):
         self.assertEqual(2, len(cfg.aggregated_metrics))
         self.assertEqual(2, len(cfg.aggregated_metrics['total_time']))
         self.assertEqual(1, len(cfg.aggregated_metrics['pretransfer_time']))
-
-
-    def test_flatten(self):
-        """ Test flattening of lists of dictionaries to single dictionaries """
-
-        #Test happy path: list of single-item dictionaries in
-        array = [{"url" : "/cheese"}, {"method" : "POST"}]
-        expected = {"url" :"/cheese", "method" : "POST"}
-        output = resttest.flatten_dictionaries(array)
-        self.assertTrue(isinstance(output,dict))
-        self.assertFalse( len(set(output.items()) ^ set(expected.items())) ) #Test that expected output matches actual
-
-        #Test dictionary input
-        array = {"url" : "/cheese", "method" : "POST"}
-        expected = {"url" : "/cheese", "method" : "POST"}
-        output = resttest.flatten_dictionaries(array)
-        self.assertTrue(isinstance(output,dict))
-        self.assertTrue( len(set(output.items()) ^ set(expected.items())) == 0) #Test that expected output matches actual
-
-        #Test empty list input
-        array = []
-        expected = {}
-        output = resttest.flatten_dictionaries(array)
-        self.assertTrue(isinstance(output,dict))
-        self.assertFalse( len(set(output.items()) ^ set(expected.items())) ) #Test that expected output matches actual
-
-        #Test empty dictionary input
-        array = {}
-        expected = {}
-        output = resttest.flatten_dictionaries(array)
-        self.assertTrue(isinstance(output,dict))
-        self.assertFalse( len(set(output.items()) ^ set(expected.items())) ) #Test that expected output matches actual
-
-        #Test mixed-size input dictionaries
-        array = [{"url" : "/cheese"}, {"method" : "POST", "foo" : "bar"}]
-        expected = {"url" : "/cheese", "method" : "POST", "foo" : "bar"}
-        output = resttest.flatten_dictionaries(array)
-        self.assertTrue(isinstance(output,dict))
-        self.assertFalse( len(set(output.items()) ^ set(expected.items())) ) #Test that expected output matches actual
 
 
     def test_median(self):
