@@ -13,6 +13,24 @@ Example: generators that case-swap
 
 INT32_MAX_VALUE = 2147483647  # Max of 32 bit unsigned int
 
+CHARACTER_SETS = {
+    """ Character sets to use in text generation, python string plus extras """
+    'ascii_letters': string.ascii_letters,
+    'ascii_lowercase': string.ascii_lowercase,
+    'ascii_uppercase': string.ascii_uppercase,
+    'digits': string.digits,
+    'hexdigits': string.hexdigits,
+    'hex_lower':  string.digits+'abcdef',
+    'hex_upper':  string.digits+'ABCDEF',
+    'letters': string.letters,
+    'lowercase': string.lowercase,
+    'octdigits': string.octdigits,
+    'punctuation': string.punctuation,
+    'printable': string.printable,
+    'uppercase': string.uppercase,
+    'whitespace': string.whitespace
+}
+
 def factory_generate_ids(starting_id=1, increment=1):
     """ Return function generator for ids starting at starting_id
         Note: needs to be called with () to make generator """
@@ -34,17 +52,19 @@ def generator_random_int32():
     while (True):
         yield random.randint(0, INT32_MAX_VALUE)
 
-def factory_generate_text(legal_characters=string.ascii_letters, length=8):
+def factory_generate_text(legal_characters=string.ascii_letters, min_length=8, max_length=8):
     """ Returns a generator function for text with given legal_characters string and length
         Default is ascii letters, length 8
 
         For hex digits, combine with string.hexstring, etc
         """
     def generate_text():
-        my_len = length
+        local_min_len = min_length
+        local_max_len = max_length
         rand = random.Random()
         while(True):
-            array = [random.choice(legal_characters) for x in xrange(0, my_len)]
+            length = random.randint(local_min_len, local_max_len)
+            array = [random.choice(legal_characters) for x in xrange(0, length)]
             yield ''.join(array)
 
     return generate_text
@@ -73,16 +93,43 @@ def factory_env_string(env_string):
 class GeneratorFactory:
     """ Implements the parsing logic for YAML, and acts as single point for reading configuration """
 
-    # List generators and supply a parsing function if needed
-    GENERATOR_TYPES = {
-        'env_variable' : None,
-        'env_string' : None,
-        'count_numbers' : None,
-        'rand_int' : None
-    }
+    def parse_random_text_generator(configuration):
+        """ Parses configuration options for a random text generator """
+        character_set = configuration.get(u'character_set').lower()
+        characters = None
+        if character_set:
+            if character_set not in CHARACTER_SETS:
+                raise ValueError("Illegal character set name, is not defined: {0}".format(character_set))
+            characters = CHARACTER_SETS[character_set]
+        else:  # Custom characters listing, not a character set
+            characters = configuration.get(u'characters')
 
+        min_length = 8
+        max_length = 8
 
-    """ Builds generators from configuration elements """
+        if configuration.get(u'min_length'):
+            min_length = int(configuration.get(u'min_length'))
+        if configuration.get(u'max_length'):
+            max_length = int(configuration.get(u'max_length'))
+
+        if configuration.get(u'length'):
+            length = int(configuration.get(u'length'))
+            min_length = length
+            max_length = length
+
+        if characters:
+            return factory_generate_text(legal_characters=characters)()
+        else:
+            return factory_generate_text(min_length=min_length, max_length=max_length)()
+
+    # List of valid generator types
+    GENERATOR_TYPES = set(['env_variable',
+        'env_string',
+        'count_numbers',
+        'rand_int',
+        'random_text'
+    ])
+
     def parse(configuration):
         """ Parses a configuration built from yaml and returns a generator
             Configuration should be a map
@@ -90,14 +137,11 @@ class GeneratorFactory:
 
         configuration = resttest.lowercase_keys(resttest.flatten_dictionaries(configuration))
         gen_type = str(configuration.get(u'type'))
-        parse_function = GENERATOR_TYPES.get(gen_type)
 
         if gen_type not in GENERATOR_TYPES:
             raise ValueError('Generator type given {0} is not valid '.format(gen_type))
-        elif parse_function:
-            return parse_function(configuration)
 
-        # Do the easy parsing
+        # Do the easy parsing, delegate more complex logic to parsing functions
         if gen_type == u'env_variable':
             return factory_env_variable(configuration[u'variable_name'])
         elif gen_type == u'env_string':
@@ -112,3 +156,7 @@ class GeneratorFactory:
             return factory_generate_ids(start, increment)
         elif gen_type == u'rand_int':
             return generator_random_int32()
+        elif gen_type == u'random_text':
+            return parse_random_text_generator(configuration)
+        else:
+            raise Exception("Unknown generator type: {0}".format('gen_type'))

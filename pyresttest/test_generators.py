@@ -71,15 +71,40 @@ class GeneratorTest(unittest.TestCase):
 
 
     def test_factory_text(self):
+        """ Test the basic generator """
         charsets = [string.letters, string.digits, string.uppercase, string.hexdigits]
         # Test multiple charsets and string lengths
         for charset in charsets:
             # Test different lengths for charset
             for my_length in xrange(1,17):
-                gen = generators.factory_generate_text(legal_characters = charset, length=my_length)()
+                gen = generators.factory_generate_text(legal_characters = charset, min_length=my_length, max_length=my_length)()
                 for x in xrange(0,10):
                     val = gen.next()
                     self.assertEqual(my_length, len(val))
+
+    def test_factory_text_multilength(self):
+        """ Test that the random text generator can handle multiple lengths """
+        gen = generators.factory_generate_text(legal_characters='abcdefghij', min_length=1,max_length=100)()
+        lengths = set()
+        for x in xrange(0,100):
+            lengths.add(len(gen.next()))
+        self.assertTrue(len(lengths) > 1, "Variable length string generator did not generate multiple string lengths")
+
+    def test_character_sets(self):
+        """ Verify all charsets are valid """
+        sets = generators.CHARACTER_SETS
+        for key, value in sets.items():
+            self.assertTrue(value)
+
+    def test_parse_text_generator(self):
+        """ Test the text generator parsing """
+        pass
+
+    def test_parse_basic(self):
+        """ Test basic parsing, simple cases that should succeed or throw known errors """
+
+        pass
+
 
 if __name__ == '__main__':
     unittest.main()
