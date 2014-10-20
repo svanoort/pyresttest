@@ -136,10 +136,9 @@ class RestTestCase(unittest.TestCase):
         """ Benchmark basic local get test """
         test = resttest.Test()
         test.url = self.prefix + '/api/person/'
-        curl = resttest.configure_curl(test)
         benchmark_config = resttest.Benchmark();
         benchmark_config.add_metric('total_time').add_metric('total_time','median')
-        benchmark_result = resttest.benchmark(curl, benchmark_config)
+        benchmark_result = resttest.run_benchmark(benchmark_config)
         print "Benchmark - median request time: " + str(benchmark_result.aggregates[0])
         self.assertTrue(benchmark_config.benchmark_runs, len(benchmark_result.results['total_time']))
 
