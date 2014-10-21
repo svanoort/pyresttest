@@ -1,0 +1,111 @@
+# Test parsing and logic around templating
+# Using included Django test app
+
+# First install python-django
+# Then launch the app in another terminal by doing
+#   cd testapp
+#   python manage.py testserver test_data.json
+# Once launched, tests can be executed via:
+# 	python resttest.py http://localhost:8000 {this_file_name}
+---
+- config:
+    - testset: "Test content/url templating & file read"
+- test:
+    - name: "Create/update person 7, no template"
+    - url: "/api/person/7/"
+    - method: "PUT"
+    - headers: {'Content-Type': 'application/json'}
+    - body: '{"first_name": "Gaius","id": "7","last_name": "Romani","login": "gromani"}'
+- test:
+    - name: "Basic get for simple user"
+    - url: "/api/person/7/"
+- test:
+    - name: "Get single person"
+    - url: "/api/person/7/"
+    - method: 'DELETE'
+
+- test: # Inline body, all around templating
+    - name: "Create/update person 8 with templating"
+    - variable_binds: {id: 8, login: traitor}
+    - url: {"template":"/api/person/$id/"}
+    - method: "PUT"
+    - headers: {'Content-Type': 'application/json'}
+    - body: '{"first_name": "Gaius","id": "$id","last_name": "Baltar","login": "$login"}'
+- test:
+    - name: "Basic get with templating"
+    - url: {template: "/api/person/$id/"}
+- test:
+    - name: "Delete single person with templating"
+    - url: "/api/person/$id/"
+    - method: 'DELETE'
+- test:
+    - name: "Templated get to confirm deletion"
+    - url: {template: "/api/person/8/"}
+    - expected_status: [404]
+
+# Body from file testing
+- test:
+    - name: "Create/update person 9 using body from file"
+    - url: "/api/person/9/"
+    - method: "PUT"
+    - headers: {'Content-Type': 'application/json'}
+    - body: {'file':'person_body_notemplate.json'}
+- test:
+    - name: "Confirm person 9 create"
+    - url: {template: "/api/person/9/"}
+- test:
+    - name: "Cleanup person 9"
+    - url: "/api/person/9/"
+    - method: 'DELETE'
+
+# Body from file with templating for the body content
+- test:
+    - name: "Create/update person 10 using body from file"
+    - variable_binds: {id: 10, login: 'horseyface'}
+    - url: "/api/person/10/"
+    - method: "PUT"
+    - headers: {'Content-Type': 'application/json'}
+    - body: {'template':{'file':'person_body_notemplate.json'}}
+- test:
+    - name: "Confirm person 10 create"
+    - url: "/api/person/10/"
+- test:
+    - name: "Cleanup person 10"
+    - url: "/api/person/10/"
+    - method: 'DELETE'
+
+# Template body path, but not body itself
+- test:
+    - name: "Create/update person 11 using templating for body path"
+    - variable_binds: {'path':'person_body_notemplate.json'}
+    - url: "/api/person/11/"
+    - method: "PUT"
+    - headers: {'Content-Type': 'application/json'}
+    - body: {'file':{'template':'$path'}}
+- test:
+    - name: "Confirm person 11 create"
+    - url: "/api/person/11/"
+- test:
+    - name: "Cleanup person 11"
+    - url: "/api/person/10/"
+    - method: 'DELETE'
+
+# Template both request content and its path
+- test:
+    - name: "Create/update person 12 using templating for body path"
+    - variable_binds:
+        - 'path': 'person_body_template.json'
+        - id: 12
+        - login: 'random'
+    - url: "/api/person/12/"
+    - method: "PUT"
+    - headers: {'Content-Type': 'application/json'}
+    - body: {'file':{'template':'$path'}}
+- test:
+    - name: "Confirm person 12 create"
+    - url: "/api/person/12/"
+- test:
+    - name: "Cleanup person 12"
+    - url: "/api/person/12/"
+    - method: 'DELETE'
+
