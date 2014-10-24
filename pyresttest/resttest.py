@@ -12,8 +12,19 @@ import StringIO
 import logging
 import string
 from optparse import OptionParser
-from binding import Context
-from generators import GeneratorFactory
+
+
+# Allow execution from anywhere as long as library is installed
+try:
+    from binding import Context
+except ImportError:
+    from pyresttest.binding import Context
+
+try:
+    from generators import GeneratorFactory
+except ImportError:
+    from pyresttest.generators import GeneratorFactory
+
 
 DEFAULT_TIMEOUT = 10  # Seconds
 
