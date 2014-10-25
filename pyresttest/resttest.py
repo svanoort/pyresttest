@@ -154,47 +154,41 @@ class ContentHandler:
     is_file = False
     is_template_path = False
     is_template_content = False
-    encoding = 'utf-8'
 
-    def isDynamic():
+    def is_dynamic(self):
         """ Is templating used? """
-        return is_template_path or is_template_content
+        return self.is_template_path or self.is_template_content
 
-    def getContent(context=None):
+    def get_content(self, context=None):
         """ Does all context binding and pathing to get content, templated out """
-        my_context = context
-        if not my_context:
-            my_context = Context()
 
-        if is_file:
+        if self.is_file:
             path = self.content
-            if self.is_template_path:
-                path = string.Template(path).safe_substitute(my_context)
+            if self.is_template_path and context:
+                path = string.Template(path).safe_substitute(context.get_values())
             data = None
             with open(path, 'r') as f:
                 data = f.read()
 
-            # Handle encoding and apply templating if pertinent
-            data = unicode(data, encoding)
-            if self.is_template_content:
-                return string.Template(data).safe_substitute(my_context)
+            if self.is_template_content and context:
+                return string.Template(data).safe_substitute(context.get_values())
             else:
                 return data
         else:
-            if self.is_template_content:
-                return string.Template(self.content).safe_substitute(my_context.get_values)
+            if self.is_template_content and context:
+                return string.Template(self.content).safe_substitute(context.get_values())
             else:
                 return self.content
 
-    def setup(input, is_file=False, is_template_path=False, is_template_content=False, encoding='utf-8'):
-        """ Self explanatory, input is inline content or file path. Note: encoding is only used for file reads """
+    def setup(self, input, is_file=False, is_template_path=False, is_template_content=False):
+        """ Self explanatory, input is inline content or file path.
+            Encoding is simply passed through intact. """
         if not isinstance(input, basestring):
             raise TypeError("Input is not a string")
         self.content = input
         self.is_file = is_file
         self.is_template_path = is_template_path
         self.is_template_content = is_template_content
-        self.encoding = encoding
 
     @staticmethod
     def parse_content(node):
@@ -209,22 +203,54 @@ class ContentHandler:
 
         """
 
+        # Tread carefully, this one is a bit narly because of nesting
         output = ContentHandler()
-        if isinstance(node, dict) or isinstance(node, list):
+        is_template_path = False
+        is_template_content = False
+        is_file = False
+        is_done = False
+
+        while (node and not is_done):  # Dive through the configuration tree
+            # Finally we've found the value!
+            if isinstance(node, basestring):
+                output.content = node
+                output.setup(node, is_file=is_file, is_template_path=is_template_path, is_template_content=is_template_content)
+                return output
+            elif not isinstance(node, dict) and not isinstance(node, list):
+                raise TypeError("Content must be a string, dictionary, or list of dictionaries")
+
+            is_done = True
+
+            # Dictionary or list of dictionaries
             flat = lowercase_keys(flatten_dictionaries(node))
             for key, value in flat.items():
                 if key == u'template':
-                    temp = parse_content(value)
-                elif key == u'file':
-                    if not isinstance(value, list) and not isinstance(value, dict):
-                        temp = parse_content(value)
-                        # HALP!
-                    # TODO add encoding configuration
-                pass # TODO finish parsing static content object
-        else:
-            output.setup(node)
+                    if isinstance(value, basestring):
+                        output.content = value
+                        is_template_content = is_template_content or not is_file
+                        output.is_template_content = is_template_content
+                        output.is_template_path = is_file
+                        output.is_file = is_file
+                        return output
+                    else:
+                        is_template_content = True
+                        node = value
+                        is_done = False
+                        break
 
-        return output
+                elif key == 'file':
+                    if isinstance(value, basestring):
+                        output.content = value
+                        output.is_file = True
+                        output.is_template_content = is_template_content
+                        return output
+                    else:
+                        is_file = True
+                        node = value
+                        is_done = False
+                        break
+
+        raise Exception("Invalid configuration for content.")
 
 
 class BodyReader:
@@ -345,19 +371,19 @@ class Test(object):
                 context.bind_variable(key, result)
 
 
-    def isContextModifier(self):
+    def is_context_modifier(self):
         """ Returns true if context can be modified by this test
             (disallows caching of templated test bodies) """
         return self.variable_binds or self.generator_binds or self.extract_binds
 
-    def isDynamic(self):
+    def is_dynamic(self):
         """ Returns true if this test does templating """
         return self.templates is not None and len(self.templates) > 0
 
     def realize(self, context):
         """ Return a fully-templated test object, for configuring curl
             Warning: this is a SHALLOW copy, mutation of fields will cause problems """
-        if not isDynamic:
+        if not is_dynamic:
             return self
         else:
             selfcopy = copy.copy(self)
@@ -1024,7 +1050,7 @@ def run_benchmark(benchmark, test_config = TestConfig(), context = None):
 
     # TODO create and use a curl-returning configuration function
     # TODO create and use a post-benchmark cleanup function
-    # They should use isDynamic/isContextModifier to determine if they need to
+    # They should use is_dynamic/is_context_modifier to determine if they need to
     #  worry about context and re-reading/retemplating and only do it if needed
     #    - Also, they will need to be smart enough to handle extraction functions
     #  For performance reasons, we don't want to re-run templating/extraction if
