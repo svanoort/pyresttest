@@ -24,51 +24,51 @@
     - url: "/api/person/7/"
     - method: 'DELETE'
 
-- test: # Inline body, all around templating
+- test: # Inline body, template URL and body
     - name: "Create/update person 8 with templating"
     - variable_binds: {id: 8, login: traitor}
     - url: {"template":"/api/person/$id/"}
     - method: "PUT"
     - headers: {'Content-Type': 'application/json'}
-    - body: '{"first_name": "Gaius","id": "$id","last_name": "Baltar","login": "$login"}'
+    - body: {template: '{"first_name": "Gaius","id": "$id","last_name": "Baltar","login": "$login"}'}
 - test:
     - name: "Basic get with templating"
     - url: {template: "/api/person/$id/"}
 - test:
     - name: "Delete single person with templating"
-    - url: "/api/person/$id/"
+    - url: {template: "/api/person/$id/"}
     - method: 'DELETE'
 - test:
     - name: "Templated get to confirm deletion"
     - url: {template: "/api/person/8/"}
     - expected_status: [404]
 
-# Body from file testing
+# Body from file with templating for file content
 - test:
-    - name: "Create/update person 9 using body from file"
-    - url: "/api/person/9/"
+    - name: "Create/update person 9 using templated body from file"
+    - variable_binds: {id: 9, login: 'horseyface'}
+    - url: {'template': "/api/person/$id/"}
     - method: "PUT"
     - headers: {'Content-Type': 'application/json'}
-    - body: {'file':'person_body_notemplate.json'}
+    - body: {'template':{'file':'person_body_template.json'}}
 - test:
     - name: "Confirm person 9 create"
-    - url: {template: "/api/person/9/"}
+    - url: "/api/person/9/"
 - test:
     - name: "Cleanup person 9"
     - url: "/api/person/9/"
     - method: 'DELETE'
 
-# Body from file with templating for the body content
+# Body from file testing, no actual templating, one no-op templating on URL
 - test:
     - name: "Create/update person 10 using body from file"
-    - variable_binds: {id: 10, login: 'horseyface'}
     - url: "/api/person/10/"
     - method: "PUT"
     - headers: {'Content-Type': 'application/json'}
-    - body: {'template':{'file':'person_body_notemplate.json'}}
+    - body: {'file':'person_body_notemplate.json'}
 - test:
     - name: "Confirm person 10 create"
-    - url: "/api/person/10/"
+    - url: {template: "/api/person/10/"}
 - test:
     - name: "Cleanup person 10"
     - url: "/api/person/10/"
@@ -76,17 +76,17 @@
 
 # Template body path, but not body itself
 - test:
-    - name: "Create/update person 11 using templating for body path"
+    - name: "Create/update person 10 using templating for body path"
     - variable_binds: {'path':'person_body_notemplate.json'}
-    - url: "/api/person/11/"
+    - url: "/api/person/10/"
     - method: "PUT"
     - headers: {'Content-Type': 'application/json'}
     - body: {'file':{'template':'$path'}}
 - test:
-    - name: "Confirm person 11 create"
-    - url: "/api/person/11/"
+    - name: "Confirm person 10 create"
+    - url: "/api/person/10/"
 - test:
-    - name: "Cleanup person 11"
+    - name: "Cleanup person 10"
     - url: "/api/person/10/"
     - method: 'DELETE'
 
@@ -100,7 +100,7 @@
     - url: "/api/person/12/"
     - method: "PUT"
     - headers: {'Content-Type': 'application/json'}
-    - body: {'file':{'template':'$path'}}
+    - body: {template: {'file':{'template':'$path'}}}
 - test:
     - name: "Confirm person 12 create"
     - url: "/api/person/12/"

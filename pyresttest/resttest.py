@@ -309,18 +309,13 @@ class Test(object):
         """ Realize a templated value, using variables from context
             Returns None if no template is set for that variable """
         val = None
-        if context is None:
+        if context is None or self.templates is None or variable_name not in self.templates:
             return None
-        if self.templates is not None:
-            val = self.templates.get(variable_name)
-        if val is not None:
-            val = val.safe_substitute(context)
-        return val
+        return self.templates[variable_name].safe_substitute(context.get_values())
 
     # These are variables that can be templated
     def set_body(self, value):
-        """ Set body.  If body is a ContentHandler, it'll be used
-            Otherwise, if string, it'll be set directly """
+        """ Set body, directly """
         self._body = value
 
     def get_body(self, context=None):
@@ -375,19 +370,23 @@ class Test(object):
 
     def is_dynamic(self):
         """ Returns true if this test does templating """
-        return self.templates is not None and len(self.templates) > 0
+        if self.templates and self.templates.keys():
+            return True
+        elif isinstance(self._body, ContentHandler) and self._body.is_dynamic():
+            return True
+        return False
 
-    def realize(self, context):
+    def realize(self, context=None):
         """ Return a fully-templated test object, for configuring curl
-            Warning: this is a SHALLOW copy, mutation of fields will cause problems """
-        if not is_dynamic:
+            Warning: this is a SHALLOW copy, mutation of fields will cause problems!
+            Can accept a None context """
+        if not self.is_dynamic():
             return self
         else:
             selfcopy = copy.copy(self)
             selfcopy.templates = None
-            if NAME_URL in self.templates:
-                selfcopy._body = self.get_body(context=context)
-            if NAME_BODY in self.templates:
+            selfcopy._body = self.get_body(context=context)
+            if self.templates and self.NAME_URL in self.templates:
                 selfcopy._url = self.get_url(context=context)
             return selfcopy
 
@@ -401,11 +400,6 @@ class Test(object):
 
     def configure_curl(self, timeout=DEFAULT_TIMEOUT, context=None):
         """ Create and mostly configure a curl object for test """
-
-        # Initialize new context if absent
-        my_context = context
-        if my_context is not None:
-            my_context = Context()
 
         curl = pycurl.Curl()
         # curl.setopt(pycurl.VERBOSE, 1)  # Debugging convenience
@@ -950,12 +944,14 @@ def run_test(mytest, test_config = TestConfig(), context = None):
 
     # Initialize a context if not supplied
     my_context = context
-    if my_context is not None:
+    if my_context is None:
         my_context = Context()
 
     mytest.update_context_before(my_context)
-    curl = mytest.configure_curl(timeout=test_config.timeout, context=my_context)
+    templated_test = mytest.realize(my_context)
+    curl = templated_test.configure_curl(timeout=test_config.timeout, context=my_context)
     result = TestResponse()
+    result.test = templated_test
 
     # reset the body, it holds values from previous runs otherwise
     result.body = bytearray()
@@ -977,8 +973,8 @@ def run_test(mytest, test_config = TestConfig(), context = None):
     except Exception as e:
         print e  #TODO figure out how to handle failures where no output is generated IE connection refused
 
+
     mytest.update_context_after(result.body, my_context)
-    result.test = mytest
     response_code = curl.getinfo(pycurl.RESPONSE_CODE)
     result.response_code = response_code
     result.passed = response_code in mytest.expected_status
@@ -1024,7 +1020,7 @@ def run_benchmark(benchmark, test_config = TestConfig(), context = None):
 
     # Context handling
     my_context = context
-    if my_context is not None:
+    if my_context is None:
         my_context = Context()
 
     warmup_runs = benchmark.warmup_runs
@@ -1056,7 +1052,8 @@ def run_benchmark(benchmark, test_config = TestConfig(), context = None):
     logging.info('Warmup: ' + message + ' started')
     for x in xrange(0, warmup_runs):
         benchmark.update_context_before(my_context)
-        curl = benchmark.configure_curl(timeout=test_config.timeout, context=my_context)
+        templated = benchmark.realize(my_context)
+        curl = templated.configure_curl(timeout=test_config.timeout, context=my_context)
         curl.setopt(pycurl.WRITEFUNCTION, lambda x: None) #Do not store actual response body at all.
         if benchmark.method == u'POST' or benchmark.method == u'PUT':
             curl.setopt(curl.READFUNCTION, StringIO.StringIO(benchmark.body).read)
@@ -1217,7 +1214,8 @@ def execute_testsets(testsets):
             result.body = None  # Remove the body, save some memory!
 
             if not result.passed: #Print failure, increase failure counts for that test group
-                logging.error('Test Failed: '+test.name+" URL="+test.url+" Group="+test.group+" HTTP Status Code: "+str(result.response_code))
+                # Use result test URL to allow for templating
+                logging.error('Test Failed: '+test.name+" URL="+result.test.url+" Group="+test.group+" HTTP Status Code: "+str(result.response_code))
 
                 if test.validators is not None:
                     for validator in test.validators:

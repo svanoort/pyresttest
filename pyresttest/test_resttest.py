@@ -75,6 +75,34 @@ class TestRestTest(unittest.TestCase):
         self.assertEqual('value', context.get_value('var'))
         self.assertTrue(test.is_context_modifier())
 
+    def test_test_url_templating(self):
+        test = Test()
+        test.set_url('$cheese', isTemplate=True)
+        self.assertTrue(test.is_dynamic())
+        self.assertEqual('$cheese', test.get_url())
+        self.assertTrue(test.templates['url'])
+
+        context = Context()
+        context.bind_variable('cheese', 'stilton')
+        self.assertEqual('stilton', test.get_url(context=context))
+
+        realized = test.realize(context)
+        self.assertEqual('stilton', realized.url)
+
+    def test_test_content_templating(self):
+        test = Test()
+        handler = ContentHandler()
+        handler.is_template_content = True
+        handler.content = '{"first_name": "Gaius","id": "$id","last_name": "Baltar","login": "$login"}'
+        context = Context()
+        context.bind_variables({'id':9, 'login':'kvothe'})
+        test.set_body(handler)
+
+        templated = test.realize(context=context)
+        self.assertEqual(string.Template(handler.content).safe_substitute(context.get_values()),
+            templated.body)
+
+
     def test_content_templating(self):
         """ Test content and templating of it """
         handler = ContentHandler()
@@ -90,14 +118,13 @@ class TestRestTest(unittest.TestCase):
         # Templating
         handler.setup(body, is_template_content=True)
         self.assertEqual(body, handler.get_content())
-        self.assertEqual(body, handler.get_content())
 
     def test_content_file_template(self):
         """ Test file read and templating of read files """
         variables = {'id':1, 'login':'thewizard'}
         context = Context()
 
-        file_path = 'person_body_template.json'
+        file_path = './pyresttest/person_body_template.json'
         file_content = None
         with open(file_path, 'r') as f:
             file_content = f.read()
