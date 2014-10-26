@@ -1,4 +1,5 @@
 import string
+import os
 from parsing import *
 
 """
@@ -53,6 +54,8 @@ class ContentHandler:
         """ Self explanatory, input is inline content or file path. """
         if not isinstance(input, basestring):
             raise TypeError("Input is not a string")
+        if is_file:
+            input = os.path.abspath(input)
         self.content = input
         self.is_file = is_file
         self.is_template_path = is_template_path
@@ -94,6 +97,8 @@ class ContentHandler:
             for key, value in flat.items():
                 if key == u'template':
                     if isinstance(value, basestring):
+                        if is_file:
+                            value = os.path.abspath(value)
                         output.content = value
                         is_template_content = is_template_content or not is_file
                         output.is_template_content = is_template_content
@@ -108,7 +113,7 @@ class ContentHandler:
 
                 elif key == 'file':
                     if isinstance(value, basestring):
-                        output.content = value
+                        output.content = os.path.abspath(value)
                         output.is_file = True
                         output.is_template_content = is_template_content
                         return output

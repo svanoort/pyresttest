@@ -57,11 +57,13 @@ class cd:
         self.newPath = newPath
 
     def __enter__(self):
-        self.savedPath = os.getcwd()
-        os.chdir(self.newPath)
+        if self.newPath:  # Don't CD to nothingness
+            self.savedPath = os.getcwd()
+            os.chdir(self.newPath)
 
     def __exit__(self, etype, value, traceback):
-        os.chdir(self.savedPath)
+        if self.newPath:  # Don't CD to nothingness
+            os.chdir(self.savedPath)
 
 class TestConfig:
     """ Configuration for a test run """
@@ -133,11 +135,11 @@ class TestResponse:
 
 def read_test_file(path):
     """ Read test file at 'path' in YAML """
-    #TODO Handle multiple test sets in a given doc
+    #TODO allow use of safe_load_all to handle multiple test sets in a given doc
     teststruct = yaml.safe_load(os.path.expandvars(read_file(path)))
     return teststruct
 
-def build_testsets(base_url, test_structure, test_files = set() ):
+def build_testsets(base_url, test_structure, test_files = set(), working_directory = None):
     """ Convert a Python datastructure read from validated YAML to a set of structured testsets
     The data stucture is assumed to be a list of dictionaries, each of which describes:
         - a tests (test structure)
@@ -149,13 +151,16 @@ def build_testsets(base_url, test_structure, test_files = set() ):
     Note: test_files is used to track tests that import other tests, to avoid recursive loops
 
     This returns a list of testsets, corresponding to imported testsets and in-line multi-document sets
-
-    TODO: Implement imports (with test_config handled) and import of multi-document YAML """
+    """
 
     tests_out = list()
     test_config = TestConfig()
     testsets = list()
     benchmarks = list()
+
+    if working_directory is None:
+        working_directory = os.path.abspath(os.getcwd())
+
     #returns a testconfig and collection of tests
     for node in test_structure: #Iterate through lists of test and configuration elements
         if isinstance(node,dict): #Each config element is a miniature key-value dictionary
@@ -177,9 +182,10 @@ def build_testsets(base_url, test_structure, test_files = set() ):
                     mytest.url = base_url + val
                     tests_out.append(mytest)
                 elif key == u'test': #Complex test with additional parameters
-                    child = node[key]
-                    mytest = Test.build_test(base_url, child)
-                    tests_out.append(mytest)
+                    with cd(working_directory):
+                        child = node[key]
+                        mytest = Test.build_test(base_url, child)
+                        tests_out.append(mytest)
                 elif key == u'benchmark':
                     benchmark = build_benchmark(base_url, node[key])
                     benchmarks.append(benchmark)
@@ -219,11 +225,11 @@ def make_configuration(node):
 
     return test_config
 
-def read_file(path): #TODO implementme, handling paths more intelligently
+def read_file(path):
     """ Read an input into a file, doing necessary conversions around relative path handling """
-    f = open(path, "r")
-    string = f.read()
-    f.close()
+    with open(path, "r") as f:
+        string = f.read()
+        f.close()
     return string
 
 def run_test(mytest, test_config = TestConfig(), context = None):
@@ -571,8 +577,9 @@ def main(args):
     if 'log' in args and args['log'] is not None:
         logging.basicConfig(level=LOGGING_LEVELS.get(args['log'].lower(), logging.NOTSET))
 
-    test_structure = read_test_file(args['test'])
-    tests = build_testsets(args['url'], test_structure)
+    test_file = args['test']
+    test_structure = read_test_file(test_file)
+    tests = build_testsets(args['url'], test_structure, working_directory=os.path.dirname(test_file))
 
     # Override configs from command line if config set
     for t in tests:

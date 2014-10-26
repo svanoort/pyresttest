@@ -179,9 +179,6 @@ class Test(object):
         curl.setopt(curl.URL, str(self.url))
         curl.setopt(curl.TIMEOUT, timeout)
 
-
-        #TODO use CURLOPT_READDATA http://pycurl.sourceforge.net/doc/files.html and lazy-read files if possible
-
         # HACK: process env vars again, since we have an extract capabilitiy in validation.. this is a complete hack, but I need functionality over beauty
         if self.body is not None:
             self.body = os.path.expandvars(self.body)
@@ -211,9 +208,11 @@ class Test(object):
         return curl
 
     @classmethod
-    def build_test(cls, base_url, node, input_test = None):
+    def build_test(cls, base_url, node, input_test = None, test_path=None):
         """ Create or modify a test, input_test, using configuration in node, and base_url
         If no input_test is given, creates a new one
+
+        Test_path gives path to test file, used for setting working directory in setting up input bodies
 
         Uses explicitly specified elements from the test input structure
         to make life *extra* fun, we need to handle list <-- > dict transformations.
@@ -274,8 +273,8 @@ class Test(object):
                 else:
                     raise Exception('Misconfigured validator, requires type property')
             elif configelement == u'body': #Read request body, as a ContentHandler
+                # Note: os.path.expandirs removed
                 mytest.body = ContentHandler.parse_content(configvalue)
-                # TODO add back in os.path.expandvars as needed for path
             elif configelement == 'headers': #HTTP headers to use, flattened to a single string-string dictionary
                 mytest.headers = flatten_dictionaries(configvalue)
             elif configelement == 'expected_status': #List of accepted HTTP response codes, as integers
