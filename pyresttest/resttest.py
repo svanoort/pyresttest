@@ -181,8 +181,7 @@ class ContentHandler:
                 return self.content
 
     def setup(self, input, is_file=False, is_template_path=False, is_template_content=False):
-        """ Self explanatory, input is inline content or file path.
-            Encoding is simply passed through intact. """
+        """ Self explanatory, input is inline content or file path. """
         if not isinstance(input, basestring):
             raise TypeError("Input is not a string")
         self.content = input
@@ -319,21 +318,19 @@ class Test(object):
         return val
 
     # These are variables that can be templated
-    NAME_BODY = 'body'
-    def set_body(self, value, isTemplate=False):
-        """ Set body, passing flag if using a template """
-        if isTemplate:
-            self.set_template(self.NAME_BODY, value)
-        else:
-            self.del_template(self.NAME_BODY)
+    def set_body(self, value):
+        """ Set body.  If body is a ContentHandler, it'll be used
+            Otherwise, if string, it'll be set directly """
         self._body = value
 
     def get_body(self, context=None):
         """ Read body from file, applying template if pertinent """
-        val = self.realize_template(self.NAME_BODY, context)
-        if val is None:
-            val = self._body
-        return val
+        if self._body is None:
+            return None
+        elif isinstance(self._body, basestring):
+            return self._body
+        else:
+            return self._body.get_content(context=context)
 
     body = property(get_body, set_body, None, 'Request body, if any (for POST/PUT methods)')
 
@@ -509,18 +506,9 @@ class Test(object):
                         mytest.validators.append(validator)
                 else:
                     raise Exception('Misconfigured validator, requires type property')
-            elif configelement == u'body': #Read request body, either as inline input or from file
-                #Body is either {'file':'myFilePath'} or inline string with file contents
-                # TODO add template reads!
-                if isinstance(configvalue, dict) and u'file' in lowercase_keys(configvalue):
-                    var = lowercase_keys(configvalue)
-                    assert isinstance(var[u'file'],str) or isinstance(var[u'file'],unicode)
-                    mytest.body = os.path.expandvars(read_file(var[u'file'])) #TODO change me to pass in a file handle, rather than reading all bodies into RAM
-                elif isinstance(configvalue, str):
-                    mytest.body = configvalue
-                else:
-                    raise Exception('Illegal input to HTTP request body: must be string or map of file -> path')
-
+            elif configelement == u'body': #Read request body, as a ContentHandler
+                mytest.body = ContentHandler.parse_content(configvalue)
+                # TODO add back in os.path.expandvars as needed for path
             elif configelement == 'headers': #HTTP headers to use, flattened to a single string-string dictionary
                 mytest.headers = flatten_dictionaries(configvalue)
             elif configelement == 'expected_status': #List of accepted HTTP response codes, as integers
