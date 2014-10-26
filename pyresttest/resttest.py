@@ -3,7 +3,6 @@ import sys
 import os
 import math
 import copy
-import operator
 import yaml
 import pycurl
 import json
@@ -22,12 +21,12 @@ try:
 except ImportError:
     pass
 
-if is_root_folder:
+if is_root_folder:  # Inside the module
     from binding import Context
     from generators import GeneratorFactory
     from parsing import flatten_dictionaries, lowercase_keys, safe_to_bool
     from validators import Validator
-else:
+else:  # Importing as library
     from pyresttest.binding import Context
     from pyresttest.generators import GeneratorFactory
     from pyresttest.parsing import flatten_dictionaries, lowercase_keys, safe_to_bool
