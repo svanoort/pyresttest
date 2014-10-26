@@ -1,17 +1,13 @@
 #!/usr/bin/env python
 import sys
 import os
-import math
-import copy
 import yaml
 import pycurl
 import json
 import csv
-import StringIO
 import logging
-import string
 from optparse import OptionParser
-
+from tests import DEFAULT_TIMEOUT
 
 # Allow execution from anywhere as long as library is installed
 is_root_folder = False
@@ -26,105 +22,32 @@ if is_root_folder:  # Inside the module
     from generators import GeneratorFactory
     from parsing import flatten_dictionaries, lowercase_keys, safe_to_bool
     from validators import Validator
+    from tests import Test
+    from benchmarks import Benchmark, AGGREGATES, METRICS, build_benchmark
 else:  # Importing as library
     from pyresttest.binding import Context
     from pyresttest.generators import GeneratorFactory
     from pyresttest.parsing import flatten_dictionaries, lowercase_keys, safe_to_bool
     from pyresttest.validators import Validator
+    from pyresttest.tests import Test
+    from pyresttest.benchmarks import Benchmark, AGGREGATES, METRICS
 
+"""
+Executable class, ties everything together into the framework.
+Module responsibilities:
+- Read & import test test_files
+- Parse test configs
+- Provide executor methods for sets of tests and benchmarks
+- Collect and report on test/benchmark results
+- Perform analysis on benchmark results
+"""
 
-
-DEFAULT_TIMEOUT = 10  # Seconds
 
 LOGGING_LEVELS = {'debug': logging.DEBUG,
     'info': logging.INFO,
     'warning': logging.WARNING,
     'error': logging.ERROR,
     'critical': logging.CRITICAL}
-
-#Map HTTP method names to curl methods
-#Kind of obnoxious that it works this way...
-HTTP_METHODS = {u'GET' : pycurl.HTTPGET,
-    u'PUT' : pycurl.UPLOAD,
-    u'POST' : pycurl.POST,
-    u'DELETE'  : 'DELETE'}
-
-#Curl metrics for benchmarking, key is name in config file, value is pycurl variable
-#Taken from pycurl docs, this is libcurl variable minus the CURLINFO prefix
-# Descriptions of the timing variables are taken from libcurl docs:
-#   http://curl.haxx.se/libcurl/c/curl_easy_getinfo.html
-
-METRICS = {
-    #Timing info, precisely in order from start to finish
-    #The time it took from the start until the name resolving was completed.
-    'namelookup_time' : pycurl.NAMELOOKUP_TIME,
-
-    #The time it took from the start until the connect to the remote host (or proxy) was completed.
-    'connect_time' : pycurl.CONNECT_TIME,
-
-    #The time it took from the start until the SSL connect/handshake with the remote host was completed.
-    'appconnect_time' : pycurl.APPCONNECT_TIME,
-
-    #The time it took from the start until the file transfer is just about to begin.
-    #This includes all pre-transfer commands and negotiations that are specific to the particular protocol(s) involved.
-    'pretransfer_time' : pycurl.PRETRANSFER_TIME,
-
-    #The time it took from the start until the first byte is received by libcurl.
-    'starttransfer_time' : pycurl.STARTTRANSFER_TIME,
-
-    #The time it took for all redirection steps include name lookup, connect, pretransfer and transfer
-    #  before final transaction was started. So, this is zero if no redirection took place.
-    'redirect_time' : pycurl.REDIRECT_TIME,
-
-    #Total time of the previous request.
-    'total_time' : pycurl.TOTAL_TIME,
-
-
-    #Transfer sizes and speeds
-    'size_download' : pycurl.SIZE_DOWNLOAD,
-    'size_upload' : pycurl.SIZE_UPLOAD,
-    'request_size' : pycurl.REQUEST_SIZE,
-    'speed_download' : pycurl.SPEED_DOWNLOAD,
-    'speed_upload' : pycurl.SPEED_UPLOAD,
-
-    #Connection counts
-    'redirect_count' : pycurl.REDIRECT_COUNT,
-    'num_connects' : pycurl.NUM_CONNECTS
-}
-
-#Map statistical aggregate to the function to use to perform the aggregation on an array
-AGGREGATES = {
-    'mean_arithmetic': #AKA the average, good for many things
-        lambda x: float(sum(x))/float(len(x)),
-    'mean':  # Alias for arithmetic mean
-        lambda x: float(sum(x))/float(len(x)),
-    'mean_harmonic': #Harmonic mean, better predicts average of rates: http://en.wikipedia.org/wiki/Harmonic_mean
-        lambda x: 1.0/( sum([1.0/float(y) for y in x]) / float(len(x))),
-    'median':  lambda x: median(x),
-    'std_deviation': lambda x: std_deviation(x),
-    'sum' : lambda x: sum(x),
-    'total' : lambda x: sum(x)
-}
-
-def median(array):
-    """ Get the median of an array """
-    sorted = [x for x in array]
-    sorted.sort()
-    middle = len(sorted)/2 #Gets the middle element, if present
-    if len(sorted) % 2 == 0: #Even, so need to average together the middle two values
-        return float((sorted[middle]+sorted[middle-1]))/2
-    else:
-        return sorted[middle]
-
-def std_deviation(array):
-    """ Compute the standard deviation of an array of numbers """
-    if not array or len(array) == 1:
-        return 0
-
-    average = AGGREGATES['mean_arithmetic'](array)
-    variance = map(lambda x: (x-average)**2,array)
-    stdev = AGGREGATES['mean_arithmetic'](variance)
-    return math.sqrt(stdev)
 
 class cd:
     """Context manager for changing the current working directory"""
@@ -139,411 +62,6 @@ class cd:
 
     def __exit__(self, etype, value, traceback):
         os.chdir(self.savedPath)
-
-class ContentHandler:
-    """ Handles content that may be (lazily) read from filesystem and/or templated to various degrees
-    Also creates pixie dust and unicorn farts on demand
-    This is pulled out because logic gets complex rather fast
-
-    Covers 6 states:
-        - Inline body content, no templating
-        - Inline body content, with templating
-        - File path to content, NO templating
-        - File path to content, content gets templated
-        - Templated path to file content (path itself is templated), file content UNtemplated
-        - Templated path to file content (path itself is templated), file content TEMPLATED
-    """
-
-    content = None  # Inline content
-    is_file = False
-    is_template_path = False
-    is_template_content = False
-
-    def is_dynamic(self):
-        """ Is templating used? """
-        return self.is_template_path or self.is_template_content
-
-    def get_content(self, context=None):
-        """ Does all context binding and pathing to get content, templated out """
-
-        if self.is_file:
-            path = self.content
-            if self.is_template_path and context:
-                path = string.Template(path).safe_substitute(context.get_values())
-            data = None
-            with open(path, 'r') as f:
-                data = f.read()
-
-            if self.is_template_content and context:
-                return string.Template(data).safe_substitute(context.get_values())
-            else:
-                return data
-        else:
-            if self.is_template_content and context:
-                return string.Template(self.content).safe_substitute(context.get_values())
-            else:
-                return self.content
-
-    def setup(self, input, is_file=False, is_template_path=False, is_template_content=False):
-        """ Self explanatory, input is inline content or file path. """
-        if not isinstance(input, basestring):
-            raise TypeError("Input is not a string")
-        self.content = input
-        self.is_file = is_file
-        self.is_template_path = is_template_path
-        self.is_template_content = is_template_content
-
-    @staticmethod
-    def parse_content(node):
-        """ Parse content from input node and returns ContentHandler object
-        it'll look like:
-
-            - template:
-                - file:
-                    - temple: path
-
-            or something
-
-        """
-
-        # Tread carefully, this one is a bit narly because of nesting
-        output = ContentHandler()
-        is_template_path = False
-        is_template_content = False
-        is_file = False
-        is_done = False
-
-        while (node and not is_done):  # Dive through the configuration tree
-            # Finally we've found the value!
-            if isinstance(node, basestring):
-                output.content = node
-                output.setup(node, is_file=is_file, is_template_path=is_template_path, is_template_content=is_template_content)
-                return output
-            elif not isinstance(node, dict) and not isinstance(node, list):
-                raise TypeError("Content must be a string, dictionary, or list of dictionaries")
-
-            is_done = True
-
-            # Dictionary or list of dictionaries
-            flat = lowercase_keys(flatten_dictionaries(node))
-            for key, value in flat.items():
-                if key == u'template':
-                    if isinstance(value, basestring):
-                        output.content = value
-                        is_template_content = is_template_content or not is_file
-                        output.is_template_content = is_template_content
-                        output.is_template_path = is_file
-                        output.is_file = is_file
-                        return output
-                    else:
-                        is_template_content = True
-                        node = value
-                        is_done = False
-                        break
-
-                elif key == 'file':
-                    if isinstance(value, basestring):
-                        output.content = value
-                        output.is_file = True
-                        output.is_template_content = is_template_content
-                        return output
-                    else:
-                        is_file = True
-                        node = value
-                        is_done = False
-                        break
-
-        raise Exception("Invalid configuration for content.")
-
-
-class BodyReader:
-    ''' Read from a data str/byte array into reader function for pyCurl '''
-
-    def __init__(self, data):
-        self.data = data
-        self.loc = 0
-
-    def readfunction(self, size):
-        startidx = self.loc
-        endidx = startidx + size
-        data = self.data
-
-        if data is None or len(data) == 0:
-            return ''
-
-        if endidx >= len(data):
-            endidx = len(data) - 1
-
-        result = data[startidx : endidx]
-        self.loc += (endidx-startidx)
-        return result
-
-class Test(object):
-    """ Describes a REST test """
-    _url  = None
-    expected_status = [200]  # expected HTTP status code or codes
-    _body = None
-    headers = dict() #HTTP Headers
-    method = u'GET'
-    group = u'Default'
-    name = u'Unnamed'
-    validators = None  # Validators for response body, IE regexes, etc
-    stop_on_failure = False
-
-    templates = None  # Dictionary of template to compiled template
-
-    # Bind variables, generators, and contexts
-    variable_binds = None
-    generator_binds = None  # Dict of variable name and then generator name
-    extract_binds = None  # Dict of variable name and extract function to run
-
-    # Template handling logic
-    def set_template(self, variable_name, template_string):
-        """ Add a templating instance for variable given """
-        if self.templates is None:
-            self.templates = dict()
-        self.templates[variable_name] = string.Template(template_string)
-
-    def del_template(self, variable_name):
-        """ Remove template instance, so we no longer use one for this test """
-        if self.templates is not None and variable_name in self.templates:
-            del self.templates[variable_name]
-
-    def realize_template(self, variable_name, context):
-        """ Realize a templated value, using variables from context
-            Returns None if no template is set for that variable """
-        val = None
-        if context is None or self.templates is None or variable_name not in self.templates:
-            return None
-        return self.templates[variable_name].safe_substitute(context.get_values())
-
-    # These are variables that can be templated
-    def set_body(self, value):
-        """ Set body, directly """
-        self._body = value
-
-    def get_body(self, context=None):
-        """ Read body from file, applying template if pertinent """
-        if self._body is None:
-            return None
-        elif isinstance(self._body, basestring):
-            return self._body
-        else:
-            return self._body.get_content(context=context)
-
-    body = property(get_body, set_body, None, 'Request body, if any (for POST/PUT methods)')
-
-    NAME_URL = 'url'
-    def set_url(self, value, isTemplate=False):
-        """ Set URL, passing flag if using a template """
-        if isTemplate:
-            self.set_template(self.NAME_URL, value)
-        else:
-            self.del_template(self.NAME_URL)
-        self._url = value
-
-    def get_url(self, context=None):
-        """ Get URL, applying template if pertinent """
-        val = self.realize_template(self.NAME_URL, context)
-        if val is None:
-            val = self._url
-        return val
-    url = property(get_url, set_url, None, 'URL fragment for request')
-
-
-    def update_context_before(self, context):
-        """ Make pre-test context updates, by applying variable and generator updates """
-        if self.variable_binds:
-            context.bind_variables(self.variable_binds)
-        if self.generator_binds:
-            for key, value in self.generator_binds:
-                context.bind_generator_next(key, value)
-
-    def update_context_after(self, response_body, context):
-        """ Run the extraction routines to update variables based on HTTP response body """
-        if self.extract_binds:
-            for key, value in extract_binds:
-                result = value(response_body)
-                context.bind_variable(key, result)
-
-
-    def is_context_modifier(self):
-        """ Returns true if context can be modified by this test
-            (disallows caching of templated test bodies) """
-        return self.variable_binds or self.generator_binds or self.extract_binds
-
-    def is_dynamic(self):
-        """ Returns true if this test does templating """
-        if self.templates and self.templates.keys():
-            return True
-        elif isinstance(self._body, ContentHandler) and self._body.is_dynamic():
-            return True
-        return False
-
-    def realize(self, context=None):
-        """ Return a fully-templated test object, for configuring curl
-            Warning: this is a SHALLOW copy, mutation of fields will cause problems!
-            Can accept a None context """
-        if not self.is_dynamic():
-            return self
-        else:
-            selfcopy = copy.copy(self)
-            selfcopy.templates = None
-            selfcopy._body = self.get_body(context=context)
-            if self.templates and self.NAME_URL in self.templates:
-                selfcopy._url = self.get_url(context=context)
-            return selfcopy
-
-    def __init__(self):
-        self.headers = dict()
-        self.expected_status = [200]
-        self.templated = dict()
-
-    def __str__(self):
-        return json.dumps(self, default=lambda o: o.__dict__)
-
-    def configure_curl(self, timeout=DEFAULT_TIMEOUT, context=None):
-        """ Create and mostly configure a curl object for test """
-
-        curl = pycurl.Curl()
-        # curl.setopt(pycurl.VERBOSE, 1)  # Debugging convenience
-        curl.setopt(curl.URL, str(self.url))
-        curl.setopt(curl.TIMEOUT, timeout)
-
-
-        #TODO use CURLOPT_READDATA http://pycurl.sourceforge.net/doc/files.html and lazy-read files if possible
-
-        # HACK: process env vars again, since we have an extract capabilitiy in validation.. this is a complete hack, but I need functionality over beauty
-        if self.body is not None:
-            self.body = os.path.expandvars(self.body)
-
-        # Set read function for post/put bodies
-        if self.method == u'POST' or self.method == u'PUT':
-            curl.setopt(curl.READFUNCTION, StringIO.StringIO(self.body).read)
-
-        if self.method == u'POST':
-            curl.setopt(HTTP_METHODS[u'POST'], 1)
-            if self.body is not None:
-                curl.setopt(pycurl.POSTFIELDSIZE, len(self.body))  # Required for some servers
-        elif self.method == u'PUT':
-            curl.setopt(HTTP_METHODS[u'PUT'], 1)
-            if self.body is not None:
-                curl.setopt(pycurl.INFILESIZE, len(self.body))  # Required for some servers
-        elif self.method == u'DELETE':
-            curl.setopt(curl.CUSTOMREQUEST,'DELETE')
-
-        headers = list()
-        if self.headers: #Convert headers dictionary to list of header entries, tested and working
-            for headername, headervalue in self.headers.items():
-                headers.append(str(headername) + ': ' +str(headervalue))
-        headers.append("Expect:")  # Fix for expecting 100-continue from server, which not all servers will send!
-        headers.append("Connection: close")
-        curl.setopt(curl.HTTPHEADER, headers)
-        return curl
-
-    @classmethod
-    def build_test(cls, base_url, node, input_test = None):
-        """ Create or modify a test, input_test, using configuration in node, and base_url
-        If no input_test is given, creates a new one
-
-        Uses explicitly specified elements from the test input structure
-        to make life *extra* fun, we need to handle list <-- > dict transformations.
-
-        This is to say: list(dict(),dict()) or dict(key,value) -->  dict() for some elements
-
-        Accepted structure must be a single dictionary of key-value pairs for test configuration """
-
-        mytest = input_test
-        if not mytest:
-            mytest = Test()
-
-        node = lowercase_keys(flatten_dictionaries(node)) #Clean up for easy parsing
-
-        #Copy/convert input elements into appropriate form for a test object
-        for configelement, configvalue in node.items():
-            #Configure test using configuration elements
-            if configelement == u'url':
-                temp = configvalue
-                if isinstance(configvalue, dict):
-                    # Template is used for URL
-                    val = lowercase_keys(configvalue)[u'template']
-                    assert isinstance(val,str) or isinstance(val,unicode) or isinstance(val,int)
-                    url = base_url + unicode(val,'UTF-8').encode('ascii','ignore')
-                    mytest.set_url(url, isTemplate=True)
-                else:
-                    assert isinstance(configvalue,str) or isinstance(configvalue,unicode) or isinstance(configvalue,int)
-                    mytest.url = base_url + unicode(configvalue,'UTF-8').encode('ascii','ignore')
-            elif configelement == u'method': #Http method, converted to uppercase string
-                var = unicode(configvalue,'UTF-8').upper()
-                assert var in HTTP_METHODS
-                mytest.method = var
-            elif configelement == u'group': #Test group
-                assert isinstance(configvalue,str) or isinstance(configvalue,unicode) or isinstance(configvalue,int)
-                mytest.group = unicode(configvalue,'UTF-8')
-            elif configelement == u'name': #Test name
-                assert isinstance(configvalue,str) or isinstance(configvalue,unicode) or isinstance(configvalue,int)
-                mytest.name = unicode(configvalue,'UTF-8')
-            elif configelement == u'validators':
-                #TODO implement more validators: regex, file/schema match, etc
-                if isinstance(configvalue, list):
-                    for var in configvalue:
-                        myquery = var.get(u'query')
-                        myoperator = var.get(u'operator')
-                        myexpected = var.get(u'expected')
-                        myexportas = var.get(u'export_as')
-
-                        # NOTE structure is checked by use of validator, do not verify attributes here
-                        # create validator and add to list of validators
-                        if mytest.validators is None:
-                            mytest.validators = list()
-                        validator = Validator()
-                        validator.query = myquery
-                        validator.expected = myexpected
-                        validator.operator = myoperator if myoperator is not None else validator.operator
-                        validator.export_as = myexportas if myexportas is not None else validator.export_as
-                        mytest.validators.append(validator)
-                else:
-                    raise Exception('Misconfigured validator, requires type property')
-            elif configelement == u'body': #Read request body, as a ContentHandler
-                mytest.body = ContentHandler.parse_content(configvalue)
-                # TODO add back in os.path.expandvars as needed for path
-            elif configelement == 'headers': #HTTP headers to use, flattened to a single string-string dictionary
-                mytest.headers = flatten_dictionaries(configvalue)
-            elif configelement == 'expected_status': #List of accepted HTTP response codes, as integers
-                expected = list()
-                #If item is a single item, convert to integer and make a list of 1
-                #Otherwise, assume item is a list and convert to a list of integers
-                if isinstance(configvalue,list):
-                    for item in configvalue:
-                        expected.append(int(item))
-                else:
-                    expected.append(int(configvalue))
-                mytest.expected_status = expected
-            elif configelement == 'variable_binds':
-                mytest.variable_binds = flatten_dictionaries(configvalue)
-            elif configelement == 'generator_binds':
-                output = flatten_dictionaries(configvalue)
-                output2 = dict()
-                for key, value in output.items:
-                    output2[str(key)] = str(value)
-                mytest.generator_binds = output2
-            elif configelement == 'stop_on_failure':
-                mytest.stop_on_failure = safe_to_bool(configvalue)
-
-        #Next, we adjust defaults to be reasonable, if the user does not specify them
-
-        #For non-GET requests, accept additional response codes indicating success
-        # (but only if not expected statuses are not explicitly specified)
-        #  this is per HTTP spec: http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.5
-        if 'expected_status' not in node.keys():
-            if mytest.method == 'POST':
-                mytest.expected_status = [200,201,204]
-            elif mytest.method == 'PUT':
-                mytest.expected_status = [200,201,204]
-            elif mytest.method == 'DELETE':
-                mytest.expected_status = [200,202,204]
-
-        return mytest
 
 class TestConfig:
     """ Configuration for a test run """
@@ -587,62 +105,6 @@ class BenchmarkResult:
     def __init__(self):
         self.aggregates = list()
         self.results = list()
-
-    def __str__(self):
-        return json.dumps(self, default=lambda o: o.__dict__)
-
-class Benchmark(Test):
-    """ Extends test with configuration for benchmarking
-        warmup_runs and benchmark_runs behave like you'd expect
-
-        Metrics are a bit tricky:
-            - Key is metric name from METRICS
-            - Value is either a single value or a list:
-                - list contains aggregagate name from AGGREGATES
-                - value of 'all' returns everything
-    """
-    warmup_runs = 10 #Times call is executed to warm up
-    benchmark_runs = 100 #Times call is executed to generate benchmark results
-    output_format = u'csv'
-    output_file = None
-
-    #Metrics to gather, both raw and aggregated
-    metrics = set()
-
-    raw_metrics = set()  # Metrics that do not have any aggregation performed
-    aggregated_metrics = dict()  # Metrics where an aggregate is computed, maps key(metric name) -> list(aggregates to use)
-
-    def add_metric(self, metric_name, aggregate=None):
-        """ Add a metric-aggregate pair to the benchmark, where metric is a number to measure from curl, and aggregate is an aggregation function
-            (See METRICS and AGGREGATES)
-            If aggregate is not defined (False,empty, or None), then the raw number is reported
-            Returns self, for fluent-syle construction of config """
-
-        clean_metric = metric_name.lower().strip()
-
-        if clean_metric.lower() not in METRICS:
-            raise Exception("Metric named: " + metric_name + " is not a valid benchmark metric.")
-        self.metrics.add(clean_metric)
-
-        if not aggregate:
-            self.raw_metrics.add(clean_metric)
-        elif aggregate.lower().strip() in AGGREGATES:
-            # Add aggregate to this metric
-            clean_aggregate = aggregate.lower().strip()
-            current_aggregates = self.aggregated_metrics.get(clean_metric, list())
-            current_aggregates.append(clean_aggregate)
-            self.aggregated_metrics[clean_metric]  = current_aggregates
-        else:
-            raise Exception("Aggregate function " + aggregate + " is not a legal aggregate function name");
-
-        return self;
-
-
-    def __init__(self):
-        self.metrics = set()
-        self.raw_metrics = set()
-        self.aggregated_metrics = dict()
-        super(Benchmark, self).__init__()
 
     def __str__(self):
         return json.dumps(self, default=lambda o: o.__dict__)
@@ -763,62 +225,6 @@ def read_file(path): #TODO implementme, handling paths more intelligently
     string = f.read()
     f.close()
     return string
-
-def build_benchmark(base_url, node):
-    """ Try building a benchmark configuration from deserialized configuration root node """
-    node = lowercase_keys(flatten_dictionaries(node))  # Make it usable
-
-    benchmark = Benchmark()
-
-    # Read & set basic test parameters
-    benchmark = Test.build_test(base_url, node, benchmark)
-
-    # Complex parsing because of list/dictionary/singleton legal cases
-    for key, value in node.items():
-        if key == u'warmup_runs':
-            benchmark.warmup_runs = int(value)
-        elif key == u'benchmark_runs':
-            benchmark.benchmark_runs = int(value)
-        elif key == u'output_format':
-            format = value.lower()
-            if format in OUTPUT_FORMATS:
-                benchmark.output_format = format
-            else:
-                raise Exception('Invalid benchmark output format: ' + format)
-        elif key == u'output_file':
-            if not isinstance(value, basestring):
-                raise Exception("Invalid output file format")
-            benchmark.output_file = value
-        elif key == u'metrics':
-            if isinstance(value, unicode) or isinstance(value,str):
-                # Single value
-                benchmark.add_metric(unicode(value, 'UTF-8'))
-            elif isinstance(value, list) or isinstance(value, set):
-            # List of single values or list of {metric:aggregate, ...}
-                for metric in value:
-                    if isinstance(metric, dict):
-                        for metricname, aggregate in metric.items():
-                            if not isinstance(metricname, basestring):
-                                raise Exception("Invalid metric input: non-string metric name")
-                            if not isinstance(aggregate, basestring):
-                                raise Exception("Invalid aggregate input: non-string aggregate name")
-                            # TODO unicode-safe this
-                            benchmark.add_metric(unicode(metricname,'UTF-8'), unicode(aggregate,'UTF-8'))
-
-                    elif isinstance(metric, unicode) or isinstance(metric, str):
-                        benchmark.add_metric(unicode(metric,'UTF-8'))
-            elif isinstance(value, dict):
-                # Dictionary of metric-aggregate pairs
-                for metricname, aggregate in value.items():
-                    if not isinstance(metricname, basestring):
-                        raise Exception("Invalid metric input: non-string metric name")
-                    if not isinstance(aggregate, basestring):
-                        raise Exception("Invalid aggregate input: non-string aggregate name")
-                    benchmark.add_metric(unicode(metricname,'UTF-8'), unicode(aggregate,'UTF-8'))
-            else:
-                raise Exception("Invalid benchmark metric datatype: "+str(value))
-
-    return benchmark
 
 def run_test(mytest, test_config = TestConfig(), context = None):
     """ Put together test pieces: configure & run actual test, return results """
@@ -1051,11 +457,8 @@ def write_benchmark_csv(file_out, benchmark_result, benchmark, test_config = Tes
         writer.writerow(('Aggregates',''))
         writer.writerows(benchmark_result.aggregates)
 
-OUTPUT_FORMATS = [u'csv', u'json']
-
 # Method to call when writing benchmark file
 OUTPUT_METHODS = {u'csv' : write_benchmark_csv, u'json': write_benchmark_json}
-
 
 def execute_testsets(testsets):
     """ Execute a set of tests, using given TestSet list input """
