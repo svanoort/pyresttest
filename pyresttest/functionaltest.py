@@ -132,6 +132,15 @@ class RestTestCase(unittest.TestCase):
         self.assertTrue(test_response2.passed)
         self.assertTrue(u'"objects": []' in test_response2.unicode_body())
 
+    def test_full_context_use(self):
+        """ Read and execute test set  with context use, from file """
+
+        # Get absolute path to test file, in the same folder as this test
+        path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'content-test.yaml')
+        tests = resttest.build_testsets('http://localhost:8000', resttest.read_test_file(path))
+        failures = resttest.execute_testsets(tests)
+        self.assertTrue(failures == 0, 'Simple tests failed where success expected')
+
     @unittest.skip("Unexpected issues here...")
     def test_benchmark_get(self):
         """ Benchmark basic local get test """
