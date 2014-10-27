@@ -10,7 +10,7 @@ class Context(object):
 
     variables = dict()  # Maps variable name to current value
     generators = dict()  # Maps generator name to generator function
-    variable_change_count = 0  # Lets us see if something has been altered, avoiding needless retemplating
+    mod_count = 0  # Lets us see if something has been altered, avoiding needless retemplating
 
     def bind_variable(self, variable_name, variable_value):
         """ Bind a named variable to a value within the context
@@ -19,7 +19,7 @@ class Context(object):
         prev = self.variables.get(str_name)
         if prev != variable_value:
             self.variables[str(variable_name)] = variable_value
-            self.variable_change_count = self.variable_change_count + 1
+            self.mod_count = self.mod_count + 1
             logging.debug('Context: altered variable named {0} to value {1}'.format(str_name, variable_value))
 
     def bind_variables(self, variable_map):
@@ -45,7 +45,7 @@ class Context(object):
         prev = self.variables.get(str_name)
         if prev != val:
             self.variables[str_name] = val
-            self.variable_change_count = self.variable_change_count + 1
+            self.mod_count = self.mod_count + 1
             logging.debug('Context: Set variable named {0} to next value {1} from generator named {2}'.format(variable_name, val, generator_name))
         return val
 
