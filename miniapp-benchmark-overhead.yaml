@@ -7,7 +7,7 @@
 - benchmark: # create entity
     - name: "Basic get"
     - url: "/api/person/"
-    - warmup_runs: 7
+    - warmup_runs: 0
     - 'benchmark_runs': '10000'
     - output_format: csv
     - metrics:

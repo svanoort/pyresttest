@@ -10,7 +10,7 @@
     - generator_binds: {id: id}
     - name: "Create person"
     - url: {template: "/api/person/$id/"}
-    - warmup_runs: 7
+    - warmup_runs: 0
     - method: 'PUT'
     - headers: {'Content-Type': 'application/json'}
     - body: {template: '{"first_name": "Gaius","id": "$id","last_name": "Baltar","login": "$id"}'}
