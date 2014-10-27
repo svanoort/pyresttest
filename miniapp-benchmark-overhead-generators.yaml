@@ -1,0 +1,21 @@
+# Test using included Django test app
+# Does basic benchmark and measures overhead with generators
+---
+- config:
+    - testset: "Benchmark tests using test app"
+    - generators:
+        - 'id': {type: 'count_numbers', start: 10}
+
+- benchmark: # create entity
+    - generator_binds: {id: id}
+    - name: "Create person"
+    - url: {template: "/api/person/$id/"}
+    - warmup_runs: 7
+    - method: 'PUT'
+    - headers: {'Content-Type': 'application/json'}
+    - body: {template: '{"first_name": "Gaius","id": "$id","last_name": "Baltar","login": "$id"}'}
+    - 'benchmark_runs': '1000'
+    - output_format: csv
+    - metrics:
+        - total_time: total
+        - total_time: mean

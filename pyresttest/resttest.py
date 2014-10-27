@@ -19,14 +19,14 @@ except ImportError:
 
 if is_root_folder:  # Inside the module
     from binding import Context
-    from generators import GeneratorFactory
+    from generators import parse_generator
     from parsing import flatten_dictionaries, lowercase_keys, safe_to_bool
     from validators import Validator
     from tests import Test
     from benchmarks import Benchmark, AGGREGATES, METRICS, build_benchmark
 else:  # Importing as library
     from pyresttest.binding import Context
-    from pyresttest.generators import GeneratorFactory
+    from pyresttest.generators import parse_generator
     from pyresttest.parsing import flatten_dictionaries, lowercase_keys, safe_to_bool
     from pyresttest.validators import Validator
     from pyresttest.tests import Test
@@ -218,8 +218,8 @@ def make_configuration(node):
         elif key == u'generators':
             flat = flatten_dictionaries(value)
             gen_map = dict()
-            for generator_name, generator_config in flat:
-                gen = GeneratorFactory.parse(generator_config)
+            for generator_name, generator_config in flat.items():
+                gen = parse_generator(generator_config)
                 gen_map[str(generator_name)] = gen
             test_config.generators = gen_map
 
@@ -348,8 +348,6 @@ def run_benchmark(benchmark, test_config = TestConfig(), context = None):
         templated = benchmark.realize(my_context)
         curl = templated.configure_curl(timeout=test_config.timeout, context=my_context)
         curl.setopt(pycurl.WRITEFUNCTION, lambda x: None) #Do not store actual response body at all.
-        if benchmark.method == u'POST' or benchmark.method == u'PUT':
-            curl.setopt(curl.READFUNCTION, StringIO.StringIO(benchmark.body).read)
         curl.perform()
         curl.close()
     logging.info('Warmup: ' + message + ' finished')
@@ -359,10 +357,9 @@ def run_benchmark(benchmark, test_config = TestConfig(), context = None):
     for x in xrange(0, benchmark_runs):  # Run the actual benchmarks
         # Setup benchmark
         benchmark.update_context_before(my_context)
-        curl = benchmark.configure_curl(timeout=test_config.timeout, context=my_context)
+        templated = benchmark.realize(my_context)
+        curl = templated.configure_curl(timeout=test_config.timeout, context=my_context)
         curl.setopt(pycurl.WRITEFUNCTION, lambda x: None) #Do not store actual response body at all.
-        if benchmark.method == u'POST' or benchmark.method == u'PUT':
-            curl.setopt(curl.READFUNCTION, StringIO.StringIO(benchmark.body).read)
 
         try:  # Run the curl call, if it errors, then add to failure counts for benchmark
             curl.perform()

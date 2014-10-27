@@ -3,6 +3,7 @@ import string
 from tests import *
 from binding import Context
 from contenthandling import ContentHandler
+import generators
 
 class TestsTest(unittest.TestCase):
     """ Testing for basic rest test methods """
@@ -92,6 +93,28 @@ class TestsTest(unittest.TestCase):
         self.assertEqual(string.Template(handler.content).safe_substitute(context.get_values()),
             templated.body)
 
+    def test_update_context_variables(self):
+        test = Test()
+        context = Context()
+        context.bind_variable('foo','broken')
+        test.variable_binds = {'foo':'correct', 'test':'value'}
+        test.update_context_before(context)
+        self.assertEqual('correct', context.get_value('foo'))
+        self.assertEqual('value', context.get_value('test'))
+
+    def test_update_context_generators(self):
+        """ Test updating context variables using generator """
+        test = Test()
+        context = Context()
+        context.bind_variable('foo','broken')
+        test.variable_binds = {'foo': 'initial_value'}
+        test.generator_binds = {'foo': 'gen'}
+        context.add_generator('gen', generators.generator_basic_ids())
+
+        test.update_context_before(context)
+        self.assertEqual(1, context.get_value('foo'))
+        test.update_context_before(context)
+        self.assertEqual(2, context.get_value('foo'))
 
 if __name__ == '__main__':
     unittest.main()

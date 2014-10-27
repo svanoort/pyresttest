@@ -3,6 +3,7 @@ import json
 import pycurl
 from tests import Test
 from parsing import *
+import StringIO
 
 """
 Encapsulates logic related to benchmarking

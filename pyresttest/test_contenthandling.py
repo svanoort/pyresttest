@@ -68,7 +68,7 @@ class ContentHandlerTest(unittest.TestCase):
 
     def test_parse_content_file(self):
         """ Test parsing of file content """
-        node = {'file':'myval'}
+        node = {'file':'/myval'}
         handler = ContentHandler.parse_content(node)
         self.assertEqual(node['file'], handler.content)
         self.assertFalse(handler.is_dynamic())
@@ -91,9 +91,9 @@ class ContentHandlerTest(unittest.TestCase):
 
     def test_parse_content_templated_file_path(self):
         """ Test parsing of templated file path """
-        node = {'file': {'template': '$host-path.yaml'}}
+        node = {'file': {'template': '/$host-path.yaml'}}
         handler = ContentHandler.parse_content(node)
-        self.assertEqual('$host-path.yaml', handler.content)
+        self.assertEqual('/$host-path.yaml', handler.content)
         self.assertTrue(handler.is_dynamic())
         self.assertTrue(handler.is_file)
         self.assertTrue(handler.is_template_path)
@@ -101,9 +101,9 @@ class ContentHandlerTest(unittest.TestCase):
 
     def test_parse_content_templated_file_content(self):
         """ Test parsing of templated file content """
-        node = {'template': {'file': 'path.yaml'}}
+        node = {'template': {'file': '/path.yaml'}}
         handler = ContentHandler.parse_content(node)
-        self.assertEqual('path.yaml', handler.content)
+        self.assertEqual('/path.yaml', handler.content)
         self.assertTrue(handler.is_dynamic())
         self.assertTrue(handler.is_file)
         self.assertFalse(handler.is_template_path)
@@ -111,9 +111,9 @@ class ContentHandlerTest(unittest.TestCase):
 
     def test_parse_content_double_templated_file(self):
         """ Test parsing of file with path and content templated """
-        node = {'template': {'file': {'template': '$var-path.yaml'}}}
+        node = {'template': {'file': {'template': '/$var-path.yaml'}}}
         handler = ContentHandler.parse_content(node)
-        self.assertEqual('$var-path.yaml', handler.content)
+        self.assertEqual('/$var-path.yaml', handler.content)
         self.assertTrue(handler.is_dynamic())
         self.assertTrue(handler.is_file)
         self.assertTrue(handler.is_template_path)

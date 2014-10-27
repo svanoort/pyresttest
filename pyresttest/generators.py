@@ -91,80 +91,77 @@ def factory_env_string(env_string):
 
     return return_variable
 
+""" Implements the parsing logic for YAML, and acts as single point for reading configuration """
 
+def parse_random_text_generator(configuration):
+    """ Parses configuration options for a random text generator """
+    character_set = configuration.get(u'character_set')
+    characters = None
+    if character_set:
+        character_set = character_set.lower()
+        if character_set not in CHARACTER_SETS:
+            raise ValueError("Illegal character set name, is not defined: {0}".format(character_set))
+        characters = CHARACTER_SETS[character_set]
+    else:  # Custom characters listing, not a character set
+        characters = str(configuration.get(u'characters'))
 
-class GeneratorFactory:
-    """ Implements the parsing logic for YAML, and acts as single point for reading configuration """
+    min_length = 8
+    max_length = 8
 
-    def parse_random_text_generator(self, configuration):
-        """ Parses configuration options for a random text generator """
-        character_set = configuration.get(u'character_set')
-        characters = None
-        if character_set:
-            character_set = character_set.lower()
-            if character_set not in CHARACTER_SETS:
-                raise ValueError("Illegal character set name, is not defined: {0}".format(character_set))
-            characters = CHARACTER_SETS[character_set]
-        else:  # Custom characters listing, not a character set
-            characters = str(configuration.get(u'characters'))
+    if configuration.get(u'min_length'):
+        min_length = int(configuration.get(u'min_length'))
+    if configuration.get(u'max_length'):
+        max_length = int(configuration.get(u'max_length'))
 
-        min_length = 8
-        max_length = 8
+    if configuration.get(u'length'):
+        length = int(configuration.get(u'length'))
+        min_length = length
+        max_length = length
 
-        if configuration.get(u'min_length'):
-            min_length = int(configuration.get(u'min_length'))
-        if configuration.get(u'max_length'):
-            max_length = int(configuration.get(u'max_length'))
+    if characters:
+        return factory_generate_text(legal_characters=characters, min_length=min_length, max_length=max_length)()
+    else:
+        return factory_generate_text(min_length=min_length, max_length=max_length)()
 
-        if configuration.get(u'length'):
-            length = int(configuration.get(u'length'))
-            min_length = length
-            max_length = length
+# List of valid generator types
+GENERATOR_TYPES = set(['env_variable',
+    'env_string',
+    'count_numbers',
+    'rand_int',
+    'random_text'
+])
 
-        if characters:
-            return factory_generate_text(legal_characters=characters, min_length=min_length, max_length=max_length)()
+def parse_generator(configuration):
+    """ Parses a configuration built from yaml and returns a generator
+        Configuration should be a map
+    """
+
+    configuration = lowercase_keys(flatten_dictionaries(configuration))
+    gen_type = str(configuration.get(u'type')).lower()
+
+    if gen_type not in GENERATOR_TYPES:
+        raise ValueError('Generator type given {0} is not valid '.format(gen_type))
+
+    # Do the easy parsing, delegate more complex logic to parsing functions
+    if gen_type == u'env_variable':
+        return factory_env_variable(configuration[u'variable_name'])()
+    elif gen_type == u'env_string':
+        return factory_env_string(configuration[u'string'])()
+    elif gen_type == u'count_numbers':
+        start = configuration.get('start')
+        increment = configuration.get('increment')
+        if not start:
+            start = 1
         else:
-            return factory_generate_text(min_length=min_length, max_length=max_length)()
-
-    # List of valid generator types
-    GENERATOR_TYPES = set(['env_variable',
-        'env_string',
-        'count_numbers',
-        'rand_int',
-        'random_text'
-    ])
-
-    def parse(self, configuration):
-        """ Parses a configuration built from yaml and returns a generator
-            Configuration should be a map
-        """
-
-        configuration = lowercase_keys(flatten_dictionaries(configuration))
-        gen_type = str(configuration.get(u'type')).lower()
-
-        if gen_type not in self.GENERATOR_TYPES:
-            raise ValueError('Generator type given {0} is not valid '.format(gen_type))
-
-        # Do the easy parsing, delegate more complex logic to parsing functions
-        if gen_type == u'env_variable':
-            return factory_env_variable(configuration[u'variable_name'])()
-        elif gen_type == u'env_string':
-            return factory_env_string(configuration[u'string'])()
-        elif gen_type == u'count_numbers':
-            start = configuration.get('start')
-            increment = configuration.get('increment')
-            if not start:
-                start = 1
-            else:
-                start = int(start)
-            if not increment:
-                increment = 1
-            else:
-                increment = int(increment)
-            return factory_generate_ids(start, increment)()
-        elif gen_type == u'rand_int':
-            return generator_random_int32()
-        elif gen_type == u'random_text':
-            return self.parse_random_text_generator(configuration)
+            start = int(start)
+        if not increment:
+            increment = 1
         else:
-            raise Exception("Unknown generator type: {0}".format('gen_type'))
+            increment = int(increment)
+        return factory_generate_ids(start, increment)()
+    elif gen_type == u'rand_int':
+        return generator_random_int32()
+    elif gen_type == u'random_text':
+        return parse_random_text_generator(configuration)
+    else:
+        raise Exception("Unknown generator type: {0}".format('gen_type'))

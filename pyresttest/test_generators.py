@@ -115,7 +115,7 @@ class GeneratorTest(unittest.TestCase):
         config['character_set'] = 'reallyINVALID'
 
         try:
-            gen = generators.GeneratorFactory().parse(config)
+            gen = generators.parse_generator(config)
             self.fail("Should never parse an invalid character_set successfully, but did!")
         except ValueError:
             pass
@@ -124,7 +124,7 @@ class GeneratorTest(unittest.TestCase):
         for charset in generators.CHARACTER_SETS:
             try:
                 config['character_set'] = charset
-                gen = generators.GeneratorFactory().parse(config)
+                gen = generators.parse_generator(config)
                 myset = set(generators.CHARACTER_SETS[charset])
                 for x in xrange(0, 50):
                     val = gen.next()
@@ -140,19 +140,19 @@ class GeneratorTest(unittest.TestCase):
         del config['character_set']
         temp_chars = 'ay78%&'
         config['characters'] = temp_chars
-        gen = generators.GeneratorFactory().parse(config)
+        gen = generators.parse_generator(config)
         self.generator_basic_test(gen, value_test_function = lambda x: set(x).issubset(set(temp_chars)))
 
         # Test for length setting
         config['length'] = '3'
-        gen = generators.GeneratorFactory().parse(config)
+        gen = generators.parse_generator(config)
         self.generator_basic_test(gen, value_test_function = lambda x: len(x) == 3)
         del config['length']
 
         # Test for explicit min/max length
         config['min_length'] = '9'
         config['max_length'] = 12
-        gen = generators.GeneratorFactory().parse(config)
+        gen = generators.parse_generator(config)
         self.generator_basic_test(gen, value_test_function = lambda x: len(x) >= 9 and len(x) <= 12)
 
 
@@ -161,33 +161,33 @@ class GeneratorTest(unittest.TestCase):
         config = {'type':'unsupported'}
 
         try:
-            gen = generators.GeneratorFactory().parse(config)
+            gen = generators.parse_generator(config)
             self.fail("Expected failure due to invalid generator type, did not emit it")
         except ValueError:
             pass
 
         # Try creating a random_int generator
         config['type'] = 'rand_int'
-        gen = generators.GeneratorFactory().parse(config)
+        gen = generators.parse_generator(config)
         self.generator_basic_test(gen, value_test_function = lambda x: isinstance(x,int))
         self.generator_repeat_test(gen)
 
         config['type'] = 'env_variable'
         config['variable_name'] = 'USER'
-        gen = generators.GeneratorFactory().parse(config)
+        gen = generators.parse_generator(config)
         self.generator_basic_test(gen)
         del config['variable_name']
 
         config['type'] = 'env_string'
         config['string'] = '$USER'
-        gen = generators.GeneratorFactory().parse(config)
+        gen = generators.parse_generator(config)
         self.generator_basic_test(gen)
         del config['string']
 
         config['type'] = 'count_numbers'
         config['start'] = '1'
         config['increment'] = '10'
-        gen = generators.GeneratorFactory().parse(config)
+        gen = generators.parse_generator(config)
         self.assertEqual(1, gen.next())
         self.assertEqual(11, gen.next())
         self.generator_basic_test(gen)

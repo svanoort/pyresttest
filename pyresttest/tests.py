@@ -125,7 +125,7 @@ class Test(object):
         if self.variable_binds:
             context.bind_variables(self.variable_binds)
         if self.generator_binds:
-            for key, value in self.generator_binds:
+            for key, value in self.generator_binds.items():
                 context.bind_generator_next(key, value)
 
     def update_context_after(self, response_body, context):
@@ -292,7 +292,7 @@ class Test(object):
             elif configelement == 'generator_binds':
                 output = flatten_dictionaries(configvalue)
                 output2 = dict()
-                for key, value in output.items:
+                for key, value in output.items():
                     output2[str(key)] = str(value)
                 mytest.generator_binds = output2
             elif configelement == 'stop_on_failure':
