@@ -163,6 +163,31 @@ class Test(object):
             selfcopy._url = self.get_url(context=context)
             return selfcopy
 
+    def realize_partial(self, context=None):
+        """ Attempt to template out what is static if possible, and load files.
+            Used for performance optimization, in cases where a test is re-run repeatedly
+            WITH THE SAME Context.
+        """
+
+        if self.is_context_modifier():
+            # Don't template what is changing
+            return self
+        elif self.is_dynamic():  # Dynamic but doesn't modify context, template everything
+            return self.realize(context=context)
+
+        # See if body can be replaced
+        bod = self._body
+        newbod = None
+        if bod and isinstance(bod, ContentHandler) and bod.is_file and not bod.is_template_path:
+            # File can be UN-lazy loaded
+            newbod = bod.create_noread_version()
+
+        output = self
+        if newbod: # Read body
+            output = copy.copy(self)
+            output._body = newbod
+        return output
+
     def __init__(self):
         self.headers = dict()
         self.expected_status = [200]
@@ -174,7 +199,6 @@ class Test(object):
     def configure_curl(self, timeout=DEFAULT_TIMEOUT, context=None, curl_handle=None):
         """ Create and mostly configure a curl object for test, reusing existing if possible """
 
-
         if curl_handle:
             curl = curl_handle
         else:
@@ -185,21 +209,22 @@ class Test(object):
         curl.setopt(curl.TIMEOUT, timeout)
 
         # HACK: process env vars again, since we have an extract capabilitiy in validation.. this is a complete hack, but I need functionality over beauty
-        if self.body is not None:
-            self.body = os.path.expandvars(self.body)
+        bod = self.body
+        if bod is not None:
+            bod = os.path.expandvars(bod)
 
         # Set read function for post/put bodies
         if self.method == u'POST' or self.method == u'PUT':
-            curl.setopt(curl.READFUNCTION, StringIO.StringIO(self.body).read)
+            curl.setopt(curl.READFUNCTION, StringIO.StringIO(bod).read)
 
         if self.method == u'POST':
             curl.setopt(HTTP_METHODS[u'POST'], 1)
-            if self.body is not None:
-                curl.setopt(pycurl.POSTFIELDSIZE, len(self.body))  # Required for some servers
+            if bod is not None:
+                curl.setopt(pycurl.POSTFIELDSIZE, len(bod))  # Required for some servers
         elif self.method == u'PUT':
             curl.setopt(HTTP_METHODS[u'PUT'], 1)
-            if self.body is not None:
-                curl.setopt(pycurl.INFILESIZE, len(self.body))  # Required for some servers
+            if bod is not None:
+                curl.setopt(pycurl.INFILESIZE, len(bod))  # Required for some servers
         elif self.method == u'DELETE':
             curl.setopt(curl.CUSTOMREQUEST,'DELETE')
 
