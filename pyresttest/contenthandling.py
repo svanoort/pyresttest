@@ -50,6 +50,16 @@ class ContentHandler:
             else:
                 return self.content
 
+    def create_noread_version(self):
+        """ Read file content if it is static and return content handler with no I/O """
+        if not self.is_file or self.is_template_path:
+            return self
+        output = ContentHandler()
+        output.is_template_content = self.is_template_content
+        with open(self.content, 'r') as f:
+                output.content = f.read()
+        return output
+
     def setup(self, input, is_file=False, is_template_path=False, is_template_content=False):
         """ Self explanatory, input is inline content or file path. """
         if not isinstance(input, basestring):

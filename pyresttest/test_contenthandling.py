@@ -1,5 +1,6 @@
 import unittest
 import string
+import os
 from contenthandling import ContentHandler
 from binding import Context
 
@@ -23,11 +24,13 @@ class ContentHandlerTest(unittest.TestCase):
         self.assertEqual(body, handler.get_content())
 
     def test_content_file_template(self):
-        """ Test file read and templating of read files """
+        """ Test file read and templating of read files in this directory """
         variables = {'id':1, 'login':'thewizard'}
         context = Context()
 
-        file_path = './pyresttest/person_body_template.json'
+        file_path = os.path.dirname(os.path.realpath(__file__))
+        file_path = os.path.join(file_path, 'person_body_template.json')
+
         file_content = None
         with open(file_path, 'r') as f:
             file_content = f.read()
@@ -54,6 +57,39 @@ class ContentHandlerTest(unittest.TestCase):
         # Test double templating with files
         handler.setup(file_path, is_file=True, is_template_path=True, is_template_content=True)
         self.assertEqual(substituted, handler.get_content(context=context))
+
+    def test_cached_read(self):
+        """ Test method that creates a copy with file read already performed """
+        file_path = os.path.dirname(os.path.realpath(__file__))
+        file_path = os.path.join(file_path, 'person_body_template.json')
+
+        # Read file to compare
+        file_content = None
+        with open(file_path, 'r') as f:
+            file_content = f.read()
+
+        handler = ContentHandler()
+        handler.setup(file_path, is_file=True)
+
+        # Check it read the file correctly
+        cached_handler = handler.create_noread_version()
+        self.assertEqual(file_content, handler.get_content())
+        self.assertFalse(cached_handler.is_file)
+
+        # Check with templating
+        handler.is_template_content = True
+        cached_handler = handler.create_noread_version()
+        self.assertEqual(file_content, handler.get_content())
+        self.assertEqual(handler.is_template_content, cached_handler.is_template_content)
+        self.assertFalse(cached_handler.is_file)
+
+        # Check dynamic paths don't try to template
+        handler.is_template_path = True
+        cached_handler = handler.create_noread_version()
+        self.assertTrue(handler is cached_handler)
+
+
+
 
     def test_parse_content_simple(self):
         """ Test parsing of simple content """
