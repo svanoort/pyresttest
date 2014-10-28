@@ -340,16 +340,17 @@ def run_benchmark(benchmark, test_config = TestConfig(), context = None):
     metricnames = list(benchmark.metrics)
     metricvalues = [METRICS[name] for name in metricnames]  # Metric variable for curl, to avoid hash lookup for every metric name
     results = [list() for x in xrange(0, len(metricnames))]  # Initialize arrays to store results for each metric
+    curl = pycurl.Curl()
 
     #Benchmark warm-up to allow for caching, JIT compiling, on client
     logging.info('Warmup: ' + message + ' started')
     for x in xrange(0, warmup_runs):
         benchmark.update_context_before(my_context)
         templated = benchmark.realize(my_context)
-        curl = templated.configure_curl(timeout=test_config.timeout, context=my_context)
+        curl = templated.configure_curl(timeout=test_config.timeout, context=my_context, curl_handle=curl)
         curl.setopt(pycurl.WRITEFUNCTION, lambda x: None) #Do not store actual response body at all.
         curl.perform()
-        curl.close()
+
     logging.info('Warmup: ' + message + ' finished')
 
     logging.info('Benchmark: ' + message + ' starting')
@@ -358,7 +359,7 @@ def run_benchmark(benchmark, test_config = TestConfig(), context = None):
         # Setup benchmark
         benchmark.update_context_before(my_context)
         templated = benchmark.realize(my_context)
-        curl = templated.configure_curl(timeout=test_config.timeout, context=my_context)
+        curl = templated.configure_curl(timeout=test_config.timeout, context=my_context, curl_handle=curl)
         curl.setopt(pycurl.WRITEFUNCTION, lambda x: None) #Do not store actual response body at all.
 
         try:  # Run the curl call, if it errors, then add to failure counts for benchmark
@@ -366,13 +367,15 @@ def run_benchmark(benchmark, test_config = TestConfig(), context = None):
         except Exception:
             output.failures = output.failures + 1
             curl.close()
+            curl = pycurl.Curl()
             continue  # Skip metrics collection
 
         # Get all metrics values for this run, and store to metric lists
         for i in xrange(0, len(metricnames)):
             results[i].append( curl.getinfo(metricvalues[i]) )
-        curl.close()
 
+
+    curl.close()
     logging.info('Benchmark: ' + message + ' ending')
 
     temp_results = dict()

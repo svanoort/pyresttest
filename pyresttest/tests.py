@@ -171,10 +171,15 @@ class Test(object):
     def __str__(self):
         return json.dumps(self, default=lambda o: o.__dict__)
 
-    def configure_curl(self, timeout=DEFAULT_TIMEOUT, context=None):
-        """ Create and mostly configure a curl object for test """
+    def configure_curl(self, timeout=DEFAULT_TIMEOUT, context=None, curl_handle=None):
+        """ Create and mostly configure a curl object for test, reusing existing if possible """
 
-        curl = pycurl.Curl()
+
+        if curl_handle:
+            curl = curl_handle
+        else:
+            curl = pycurl.Curl()
+
         # curl.setopt(pycurl.VERBOSE, 1)  # Debugging convenience
         curl.setopt(curl.URL, str(self.url))
         curl.setopt(curl.TIMEOUT, timeout)

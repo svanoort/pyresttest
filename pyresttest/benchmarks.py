@@ -2,6 +2,7 @@ import math
 import json
 import pycurl
 from tests import Test
+import tests
 from parsing import *
 import StringIO
 
@@ -147,6 +148,11 @@ class Benchmark(Test):
 
     def __str__(self):
         return json.dumps(self, default=lambda o: o.__dict__)
+
+def configure_curl(self, timeout=tests.DEFAULT_TIMEOUT, context=None, curl_handle=None):
+    curl = super().configure_curl(self, timeout=timeout, context=context, curl_handle=curl_handle)
+    curl.setopt(pycurl.FORBID_REUSE, 1)  # Simulate results from different users hitting server
+    return curl
 
 def build_benchmark(base_url, node):
     """ Try building a benchmark configuration from deserialized configuration root node """
