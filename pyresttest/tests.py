@@ -153,14 +153,14 @@ class Test(object):
         """ Return a fully-templated test object, for configuring curl
             Warning: this is a SHALLOW copy, mutation of fields will cause problems!
             Can accept a None context """
-        if not self.is_dynamic():
+        if not self.is_dynamic() or context is None:
             return self
         else:
             selfcopy = copy.copy(self)
             selfcopy.templates = None
-            selfcopy._body = self.get_body(context=context)
-            if self.templates and self.NAME_URL in self.templates:
-                selfcopy._url = self.get_url(context=context)
+            if isinstance(self._body, ContentHandler):
+                selfcopy._body = self._body.get_content(context)
+            selfcopy._url = self.get_url(context=context)
             return selfcopy
 
     def __init__(self):

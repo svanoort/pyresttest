@@ -149,6 +149,18 @@ class Benchmark(Test):
     def __str__(self):
         return json.dumps(self, default=lambda o: o.__dict__)
 
+def realize_partial(self, context=None):
+    """ Attempt to template out what is possible for this benchmark """
+    if not self.is_dynamic():
+        return self
+    if self.is_context_modifier():
+        # Enhanceme - once extract is done, check if variables already bound, in that case template out
+        return self
+    else:
+        copyout = copy.cop
+
+    pass
+
 def configure_curl(self, timeout=tests.DEFAULT_TIMEOUT, context=None, curl_handle=None):
     curl = super().configure_curl(self, timeout=timeout, context=context, curl_handle=curl_handle)
     curl.setopt(pycurl.FORBID_REUSE, 1)  # Simulate results from different users hitting server
