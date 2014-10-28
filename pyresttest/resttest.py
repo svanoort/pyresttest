@@ -30,7 +30,7 @@ else:  # Importing as library
     from pyresttest.parsing import flatten_dictionaries, lowercase_keys, safe_to_bool
     from pyresttest.validators import Validator
     from pyresttest.tests import Test
-    from pyresttest.benchmarks import Benchmark, AGGREGATES, METRICS
+    from pyresttest.benchmarks import Benchmark, AGGREGATES, METRICS, build_benchmark
 
 """
 Executable class, ties everything together into the framework.
