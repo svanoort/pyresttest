@@ -4,6 +4,45 @@ import operator
 
 """ Validator logic """
 
+
+VALIDATORS = {}
+VALIDATOR_PARSE_FUNCTIONS = {}
+
+def parse(name, config_node):
+    """ Parse a validator from configuration and use it """
+    if name not in VALIDATORS:
+        raise ValueError("Name {0} is not a named validator type!".format(name))
+    return VALIDATOR_PARSE_FUNCTIONS[name].parse(config_node)
+
+def register_validator(name, parse_function):
+    """ Registers a validator for use by this library
+        Name is the string name for validator
+
+        Parse function does parse(config_node) and returns a validator function
+        Validator functions have signature:
+            validate(response_body, context=None) - context is a bindings.Context object
+
+        Validators return true or false (optionally throw exceptions)
+    """
+    if name in VALIDATORS:
+        raise Exception("Validator exists with this name: {0}".format(name))
+
+    VALIDATORS.add(name)
+    VALIDATOR_PARSE_FUNCTIONS[name] = parse_function
+
+# Text extraction
+def make_extract_json_dict(query):
+    """ Creates an extract function by converting JSON to dictionary """
+    pass
+
+def make_extract_regex(regex):
+    """ Extract regex match """
+    pass
+
+def parse_extractor(type, config):
+    """ Convert extractor type and config to an extractor instance """
+    pass
+
 class Validator:
     """ Validation for a dictionary """
     query = None
