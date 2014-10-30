@@ -115,6 +115,28 @@ class GeneratorTest(unittest.TestCase):
         gen = generators.parse_generator(config)
         self.generator_basic_test(gen, lambda x: x in vals)
 
+    def test_factory_choice(self):
+        """ Tests linear sequences """
+        vals = [1]
+        gen = generators.factory_choice_generator(vals)()
+        self.generator_basic_test(gen, lambda x: x in vals)
+
+        vals = ['moobie', 'moby', 'moo']
+        gen = generators.factory_choice_generator(vals)()
+        self.generator_basic_test(gen, lambda x: x in vals)
+
+        vals = {'a','b','c'}
+        gen = generators.factory_choice_generator(vals)()
+        self.generator_basic_test(gen, lambda x: x in vals)
+
+    def test_parse_choice_generatpr(self):
+        vals = ['moobie', 'moby', 'moo']
+        config = {'type': 'choice',
+            'values': vals}
+        gen = generators.parse_generator(config)
+        self.generator_basic_test(gen, lambda x: x in vals)
+
+
     def test_factory_text_multilength(self):
         """ Test that the random text generator can handle multiple lengths """
         gen = generators.factory_generate_text(legal_characters='abcdefghij', min_length=1,max_length=100)()

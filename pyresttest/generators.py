@@ -86,10 +86,29 @@ def parse_fixed_sequence(config):
     """ Parse fixed sequence string """
     vals = config['values']
     if not vals:
-        raise ValueError('Values for fix sequence must exist')
+        raise ValueError('Values for fixed sequence must exist')
     if not isinstance(vals,list):
         raise ValueError('Values must be a list of entries')
     return factory_fixed_sequence(vals)()
+
+def factory_choice_generator(values):
+    """ Return a generator that picks values from a list randomly """
+
+    def choice_generator():
+        my_list = list(values)
+        rand = random.Random()
+        while(True):
+            yield random.choice(my_list)
+    return choice_generator
+
+def parse_choice_generator(config):
+    """ Parse choice generator """
+    vals = config['values']
+    if not vals:
+        raise ValueError('Values for choice sequence must exist')
+    if not isinstance(vals,list):
+        raise ValueError('Values must be a list of entries')
+    return factory_choice_generator(vals)()
 
 
 def factory_env_variable(env_variable):
@@ -167,6 +186,9 @@ def register_generator(typename, parse_function):
         raise ValueError('Generator type named {0} already exists'.format(typename))
     GENERATOR_TYPES.add(typename)
     GENERATOR_PARSING[typename] = parse_function
+
+# Try registering a new generator
+register_generator('choice', parse_choice_generator)
 
 def parse_generator(configuration):
     """ Parses a configuration built from yaml and returns a generator
