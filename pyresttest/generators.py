@@ -70,6 +70,27 @@ def factory_generate_text(legal_characters=string.ascii_letters, min_length=8, m
 
     return generate_text
 
+def factory_fixed_sequence(values):
+    """ Return a generator that runs through a list of values in order, looping after end """
+
+    def seq_generator():
+        my_list = list(values)
+        i = 0
+        while(True):
+            yield my_list[i]
+            if i == len(my_list):
+                i = 0
+    return seq_generator
+
+def parse_fixed_sequence(config):
+    """ Parse fixed sequence string """
+    vals = config['values']
+    if not vals:
+        raise ValueError('Values for fix sequence must exist')
+    if not isinstance(vals,list):
+        raise ValueError('Values must be a list of entries')
+    return factory_fixed_sequence(vals)()
+
 
 def factory_env_variable(env_variable):
     """ Return a generator function that reads from an environment variable """
@@ -123,13 +144,29 @@ def parse_random_text_generator(configuration):
     else:
         return factory_generate_text(min_length=min_length, max_length=max_length)()
 
+
 # List of valid generator types
 GENERATOR_TYPES = set(['env_variable',
     'env_string',
     'number_sequence',
     'random_int',
-    'random_text'
+    'random_text',
+    'fixed_sequence'
 ])
+
+GENERATOR_PARSING = {'fixed_sequence': parse_fixed_sequence}
+
+def register_generator(typename, parse_function):
+    """ Register a new generator for use in testing
+        typename is the new generator type name (must not already exist)
+        parse_function will parse a configuration object (dict)
+    """
+    if not isinstance(typename, basestring):
+        raise TypeError('Generator type name {0} is invalid, must be a string'.format(typename))
+    if typename in GENERATOR_TYPES:
+        raise ValueError('Generator type named {0} already exists'.format(typename))
+    GENERATOR_TYPES.add(typename)
+    GENERATOR_PARSING[typename] = parse_function
 
 def parse_generator(configuration):
     """ Parses a configuration built from yaml and returns a generator
@@ -163,5 +200,7 @@ def parse_generator(configuration):
         return generator_random_int32()
     elif gen_type == u'random_text':
         return parse_random_text_generator(configuration)
+    elif gen_type in GENERATOR_TYPES:
+        return GENERATOR_PARSING[gen_type](configuration)
     else:
         raise Exception("Unknown generator type: {0}".format('gen_type'))
