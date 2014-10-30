@@ -167,7 +167,7 @@ class GeneratorTest(unittest.TestCase):
             pass
 
         # Try creating a random_int generator
-        config['type'] = 'rand_int'
+        config['type'] = 'random_int'
         gen = generators.parse_generator(config)
         self.generator_basic_test(gen, value_test_function = lambda x: isinstance(x,int))
         self.generator_repeat_test(gen)
@@ -184,7 +184,7 @@ class GeneratorTest(unittest.TestCase):
         self.generator_basic_test(gen)
         del config['string']
 
-        config['type'] = 'count_numbers'
+        config['type'] = 'number_sequence'
         config['start'] = '1'
         config['increment'] = '10'
         gen = generators.parse_generator(config)

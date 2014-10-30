@@ -4,7 +4,7 @@
 - config:
     - testset: "Benchmark tests using test app"
     - generators:
-        - 'id': {type: 'count_numbers', start: 10}
+        - 'id': {type: 'number_sequence', start: 10}
 
 - benchmark: # create entity
     - generator_binds: {id: id}

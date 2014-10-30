@@ -126,8 +126,8 @@ def parse_random_text_generator(configuration):
 # List of valid generator types
 GENERATOR_TYPES = set(['env_variable',
     'env_string',
-    'count_numbers',
-    'rand_int',
+    'number_sequence',
+    'random_int',
     'random_text'
 ])
 
@@ -147,7 +147,7 @@ def parse_generator(configuration):
         return factory_env_variable(configuration[u'variable_name'])()
     elif gen_type == u'env_string':
         return factory_env_string(configuration[u'string'])()
-    elif gen_type == u'count_numbers':
+    elif gen_type == u'number_sequence':
         start = configuration.get('start')
         increment = configuration.get('increment')
         if not start:
@@ -159,7 +159,7 @@ def parse_generator(configuration):
         else:
             increment = int(increment)
         return factory_generate_ids(start, increment)()
-    elif gen_type == u'rand_int':
+    elif gen_type == u'random_int':
         return generator_random_int32()
     elif gen_type == u'random_text':
         return parse_random_text_generator(configuration)
