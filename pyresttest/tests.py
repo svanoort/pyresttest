@@ -66,6 +66,15 @@ class Test(object):
     generator_binds = None  # Dict of variable name and then generator name
     extract_binds = None  # Dict of variable name and extract function to run
 
+    def ninja_copy(self):
+        """ Optimization: limited copy of test object, for realize() methods
+            This only copies fields changed vs. class, and keeps methods the same
+        """
+        output = Test()
+        myvars = vars(self)
+        output.__dict__ = myvars.copy()
+        return output
+
     # Template handling logic
     def set_template(self, variable_name, template_string):
         """ Add a templating instance for variable given """
@@ -156,7 +165,7 @@ class Test(object):
         if not self.is_dynamic() or context is None:
             return self
         else:
-            selfcopy = copy.copy(self)
+            selfcopy = self.ninja_copy()
             selfcopy.templates = None
             if isinstance(self._body, ContentHandler):
                 selfcopy._body = self._body.get_content(context)

@@ -114,6 +114,13 @@ class Benchmark(Test):
     raw_metrics = set()  # Metrics that do not have any aggregation performed
     aggregated_metrics = dict()  # Metrics where an aggregate is computed, maps key(metric name) -> list(aggregates to use)
 
+    def ninja_copy(self):
+        """ Optimization: limited, fast copy of benchmark, overrides Test parent method """
+        output = Benchmark()
+        myvars = vars(self)
+        output.__dict__ = myvars.copy()
+        return output
+
     def add_metric(self, metric_name, aggregate=None):
         """ Add a metric-aggregate pair to the benchmark, where metric is a number to measure from curl, and aggregate is an aggregation function
             (See METRICS and AGGREGATES)
