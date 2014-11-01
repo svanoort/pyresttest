@@ -237,10 +237,11 @@ class Test(object):
         elif self.method == u'DELETE':
             curl.setopt(curl.CUSTOMREQUEST,'DELETE')
 
-        headers = list()
+
         if self.headers: #Convert headers dictionary to list of header entries, tested and working
-            for headername, headervalue in self.headers.items():
-                headers.append(str(headername) + ': ' +str(headervalue))
+            headers = [str(headername)+':'+str(headervalue) for headername, headervalue in self.headers.items()]
+        else:
+            headers = list()
         headers.append("Expect:")  # Fix for expecting 100-continue from server, which not all servers will send!
         headers.append("Connection: close")
         curl.setopt(curl.HTTPHEADER, headers)
