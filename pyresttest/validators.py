@@ -1,14 +1,87 @@
 import logging
 import json
 import operator
+import string
+import parsing
 
-""" Validator logic """
+"""
+Validator/Extractor logic for utility use
+Defines objects:
+- Extractors that take a text body and context, and return a result from the (text) body
+- Validators (functions) that take a text body and context, and validate the body
+- Several useful implementations for each:
+
+Extractors:
+    - json mini extractor (sudo-jsonpath)
+
+Validators:
+    - TEST validator, config includes and extractor function and test name, applies test to extract results
+        - Uses TESTS, for pluggable test functions
+    - comparator validator:
+        - runs named extractor, compares to expected value (can be template or extractor)
+        - uses (pluggable) comparator function for comparison
+
+"""
 
 
 VALIDATORS = {}
 VALIDATOR_PARSE_FUNCTIONS = {}
 
-def parse(name, config_node):
+# Binary comparison tests
+COMPARATORS = {
+    'lt': operator.lt,
+    'less_than': operator.lt,
+    'le': operator.lt,
+    'less_than_or_equal': operator.lt,
+    'eq': operator.eq,
+    'equals': operator.eq,
+    'ne': operator.eq,
+    'not_equals': operator.eq,
+    'ge': operator.ge,
+    'greater_than_or_equal': operator.ge,
+    'gt': operator.gt,
+    'greater_than': operator.gt,
+    'contains': lambda x,y: x and y and operator.contains(x,y), # is y in x
+    'contained_by': lambda x,y: x and y and operator.contains(y,x), # is x in y
+}
+
+# Unury comparison tests
+TESTS = {
+    'exists': lambda x: bool(x),
+    'not_exists' : lambda x: not bool(x)
+}
+
+def parse_extractor_minijson(config):
+    """ Creates an extractor function using the mini-json query functionality """
+    if isinstance(config, dict):
+        try:
+            config = config['template']
+            isTemplate = True
+        except KeyError:
+            raise ValueError("Cannot define a dictionary config for mini-json extractor without it having template key")
+    elif isinstance(config, basestring):
+        isTemplate = False
+    else:
+        raise TypeError("Mini-json extractor must have a string or {template: querystring} configuration node!")
+
+    # Closure: config information is closed over in scope
+    def extract(body, context=None):
+        try:
+            body = json.loads(body)
+            return query_dictionary(config, body, context=context, isTemplate=isTemplate)
+        except:
+            return None
+    return extract
+
+# Extractor parse functions
+EXTRACTORS = {
+    'jsonpath_mini': parse_extractor_minijson
+    # ENHANCEME: add JsonPath-rw support for full JsonPath syntax
+    # ENHANCEME: add elementree support for xpath extract on XML, very simple no?
+    #  See: https://docs.python.org/2/library/xml.etree.elementtree.html, findall syntax
+}
+
+def parse_validator(name, config_node):
     """ Parse a validator from configuration and use it """
     if name not in VALIDATORS:
         raise ValueError("Name {0} is not a named validator type!".format(name))
@@ -30,18 +103,100 @@ def register_validator(name, parse_function):
     VALIDATORS.add(name)
     VALIDATOR_PARSE_FUNCTIONS[name] = parse_function
 
-# Text extraction
-def make_extract_json_dict(query):
-    """ Creates an extract function by converting JSON to dictionary """
-    pass
-
-def make_extract_regex(regex):
-    """ Extract regex match """
-    pass
-
-def parse_extractor(type, config):
+def parse_extractor(extractor_type, config):
     """ Convert extractor type and config to an extractor instance """
-    pass
+    parse = EXTRACTORS.get(extractor_type)
+    if not parse:
+        raise ValueError("Extractor {0} is not a valid extractor type".format(extractor_type))
+    return parse(config)
+
+def register_extractor(extractor_name, parse_function):
+    """ Register a new body extraction function """
+    if not isinstance(extractor_name, basestring):
+        raise TypeError("Cannot register a non-string extractor name")
+    if extractor_name.lower() == 'comparator':
+        raise ValueError("Cannot register extractors called 'comparator', that is a reserved name")
+    elif extractor_name.lower() == 'test':
+        raise ValueError("Cannot register extractors called 'test', that is a reserved name")
+    elif extractor_name.lower() == 'expected':
+        raise ValueError("Cannot register extractors called 'expected', that is a reserved name")
+    elif extractor_name in EXTRACTORS:
+        raise ValueError("Cannot register an extractor name that already exists: {0}".format(extractor_name))
+    EXTRACTORS[extractor_name] = parse_function
+
+
+def parse_comparator_validator(config):
+    """ Create a validator that does an extract from body and applies a comparator,
+        Then does comparison vs expected value
+        Syntax sample:
+          { jsonpath_mini: 'node.child',
+            operator: 'eq',
+            expected: 'myValue'
+          }
+    """
+
+    config = parsing.lowercase_keys(parsing.flatten_dictionaries(config))
+    extract = None
+    extract_config = None
+
+    # Extract functions are called by using defined extractor names
+    for key, value in config.items():
+        if key in EXTRACTORS:
+            if extract is not None:
+                raise ValueError("Cannot have multiple extract functions defined for comparator-validator!")
+            else:
+                extract = key
+                extract_config = value
+    if extract is None:
+        raise ValueError("Extract function for comparison is not valid or not found!")
+    extract_fn = EXTRACTORS[extract](extract_config)  # Parses using extractor's parse function
+
+    try:
+        comparator = config['comparator']
+    except KeyError:
+        raise ValueError("No comparator found in comparator validator config, one must be!")
+    comparator = COMPARATORS[comparator.lower()]
+    if not comparator:
+        raise ValueError("Invalid comparator given!")
+
+    try:
+        expected = config['expected']
+    except KeyError:
+        raise ValueError("No expected value found in comparator validator config, one must be!")
+
+    # TODO: handle templating and queries for expecteds
+    expectedval = None
+    if isinstance(expected, basestring):
+        expectedval = expected
+    if isinstance(expected, dict):
+        expected = lowercase_keys(expected)
+
+    if isinstance(expected, dict) :
+        raise NotImplementedError("Have not implemented complex expected values with query and templating")
+
+    def validate(body, context=None):
+        return comparator(extract_fn(body, context=context), expectedval)
+
+    return validate
+
+
+def query_dictionary(query, dictionary, delimiter='.', context=None, isTemplate=False):
+    """ Do an xpath-like query with dictionary, using a template if relevant """
+    # Based on http://stackoverflow.com/questions/7320319/xpath-like-query-for-nested-python-dictionaries
+
+    if isTemplate and context:
+        query = string.Template(query).safe_substitute(context.get_values())
+    try:
+        for x in query.strip(delimiter).split(delimiter):
+            try:
+                x = int(x)
+                dictionary = dictionary[x]
+            except ValueError:
+                dictionary = dictionary[x]
+    except:
+        return None
+    return dictionary
+
 
 class Validator:
     """ Validation for a dictionary """
