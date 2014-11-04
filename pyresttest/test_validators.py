@@ -64,12 +64,27 @@ class ValidatorsTest(unittest.TestCase):
         self.assertEqual(3, extracted)
         self.assertEqual(extracted, extract_fn(myjson, context))
 
-        self.assertEqual(None, extract_fn('[31{]'))
+        try:
+            val = extract_fn('[31{]')
+            self.fail("Should throw exception on invalid JSON")
+        except ValueError:
+            pass
 
         # Templating
         config = {'template': 'key.$node'}
         extract_fn = validators.parse_extractor_minijson(config)
         self.assertEqual(3, extract_fn(myjson, context=context))
+
+    def test_get_extract_fn(self):
+        config = {
+            'jsonpath_mini': 'key.val',
+            'comparator': 'eq',
+            'expected': 3
+        }
+        extract_fn = validators._get_extract_fn(config)
+        myjson = '{"key": {"val": 3}}'
+        extracted = extract_fn(myjson)
+        self.assertEqual(3, extracted)
 
     def test_validator_compare_basic(self):
         """ Basic tests of the comparison validators """
@@ -79,7 +94,7 @@ class ValidatorsTest(unittest.TestCase):
             'expected': 3
         }
         comp_fn = validators.parse_comparator_validator(config)
-        myjson = "{'key': {'val': 3}}"
+        myjson = '{"key": {"val": 3}}'
         self.assertTrue(comp_fn(myjson))
 
 

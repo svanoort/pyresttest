@@ -68,9 +68,10 @@ def parse_extractor_minijson(config):
     def extract(body, context=None):
         try:
             body = json.loads(body)
-            return query_dictionary(config, body, context=context, isTemplate=isTemplate)
-        except:
-            return None
+        except ValueError:
+            raise ValueError("Not legal JSON!")
+        return query_dictionary(config, body, context=context, isTemplate=isTemplate)
+
     return extract
 
 # Extractor parse functions
@@ -105,7 +106,7 @@ def register_validator(name, parse_function):
 
 def parse_extractor(extractor_type, config):
     """ Convert extractor type and config to an extractor instance """
-    parse = EXTRACTORS.get(extractor_type)
+    parse = EXTRACTORS.get(extractor_type.lower())
     if not parse:
         raise ValueError("Extractor {0} is not a valid extractor type".format(extractor_type))
     return parse(config)
@@ -125,6 +126,23 @@ def register_extractor(extractor_name, parse_function):
     EXTRACTORS[extractor_name] = parse_function
 
 
+def _get_extract_fn(config_dict):
+    """ Utility function, get an extract function for a single valid extractor name in config
+        and error if more than one or none """
+    extract = None
+    extract_config = None
+    for key, value in config_dict.items():
+        if key in EXTRACTORS:
+            if extract is not None:
+                raise ValueError("Cannot have multiple extract functions defined for validator!")
+            else:
+                extract = key
+                extract_config = value
+    if extract:
+        return EXTRACTORS[extract](extract_config)
+    else:  # No valid extractor
+        return None
+
 def parse_comparator_validator(config):
     """ Create a validator that does an extract from body and applies a comparator,
         Then does comparison vs expected value
@@ -136,20 +154,11 @@ def parse_comparator_validator(config):
     """
 
     config = parsing.lowercase_keys(parsing.flatten_dictionaries(config))
-    extract = None
-    extract_config = None
 
     # Extract functions are called by using defined extractor names
-    for key, value in config.items():
-        if key in EXTRACTORS:
-            if extract is not None:
-                raise ValueError("Cannot have multiple extract functions defined for comparator-validator!")
-            else:
-                extract = key
-                extract_config = value
-    if extract is None:
+    extract_fn = _get_extract_fn(config)
+    if extract_fn is None:
         raise ValueError("Extract function for comparison is not valid or not found!")
-    extract_fn = EXTRACTORS[extract](extract_config)  # Parses using extractor's parse function
 
     try:
         comparator = config['comparator']
@@ -164,20 +173,51 @@ def parse_comparator_validator(config):
     except KeyError:
         raise ValueError("No expected value found in comparator validator config, one must be!")
 
-    # TODO: handle templating and queries for expecteds
+    # Expected value can be another extractor query, or a single value, or a templated value
     expectedval = None
-    if isinstance(expected, basestring):
+    expected_extract_fn = None
+    is_expected_template = False
+
+    if isinstance(expected, basestring) or isinstance(expected, (int, long, float, complex)):
         expectedval = expected
-    if isinstance(expected, dict):
+    elif isinstance(expected, dict):
         expected = lowercase_keys(expected)
+        template = expected.get('template')
+        if template:  # Templated string
+            if not isinstance(template, string):
+                raise ValueError("Can't template a comparator-validator unless template value is a string")
+            is_expected_template = True
+            expectedval = template
+        else:  # Extractor to compare against
+            expected_extract_fn =  _get_extract_fn(expected)
+            if not expected_extract_fn:
+                raise ValueError("Can't supply a non-template, non-extract dictionary to comparator-validator")
 
-    if isinstance(expected, dict) :
-        raise NotImplementedError("Have not implemented complex expected values with query and templating")
+    # TOOD pull out the following into some sort of factor/composition function for testability?
+    if expectedval and not is_expected_template:
+        # Simple extract and value comparison
+        def validate(body, context=None):
+            extracted = extract_fn(body, context=context)
+            return comparator(extracted, expectedval)
+        return validate
 
-    def validate(body, context=None):
-        return comparator(extract_fn(body, context=context), expectedval)
-
-    return validate
+    elif expectedval and is_expected_template:
+        def validate(body, context=None):
+            extracted = extract_fn(body, context=context)
+            if context:
+                expected = string.Template(expectedval).safe_substitute(context.get_values())
+            else:
+                expected = expectedval
+            return comparator(extracted, expected)
+        return validate
+    elif not expected_extract_fn:
+        raise Exception("No extract function given, expected is not a string, this should never happen!")
+    else:  # Extractor function for expected value
+        def validate(body, context=None):
+            extracted = extract_fn(body, context=context)
+            expected = expected_extract_fn(body, context=context)
+            return comparator(extracted, expected)
+        return validate
 
 
 def query_dictionary(query, dictionary, delimiter='.', context=None, isTemplate=False):
