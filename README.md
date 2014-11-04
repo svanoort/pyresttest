@@ -2,20 +2,51 @@ pyresttest
 ==========
 
 # What?
-- Python utility for testing and benchmarking RESTful services.
-- Tests are defined with YAML or JSON config files
+- A simple but powerful and extensible REST testing and benchmarking framework
+- Tests are defined in basic YAML or JSON config files, no code needed
+- Logic is written and extensible in Python, but designed for use in a multi-language environment
+
+
+# Philosophy
+- Make common things simple, make it explicit when you're doing something more complex
+- Fail early when parsing configuration, fail late when executing
+- There's A Way To Do It
+- For tests: do it the Right Way, then worry about doing it the Fast Way
 
 
 # License
 Apache License, Version 2.0
 
-# Features
-* Easily define sets of tests in YAML or JSON files
-* Ability to import test sets into other test sets.
-* Optional interactive mode for debugging and demonstrations.
-* Benchmarking (soon)!
+# Key Features (not an exhaustive list)
+* Full functional testing of REST APIs
+* Full support for GET/PUT/POST/DELETE HTTP methods, and custom headers
+* Simple templating of HTTP request bodies, URLs, and validators, with user variables
+* Read HTTP request bodies from files or inline them
+* Generators to create dummy data for testing, with support for easily writing your own
+* Simple validation: ensure host is reachable and check HTTP response codes
+* Complex validation: check for values in HTTP responses, and do comparisons on them
+* Setup/Teardown: extract information from one test to use in the next ones
+* Import test sets in other test sets, to compose suites of tests easily
+* Easy benchmarking: convert any test to a benchmark, by changing the element type and setting output options if needed
+* Lightweight benchmarking: ~0.3 ms of overhead per request, and plans to reduce that in the future
+* Accurate benchmarking: network measurements come from native code in LibCurl, so test overhead doesn't alter them
+* Optional interactive mode for debugging and demos
+
+# Installation
+git clone https://github.com/svanoort/pyresttest.git
+cd pyresttest
+sudo python setup.py install
+
+After this, you can execute the tests by:
+resttest.py {host:port/endpoint} {testfile.yaml}
+
+# Uninstallation
+Remove /usr/bin/resttest.py, /usr/lib/$python_version_here/
+TODO FINISH ME
+
 
 # Examples
+TODO Include both the run and the test code
 
 ## Simple Test
 
@@ -212,29 +243,97 @@ Samples:
 
 # Troubleshooting
 
-## Cannot find argparse, pycurl, or yaml
+## Cannot find pycurl, or yaml
 ```
 sudo su -
-easy_install argparse pyyaml pycurl
+easy_install pyyaml pycurl
 exit
 ```
 
 OR via pip
 ```
 sudo su -
-pip install argparse pyyaml pycurl
+pip install pyyaml pycurl
 exit
 ```
+
+## Pure RPM-based install?
+It's not too complex to build and install from RPM, as long as you're building for systems with the same minor version of Python.
+You must build on the same minor version of python, otherwise there will be a dependency issue on RPM installation.
+See below for special cases with RHEL/CentOS 6.
+
+### Building a basic RPM
+```
+python setup.py bdist_rpm  # Build RPM
+find -iname '*.rpm'   # Gets the RPM name
+```
+
+### Installing from RPM
+```
+sudo yum localinstall my_rpm_name
+sudo yum install PyYAML
+```
+Note that the latter is necessary because Python can't translate python dependencies to RPM packages. 
+I am looking to fix this in the future, but it requires quite a bit of additional work.
+PyCurl is built in by default to both yum and apt-get, so generally you don't have to install it.
+
+
+## Building an RPM for RHEL 6/CentOS 6
+There are a couple special challenges building RPMs from Python for these operating systems. 
+- rpm-build is not installed by default, just RPM, and Python set up tools do not like this
+- These operating systems come with Python 2.6.x, not 2.7.  
+- If you build the RPM on a Python 2.7 system, that will be a dependency for the RPM
+
+For these operating systems, install RPM build, then build as above **from a system on the same OS version**:
+```
+sudo yum install rpm-build
+```
+
 
 # FAQ
 
 ## Why not pure-python tests?
 This is intended for use in an environment where Python isn't the primary language.  You only need to know a little YAML to be able to throw together a working test for a REST API written in Java, Ruby, Python, node.js, etc.
 
-That said, there's nothing stopping you from doing the tests in python.
+If you want to write tests in pure python, there's nothing stopping this, but a couple notes:
+- I've *tried* to separate config parsing and application logic, and test separately. 
+- Code is generally separated by concern and commented.  
+- Read before you assume, there are implementation details around templating, for example, which can be more complex than anticipated.
+- The framework run/execute methods in pyresttest/resttest.py do *quite* a bit of heavy lifting for now.
+- Internal implementation is far more subject to change than the YAML syntax
 
 
 ## Why YAML and not XML/JSON?
-- It's human readable and human editable
-- XML is extremely verbose, reducing readability, and tests are supposed to be written by people
-- JSON is actually a subset of YAML, so you still can use JSON to define tests, it's just more verbose. See miniapp-test.json for an example.  Just remember that you have to escape quotes when giving JSON input to request bodies.
+- It's concise, flexible and legitimately human readable and human editable, even more than JSON
+- XML is extremely verbose and has gotchas, reducing readability, and tests are supposed to be written by people
+- JSON is a subset of YAML, so you still can use JSON to define tests, it's just more verbose. See miniapp-test.json for an example.  Just remember that you have to escape quotes when giving JSON input to request bodies.
+- I feel the readability/writeability gains for YAML outweigh the costs of an extra dependency
+
+
+## Where does this come from?
+Pain and suffering. :)  
+
+No, seriously, this is an answer to a whole series of unpleasant problems encountered working with REST APIs.
+It started with a simple BASH script used to smoketest services after deployments and maintenance.
+Then, it just grew from there. 
+
+
+# Future Plans (rough priority order)
+0. Refactor complex runner/executor methods into extensible, composable structures for a testing lifecycle
+1. Support for cert-based authentication (simply add test config elements and parsing)
+2. Smarter reporting, better reporting/logging of test execution and failures
+3. Depends 0: support parallel execution of a test set where extract/generators not used
+4. Repeat tests (for fuzzing) and setUp/tearDown
+5. Hooks for reporting on test results
+6. Improve Python APIs and document how to do pure-python testing with this
+7. Tentative: add a one-pass optimizer for benchmark/test execution (remove redundant templating)
+
+## Feedback
+We welcome any feedback you have, including pull requests, reported issues, etc
+
+For pull requests to get easily merged, please:
+- Include unit tests
+- Include documentation as appropriate
+- Attempt to adhere to PEP8 style guidelines and project style
+
+Bear in mind that this is largely a one-man, outside-of-working-hours effort at the moment, so response times will vary.
