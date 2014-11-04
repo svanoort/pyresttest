@@ -157,6 +157,7 @@ def parse_comparator_validator(config):
 
     # Extract functions are called by using defined extractor names
     extract_fn = _get_extract_fn(config)
+
     if extract_fn is None:
         raise ValueError("Extract function for comparison is not valid or not found!")
 
@@ -181,7 +182,7 @@ def parse_comparator_validator(config):
     if isinstance(expected, basestring) or isinstance(expected, (int, long, float, complex)):
         expectedval = expected
     elif isinstance(expected, dict):
-        expected = lowercase_keys(expected)
+        expected = parsing.lowercase_keys(expected)
         template = expected.get('template')
         if template:  # Templated string
             if not isinstance(template, string):

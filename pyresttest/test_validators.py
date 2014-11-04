@@ -87,18 +87,53 @@ class ValidatorsTest(unittest.TestCase):
         self.assertEqual(3, extracted)
 
     def test_validator_compare_basic(self):
-        """ Basic tests of the comparison validators """
+        """ Basic tests of the comparison validators, and templating"""
         config = {
             'jsonpath_mini': 'key.val',
             'comparator': 'eq',
             'expected': 3
         }
         comp_fn = validators.parse_comparator_validator(config)
-        myjson = '{"key": {"val": 3}}'
-        self.assertTrue(comp_fn(myjson))
+        myjson_pass = '{"id": 3, "key": {"val": 3}}'
+        myjson_fail = '{"id": 3, "key": {"val": 4}}'
 
+        self.assertTrue(comp_fn(myjson_pass))
+        self.assertFalse(comp_fn(myjson_fail))
 
+    def test_validator_comparator_templating(self):
+        """ Try templating comparator validator """
+        config = {
+            'jsonpath_mini': {'template': 'key.$node'},
+            'comparator': 'eq',
+            'expected': 3
+        }
+        context = Context()
+        context.bind_variable('node', 'val')
+        myjson_pass = '{"id": 3, "key": {"val": 3}}'
+        myjson_fail = '{"id": 3, "key": {"val": 4}}'
+        comp_fn = validators.parse_comparator_validator(config)
 
+        self.assertTrue(comp_fn(myjson_pass, context=context))
+        self.assertFalse(comp_fn(myjson_fail, context=context))
+
+        # Template expected
+        config['expected'] = {'template' : '$id'}
+        context.bind_variable('id', 3)
+        self.assertTrue(comp_fn(myjson_pass, context=context))
+        self.assertFalse(comp_fn(myjson_fail, context=context))
+
+    def test_validator_comparator_extract(self):
+        """ Try comparing two extract expressions """
+        config = {
+            'jsonpath_mini': 'key.val',
+            'comparator': 'eq',
+            'expected': {'jsonpath_mini': 'id'}
+        }
+        myjson_pass = '{"id": 3, "key": {"val": 3}}'
+        myjson_fail = '{"id": 3, "key": {"val": 4}}'
+        comp_fn = validators.parse_comparator_validator(config)
+        self.assertTrue(comp_fn(myjson_pass))
+        self.assertFalse(comp_fn(myjson_fail))
 
 if __name__ == '__main__':
     unittest.main()
