@@ -51,6 +51,39 @@ TESTS = {
     'not_exists' : lambda x: not bool(x)
 }
 
+class Extractor(object):
+    """ Encapsulates extractor function in a readable format so people can understand
+        what the parsed extract function should be doing """
+    extractor_type = None  # Name
+    config = None  # Settings info for printing, ONLY USED TO DISPLAY,
+    extract_fn = None  # Actual extract function, does execution and is parsed already
+
+    def __str__(self):
+        print "Extractor type: {0} and config: {1}".format(self.extractor_type, self.config)
+
+    def extract(self, body, context=None):
+        return self.extract_fn(body, context=context)
+
+
+class AbstractValidator(object):
+    """ Encapsulates basic validator handling """
+    extractor = None
+    comparator = None
+    expected = None
+
+    def validate(self, body, context=None):
+        """ Run the validation function """
+        pass
+
+class ComparatorValidator(AbstractValidator):
+    """ Does extract and compare from request body """
+    pass
+
+class ExtractTestvalidator(AbstractValidator):
+    """ Does extract and test from request body """
+    pass
+
+
 def parse_extractor_minijson(config):
     """ Creates an extractor function using the mini-json query functionality """
     if isinstance(config, dict):
@@ -105,11 +138,28 @@ def register_validator(name, parse_function):
     VALIDATOR_PARSE_FUNCTIONS[name] = parse_function
 
 def parse_extractor(extractor_type, config):
-    """ Convert extractor type and config to an extractor instance """
+    """ Convert extractor type and config to an extractor instance
+        Uses registered parse function for that extractor type
+        Parse functions may return either:
+            - An extraction function (wrapped in an Extractor instance with configs and returned)
+            - OR a a full Extractor instance (configured)
+    """
     parse = EXTRACTORS.get(extractor_type.lower())
     if not parse:
         raise ValueError("Extractor {0} is not a valid extractor type".format(extractor_type))
-    return parse(config)
+    parsed = parse(config)
+
+    if isinstance(parsed, Extractor):  # Parser gave a full extractor
+        return parsed
+    elif callable(parsed):  # Create an extractor using returned extraction function
+        extractor = Extractor()
+        extractor.extractor_type = extractor_type
+        extractor.config = config
+        extractor.extract_fn = parsed
+        return extractor
+    else:
+        raise TypeError("Parsing functions for extractors must return either an extraction function or an Extractor instance!")
+
 
 def register_extractor(extractor_name, parse_function):
     """ Register a new body extraction function """
