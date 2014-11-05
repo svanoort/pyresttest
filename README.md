@@ -40,13 +40,7 @@ sudo python setup.py install
 After this, you can execute the tests by:
 resttest.py {host:port/endpoint} {testfile.yaml}
 
-# Uninstallation
-Remove /usr/bin/resttest.py, /usr/lib/$python_version_here/
-TODO FINISH ME
-
-
 # Examples
-TODO Include both the run and the test code
 
 ## Simple Test
 
