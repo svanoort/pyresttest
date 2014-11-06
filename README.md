@@ -87,11 +87,6 @@ python resttest.py https://api.github.com github_api_test.yaml --log debug
     # Print full response bodies
     - print_bodies: 'False'
 
-    # Not implemented yet, will allow retrying test on failure
-    - retries: 7
-
-    # Would allow parallel test execution, not implemented yet
-    - test_parallel: False
 - url: "/ping"  # Basic test, just a simple GET
 - test: {url: "/ping", method: "GET"}  # Specify method, in-line version
 - test: # Defined test
