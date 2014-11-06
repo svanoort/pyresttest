@@ -33,12 +33,16 @@ Apache License, Version 2.0
 * Optional interactive mode for debugging and demos
 
 # Installation
+```
 git clone https://github.com/svanoort/pyresttest.git
 cd pyresttest
 sudo python setup.py install
+```
 
 After this, you can execute the tests by:
+```
 resttest.py {host:port/endpoint} {testfile.yaml}
+```
 
 # Examples
 
