@@ -237,10 +237,37 @@ class ExtractTestValidator(AbstractValidator):
     """ Does extract and test from request body """
     name = 'ExtractTestValidator'
     extractor = None
+    test_fn = None
+    test_name = None
+    config = None
 
     @staticmethod
     def parse(config):
-        pass
+        output = ExtractTestValidator()
+        config = parsing.lowercase_keys(parsing.flatten_dictionaries(config))
+        output.config = config
+        extractor = _get_extractor(config)
+        output.extractor = extractor
+
+        test_name = config['test']
+        output.test_name = test_name
+        test_fn = TESTS[test_name]
+        output.test_fn = test_fn
+        return output
+
+    def validate(self, body, context=None):
+        try:
+            extracted = self.extractor.extract(body, context=context)
+        except Exception as e:
+            return ValidationFailure(message="Exception thrown while running extraction from body", details=e, validator=self)
+
+        tested = self.test_fn(extracted)
+        if tested:
+            return True
+        else:
+            failure = ValidationFailure(details=self.config, validator=self)
+            failure.message = "Extract and test validator failed on test: {0}({1})".format(self.test_name, extracted)
+            return failure
 
 register_validator('extract_test', ExtractTestValidator.parse)
 

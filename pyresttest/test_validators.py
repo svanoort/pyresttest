@@ -176,5 +176,22 @@ class ValidatorsTest(unittest.TestCase):
         failure = comp.validate('{"id": 3, "key": {"val": 4}')
         self.assertTrue(isinstance(failure, validators.ValidationFailure))
 
+    def test_parse_validator_extracttest(self):
+        """ Test parsing for extract test """
+        config = {
+            'jsonpath_mini': 'key.val',
+            'test': 'exists'
+        }
+        myjson_pass = '{"id": 3, "key": {"val": 3}}'
+        myjson_fail = '{"id": 3, "key": {"valley": "wide"}}'
+        validator = validators.ExtractTestValidator.parse(config)
+        validation_result = validator.validate(myjson_pass)
+        self.assertTrue(validation_result)
+
+        validation_result = validator.validate(myjson_fail)
+        self.assertFalse(validation_result)
+        self.assertTrue(isinstance(validation_result, validators.ValidationFailure))
+        self.assertEqual(validation_result.message, "Extract and test validator failed on test: exists(None)")
+
 if __name__ == '__main__':
     unittest.main()
