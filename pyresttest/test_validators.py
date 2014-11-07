@@ -75,16 +75,35 @@ class ValidatorsTest(unittest.TestCase):
         extract_fn = validators.parse_extractor_minijson(config)
         self.assertEqual(3, extract_fn(myjson, context=context))
 
-    def test_get_extract_fn(self):
+    def test_parse_extractor(self):
+        """ Test parsing an extractor using the registry """
+        config = 'key.val'
+        myjson = '{"key": {"val": 3}}'
+        extractor = validators.parse_extractor('jsonpath_mini', config)
+        self.assertTrue(isinstance(extractor, validators.Extractor))
+        self.assertEqual(3, extractor.extract(myjson))
+
+    def test_get_extractor(self):
         config = {
             'jsonpath_mini': 'key.val',
             'comparator': 'eq',
             'expected': 3
         }
-        extractor = validators._get_extract_fn(config)
+        extractor = validators._get_extractor(config)
         myjson = '{"key": {"val": 3}}'
         extracted = extractor.extract(myjson)
         self.assertEqual(3, extracted)
+
+    def test_parse_validator(self):
+        """ Test basic parsing using registry """
+        config = {
+            'jsonpath_mini': 'key.val',
+            'comparator': 'eq',
+            'expected': 3
+        }
+        validator = validators.parse_validator('comparator', config)
+        myjson = '{"key": {"val": 3}}'
+        comp = validator.validate(myjson)
 
     def test_validator_compare_basic(self):
         """ Basic tests of the comparison validators, and templating"""
@@ -133,7 +152,29 @@ class ValidatorsTest(unittest.TestCase):
         myjson_fail = '{"id": 3, "key": {"val": 4}}'
         comp = validators.ComparatorValidator.parse(config)
         self.assertTrue(comp.validate(myjson_pass))
-        self.assertFalse(comp.validate(myjson_fail))
+        failure = comp.validate(myjson_fail)
+        self.assertFalse(failure)
+
+    def test_validator_error_responses(self):
+        config = {
+            'jsonpath_mini': 'key.val',
+            'comparator': 'eq',
+            'expected': 3
+        }
+        comp = validators.ComparatorValidator.parse(config)
+        myjson_fail = '{"id": 3, "key": {"val": 4}}'
+        failure = comp.validate(myjson_fail)
+
+        # Test the validator failure object handling
+        self.assertFalse(failure)
+        self.assertEqual(failure.message, 'Comparison failed, evaluating eq(4, 3) returned False')
+        self.assertEqual(failure.message, str(failure))
+        self.assertTrue(failure.details)
+        print "Failure config: "+str(failure.details)
+        self.assertEqual(comp, failure.validator)
+
+        failure = comp.validate('{"id": 3, "key": {"val": 4}')
+        self.assertTrue(isinstance(failure, validators.ValidationFailure))
 
 if __name__ == '__main__':
     unittest.main()
