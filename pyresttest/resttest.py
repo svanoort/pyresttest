@@ -20,14 +20,14 @@ if is_root_folder:  # Inside the module
     from binding import Context
     from generators import parse_generator
     from parsing import flatten_dictionaries, lowercase_keys, safe_to_bool
-    from validators import Validator
+    from validators import ValidationFailure
     from tests import Test, DEFAULT_TIMEOUT
     from benchmarks import Benchmark, AGGREGATES, METRICS, build_benchmark
 else:  # Importing as library
     from pyresttest.binding import Context
     from pyresttest.generators import parse_generator
     from pyresttest.parsing import flatten_dictionaries, lowercase_keys, safe_to_bool
-    from pyresttest.validators import Validator
+    from pyresttest.validators import ValidationFailure
     from pyresttest.tests import Test, DEFAULT_TIMEOUT
     from pyresttest.benchmarks import Benchmark, AGGREGATES, METRICS, build_benchmark
 
@@ -117,6 +117,7 @@ class TestResponse:
     body = bytearray() #Response body, if tracked
     passed = False
     response_headers = bytearray()
+    failures = None
 
     def __str__(self):
         return json.dumps(self, default=lambda o: str(o) if isinstance(o, bytearray) else o.__dict__)
@@ -270,6 +271,7 @@ def run_test(mytest, test_config = TestConfig(), context = None):
     response_code = curl.getinfo(pycurl.RESPONSE_CODE)
     result.response_code = response_code
     result.passed = response_code in mytest.expected_status
+    # TODO add listing to test failure reasons (test.failures)
     logging.debug("Initial Test Result, based on expected response code: "+str(result.passed))
 
     #print str(test_config.print_bodies) + ',' + str(not result.passed) + ' , ' + str(test_config.print_bodies or not result.passed)
@@ -281,22 +283,20 @@ def run_test(mytest, test_config = TestConfig(), context = None):
         print result.body
 
     # execute validator on body
-    if result.passed == True:
+    if result.passed is True:
+        body = result.body
+        # TODO redo validator calls in test method!
         if mytest.validators is not None and isinstance(mytest.validators, list):
             logging.debug("executing this many validators: " + str(len(mytest.validators)))
-            myjson = json.loads(str(result.body))
+            failures = list()
             for validator in mytest.validators:
-                # pass delimiter from config to validator
-                validator.query_delimiter = test_config.validator_query_delimiter
-                # execute validation
-                mypassed = validator.validate(myjson)
-                if mypassed == False:
+                result = validator.validate(body, context=my_context)
+                if not result:
                     result.passed = False
-                    # do NOT break, collect all validation data!
-                if test_config.interactive:
-                    # expected isn't really required, so accomidate with prepending space if it is set, else make it empty (for formatting)
-                    myexpected = " " + str(validator.expected) if validator.expected is not None else ""
-                    print "VALIDATOR: " + validator.query + " " + validator.operator + myexpected + " = " + str(validator.passed)
+                if isinstance(result, ValidationFailure):
+                    failures.add(result)
+                # TODO add printing of validation for interactive mode
+            result.failures = failures
         else:
             logging.debug("no validators found")
 
@@ -506,10 +506,10 @@ def execute_testsets(testsets):
                 # Use result test URL to allow for templating
                 logging.error('Test Failed: '+test.name+" URL="+result.test.url+" Group="+test.group+" HTTP Status Code: "+str(result.response_code))
 
-                if test.validators is not None:
-                    for validator in test.validators:
-                        if validator.passed == False:
-                            logging.warning("   Validation Failed: " + str(validator))
+                # Print test failure reasons
+                if test.failures:
+                    for failure in test.failures:
+                        logging.warning("Test Failure reason: {0}".format(failure))
 
                 #Increment test failure counts for that group (adding an entry if not present)
                 failures = group_failure_counts[test.group]

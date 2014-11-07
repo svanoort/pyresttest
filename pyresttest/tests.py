@@ -5,7 +5,7 @@ import json
 import StringIO
 import pycurl
 from contenthandling import ContentHandler
-from validators import Validator
+import validators
 from parsing import *
 
 """
@@ -292,26 +292,21 @@ class Test(object):
                 assert isinstance(configvalue,str) or isinstance(configvalue,unicode) or isinstance(configvalue,int)
                 mytest.name = unicode(configvalue,'UTF-8')
             elif configelement == u'validators':
-                #TODO implement more validators: regex, file/schema match, etc
-                if isinstance(configvalue, list):
-                    for var in configvalue:
-                        myquery = var.get(u'query')
-                        myoperator = var.get(u'operator')
-                        myexpected = var.get(u'expected')
-                        myexportas = var.get(u'export_as')
 
-                        # NOTE structure is checked by use of validator, do not verify attributes here
-                        # create validator and add to list of validators
-                        if mytest.validators is None:
-                            mytest.validators = list()
-                        validator = Validator()
-                        validator.query = myquery
-                        validator.expected = myexpected
-                        validator.operator = myoperator if myoperator is not None else validator.operator
-                        validator.export_as = myexportas if myexportas is not None else validator.export_as
+                # Add a list of validators
+                if not isinstance(configvalue, list):
+                    raise Exception('Misconfigured validator section, must be a list of validators')
+                if mytest.validators is None:
+                    mytest.validators = list()
+
+                # create validator and add to list of validators
+                for var in configvalue:
+                    if not isinstance(var, dict):
+                        raise TypeError("Validators must be defined as validatorType:{configs} ")
+                    for validator_type, validator_config in var.items():
+                        validator = validators.parse_validator(validator_type, validator_config)
                         mytest.validators.append(validator)
-                else:
-                    raise Exception('Misconfigured validator, requires type property')
+
             elif configelement == u'body': #Read request body, as a ContentHandler
                 # Note: os.path.expandirs removed
                 mytest.body = ContentHandler.parse_content(configvalue)
