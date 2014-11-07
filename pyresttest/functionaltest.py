@@ -140,7 +140,8 @@ class RestTestCase(unittest.TestCase):
 
         # Get absolute path to test file, in the same folder as this test
         path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'content-test.yaml')
-        tests = resttest.build_testsets('http://localhost:8000', resttest.read_test_file(path))
+        print path
+        tests = resttest.build_testsets('http://localhost:8000', resttest.read_test_file(path), working_directory = os.path.dirname(os.path.realpath(__file__)))
         failures = resttest.execute_testsets(tests)
         self.assertTrue(failures == 0, 'Simple tests failed where success expected')
 
