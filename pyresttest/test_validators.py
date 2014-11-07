@@ -81,9 +81,9 @@ class ValidatorsTest(unittest.TestCase):
             'comparator': 'eq',
             'expected': 3
         }
-        extract_fn = validators._get_extract_fn(config)
+        extractor = validators._get_extract_fn(config)
         myjson = '{"key": {"val": 3}}'
-        extracted = extract_fn(myjson)
+        extracted = extractor.extract(myjson)
         self.assertEqual(3, extracted)
 
     def test_validator_compare_basic(self):
@@ -93,12 +93,12 @@ class ValidatorsTest(unittest.TestCase):
             'comparator': 'eq',
             'expected': 3
         }
-        comp_fn = validators.parse_comparator_validator(config)
+        comp_validator = validators.ComparatorValidator.parse(config)
         myjson_pass = '{"id": 3, "key": {"val": 3}}'
         myjson_fail = '{"id": 3, "key": {"val": 4}}'
 
-        self.assertTrue(comp_fn(myjson_pass))
-        self.assertFalse(comp_fn(myjson_fail))
+        self.assertTrue(comp_validator.validate(myjson_pass))
+        self.assertFalse(comp_validator.validate(myjson_fail))
 
     def test_validator_comparator_templating(self):
         """ Try templating comparator validator """
@@ -111,16 +111,16 @@ class ValidatorsTest(unittest.TestCase):
         context.bind_variable('node', 'val')
         myjson_pass = '{"id": 3, "key": {"val": 3}}'
         myjson_fail = '{"id": 3, "key": {"val": 4}}'
-        comp_fn = validators.parse_comparator_validator(config)
+        comp = validators.ComparatorValidator.parse(config)
 
-        self.assertTrue(comp_fn(myjson_pass, context=context))
-        self.assertFalse(comp_fn(myjson_fail, context=context))
+        self.assertTrue(comp.validate(myjson_pass, context=context))
+        self.assertFalse(comp.validate(myjson_fail, context=context))
 
         # Template expected
         config['expected'] = {'template' : '$id'}
         context.bind_variable('id', 3)
-        self.assertTrue(comp_fn(myjson_pass, context=context))
-        self.assertFalse(comp_fn(myjson_fail, context=context))
+        self.assertTrue(comp.validate(myjson_pass, context=context))
+        self.assertFalse(comp.validate(myjson_fail, context=context))
 
     def test_validator_comparator_extract(self):
         """ Try comparing two extract expressions """
@@ -131,9 +131,9 @@ class ValidatorsTest(unittest.TestCase):
         }
         myjson_pass = '{"id": 3, "key": {"val": 3}}'
         myjson_fail = '{"id": 3, "key": {"val": 4}}'
-        comp_fn = validators.parse_comparator_validator(config)
-        self.assertTrue(comp_fn(myjson_pass))
-        self.assertFalse(comp_fn(myjson_fail))
+        comp = validators.ComparatorValidator.parse(config)
+        self.assertTrue(comp.validate(myjson_pass))
+        self.assertFalse(comp.validate(myjson_fail))
 
 if __name__ == '__main__':
     unittest.main()
