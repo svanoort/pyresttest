@@ -1,0 +1,21 @@
+# Test using included Django test app
+# Demo for extract/validate of model
+---
+- config:
+    - testset: "Demonstrate use of extract after creating a person"
+- test: # create entity by POST
+    - name: "Create person"
+    - url: "/api/person/"
+    - method: "POST"
+    - body: '{"first_name": "Test","last_name": "User","login": "testuser"}'
+    - headers: {Content-Type: application/json}
+    - expected_status: [201]
+    - extract_binds:
+        - 'id': {'jsonpath_mini': 'id'}
+- test:
+    - name: "Get person you just created and validate them"
+    - url: {'template': "/api/person/$id/"}
+- test:
+    - name: "Delete person you just created"
+    - url: {'template': "/api/person/$id/"}
+    - method: "DELETE"
