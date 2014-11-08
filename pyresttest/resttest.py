@@ -70,7 +70,6 @@ class TestConfig:
     print_bodies = False  # Print response bodies in all cases
     retries = 0  # Retries on failures
     test_parallel = False  # Allow parallel execution of tests in a test set, for speed?
-    validator_query_delimiter = "/"
     interactive = False
 
     # Binding and creation of genenerators
@@ -211,8 +210,6 @@ def make_configuration(node):
             test_config.print_bodies = safe_to_bool(value)
         elif key == u'retries':
             test_config.retries = int(value)
-        elif key == u'validator_query_delimiter':
-            test_config.validator_query_delimiter = str(value)
         elif key == u'variable_binds':
             test_config.variable_binds = flatten_dictionaries(value)
         elif key == u'generators':

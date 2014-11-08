@@ -141,7 +141,7 @@ class Test(object):
         """ Run the extraction routines to update variables based on HTTP response body """
         if self.extract_binds:
             for key, value in extract_binds:
-                result = value(response_body)
+                result = value.extract(response_body, context=context)
                 context.bind_variable(key, result)
 
 
@@ -291,8 +291,22 @@ class Test(object):
             elif configelement == u'name': #Test name
                 assert isinstance(configvalue,str) or isinstance(configvalue,unicode) or isinstance(configvalue,int)
                 mytest.name = unicode(configvalue,'UTF-8')
-            elif configelement == u'validators':
+            elif configelement == u'extractors':
+                # Add a list of validators
+                if not isinstance(configvalue, list):
+                    raise Exception('Misconfigured extractors section, must be a list of validators')
+                if mytest.extractors is None:
+                    mytest.extractors = list()
 
+                # create extractor and add to list of extractors
+                for var in configvalue:
+                    if not isinstance(var, dict):
+                        raise TypeError("Extractors must be defined as extractorType:{configs} ")
+                    for extractor_type, extractor_config in var.items():
+                        extractor = extractors.parse_extractor(extractor_type, extractor_config)
+                        mytest.extractors.append(extractor)
+
+            elif configelement == u'validators':
                 # Add a list of validators
                 if not isinstance(configvalue, list):
                     raise Exception('Misconfigured validator section, must be a list of validators')
