@@ -124,7 +124,7 @@ class Extractor(object):
         return os.linesep.join(lines)  #Output lines joined by separator
 
     def __str__(self):
-        print "Extractor type: {0} and config: {1}".format(self.extractor_type, self.config)
+        return "Extractor type: {0} and config: {1}".format(self.extractor_type, self.config)
 
     def extract(self, body, context=None):
         return self.extract_fn(body, context=context)

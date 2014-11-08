@@ -263,6 +263,7 @@ def run_test(mytest, test_config = TestConfig(), context = None):
     except Exception as e:
         print e  #TODO figure out how to handle failures where no output is generated IE connection refused
 
+    result.body = str(result.body)
 
     mytest.update_context_after(result.body, my_context)
     response_code = curl.getinfo(pycurl.RESPONSE_CODE)

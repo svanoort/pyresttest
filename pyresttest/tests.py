@@ -58,6 +58,7 @@ class Test(object):
     name = u'Unnamed'
     validators = None  # Validators for response body, IE regexes, etc
     stop_on_failure = False
+    failures = None
 
     templates = None  # Dictionary of template to compiled template
 
@@ -140,8 +141,9 @@ class Test(object):
     def update_context_after(self, response_body, context):
         """ Run the extraction routines to update variables based on HTTP response body """
         if self.extract_binds:
-            for key, value in extract_binds:
+            for key, value in self.extract_binds.items():
                 result = value.extract(response_body, context=context)
+                print 'Result: {0}'.format(result)
                 context.bind_variable(key, result)
 
 
@@ -304,7 +306,8 @@ class Test(object):
                     if len(extractor) > 1:
                         raise ValueError("Cannot define multiple extractors for given variable name")
                     extractor_type, extractor_config = extractor.items()[0]
-                    mytest.extract_binds[variable_name] = validators.parse_extractor(extractor_type, extractor_config)
+                    extractor = validators.parse_extractor(extractor_type, extractor_config)
+                    mytest.extract_binds[variable_name] = extractor
 
             elif configelement == u'validators':
                 # Add a list of validators
@@ -359,5 +362,4 @@ class Test(object):
                 mytest.expected_status = [200,201,204]
             elif mytest.method == 'DELETE':
                 mytest.expected_status = [200,202,204]
-
         return mytest
