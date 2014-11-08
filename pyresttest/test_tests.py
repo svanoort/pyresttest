@@ -49,6 +49,36 @@ class TestsTest(unittest.TestCase):
         self.assertTrue(test.expected_status == [200,204,202])
         self.assertFalse(test.is_context_modifier())
 
+    def test_parse_test_validators(self):
+        """ Test that for a test it can parse the validators section correctly """
+        input = {"url": '/test', 'validators' : [
+            {'comparator': {
+                'jsonpath_mini': 'key.val',
+                'comparator': 'eq',
+                'expected': 3
+            }},
+            {'extract_test': {'jsonpath_mini': 'key.val', 'test':'exists'}}
+        ]}
+
+        test = Test.build_test('',input)
+        self.assertTrue(test.validators)
+        self.assertEqual(2, len(test.validators))
+        self.assertTrue(isinstance(test.validators[0], validators.ComparatorValidator))
+        self.assertTrue(isinstance(test.validators[1], validators.ExtractTestValidator))
+
+        # Check the validators really work
+        self.assertTrue(test.validators[0].validate('{"id": 3, "key": {"val": 3}}'))
+
+    def test_parse_validators_fail(self):
+        """ Test an invalid validator syntax throws exception """
+        input = {"url": '/test', 'validators' : ['comparator']}
+        try:
+            test = Test.build_test('', input)
+            self.fail("Should throw exception if not giving a dictionary-type comparator")
+        except TypeError:
+            pass
+
+
     def test_variable_binding(self):
         """ Test that tests successfully bind variables """
         element = 3
