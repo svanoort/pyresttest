@@ -1,0 +1,91 @@
+{
+    "id": "e3ce82f2-fb36-4df8-9903-e4e0038995ba",
+    "name": "miniapp",
+    "requests": [
+        {
+            "collectionId": "e3ce82f2-fb36-4df8-9903-e4e0038995ba",
+            "data": "{\n    \"first_name\": \"Willim\",\n    \"last_name\": \"Adama\",\n    \"login\": \"theadmiral\"\n}",
+            "dataMode": "raw",
+            "description": "post to create new person",
+            "headers": "Content-Type: application/json\n",
+            "id": "0b2f69a1-b01f-7232-540d-93c470b38206",
+            "method": "POST",
+            "name": "post to create new person",
+            "responses": [],
+            "timestamp": 0,
+            "url": "localhost:8000/api/person/",
+            "version": 2
+        },
+        {
+            "collectionId": "e3ce82f2-fb36-4df8-9903-e4e0038995ba",
+            "data": "{\n    \"first_name\": \"Willim\",\n    \"last_name\": \"Adama\",\n    \"login\": \"theadmiral\"\n}",
+            "dataMode": "raw",
+            "description": "search for gaius",
+            "headers": "Content-Type: application/json\n",
+            "id": "1178f916-8034-4527-2886-980e8a9a64bf",
+            "method": "GET",
+            "name": "search for gaius",
+            "responses": [],
+            "timestamp": 0,
+            "url": "localhost:8000/api/person/?first_name__contains=Gaius",
+            "version": 2
+        },
+        {
+            "collectionId": "e3ce82f2-fb36-4df8-9903-e4e0038995ba",
+            "data": [],
+            "dataMode": "params",
+            "description": "",
+            "headers": "",
+            "id": "355fa982-5723-e886-5d11-3b46f979265f",
+            "method": "GET",
+            "name": "get person 2",
+            "responses": [],
+            "timestamp": 0,
+            "url": "localhost:8000/api/person/2/",
+            "version": 2
+        },
+        {
+            "collectionId": "e3ce82f2-fb36-4df8-9903-e4e0038995ba",
+            "data": "{\n    \"first_name\": \"Gaius\",\n    \"id\": 1,\n    \"last_name\": \"Balthazar\",\n    \"login\": \"gbalthazar\",\n    \"resource_uri\": \"/api/person/1/\"\n}",
+            "dataMode": "raw",
+            "description": "delete person 4",
+            "headers": "",
+            "id": "5612ace3-8f02-edf6-8c15-294e6f9de101",
+            "method": "DELETE",
+            "name": "delete person 4",
+            "responses": [],
+            "timestamp": 0,
+            "url": "localhost:8000/api/person/4/",
+            "version": 2
+        },
+        {
+            "collectionId": "e3ce82f2-fb36-4df8-9903-e4e0038995ba",
+            "data": "{\n    \"first_name\": \"Gaius\",\n    \"id\": 1,\n    \"last_name\": \"Balthazar\",\n    \"login\": \"gbalthazar\",\n    \"resource_uri\": \"/api/person/1/\"\n}",
+            "dataMode": "raw",
+            "description": "put a person 1",
+            "headers": "Content-Type: application/json\n",
+            "id": "5b90c2c1-6ba8-98f5-05d9-90dfbf207384",
+            "method": "PUT",
+            "name": "put person 1",
+            "responses": [],
+            "timestamp": 0,
+            "url": "localhost:8000/api/person/1/",
+            "version": 2
+        },
+        {
+            "collectionId": "e3ce82f2-fb36-4df8-9903-e4e0038995ba",
+            "data": [],
+            "dataMode": "params",
+            "description": "",
+            "headers": "",
+            "id": "e6747faf-2a90-342a-75c8-27530c4a3901",
+            "method": "GET",
+            "name": "get collection of person",
+            "responses": [],
+            "timestamp": 0,
+            "url": "localhost:8000/api/person/",
+            "version": 2
+        }
+    ],
+    "timestamp": 1401884514056
+}
