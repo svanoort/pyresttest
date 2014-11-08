@@ -291,20 +291,20 @@ class Test(object):
             elif configelement == u'name': #Test name
                 assert isinstance(configvalue,str) or isinstance(configvalue,unicode) or isinstance(configvalue,int)
                 mytest.name = unicode(configvalue,'UTF-8')
-            elif configelement == u'extractors':
-                # Add a list of validators
-                if not isinstance(configvalue, list):
-                    raise Exception('Misconfigured extractors section, must be a list of validators')
-                if mytest.extractors is None:
-                    mytest.extractors = list()
+            elif configelement == u'extract_binds':
+                # Add a list of extractors, of format:
+                # {variable_name: {extractor_type: extractor_config}, ... }
+                binds = flatten_dictionaries(configvalue)
+                if mytest.extract_binds is None:
+                    mytest.extract_binds = dict()
 
-                # create extractor and add to list of extractors
-                for var in configvalue:
-                    if not isinstance(var, dict):
-                        raise TypeError("Extractors must be defined as extractorType:{configs} ")
-                    for extractor_type, extractor_config in var.items():
-                        extractor = extractors.parse_extractor(extractor_type, extractor_config)
-                        mytest.extractors.append(extractor)
+                for variable_name, extractor in binds.items():
+                    if not isinstance(extractor, dict) or len(extractor) == 0:
+                        raise TypeError("Extractors must be defined as maps of extractorType:{configs} with 1 entry")
+                    if len(extractor) > 1:
+                        raise ValueError("Cannot define multiple extractors for given variable name")
+                    extractor_type, extractor_config = extractor.items()[0]
+                    mytest.extract_binds[variable_name] = validators.parse_extractor(extractor_type, extractor_config)
 
             elif configelement == u'validators':
                 # Add a list of validators

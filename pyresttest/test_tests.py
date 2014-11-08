@@ -78,6 +78,50 @@ class TestsTest(unittest.TestCase):
         except TypeError:
             pass
 
+    def test_parse_extractor_bind(self):
+        """ Test parsing of extractors """
+        test_config = {
+            "url": '/api',
+            'extract_binds': {
+                'id': {'jsonpath_mini': 'idfield'},
+                'name': {'jsonpath_mini': 'firstname'}
+            }
+        }
+        test = Test.build_test('', test_config)
+        self.assertTrue(test.extract_binds)
+        self.assertEqual(2, len(test.extract_binds))
+        self.assertTrue('id' in test.extract_binds)
+        self.assertTrue('name' in test.extract_binds)
+
+        # Test extractors config'd correctly for extraction
+        myjson = '{"idfield": 3, "firstname": "bob"}'
+        extracted = test.extract_binds['id'].extract(myjson)
+        self.assertEqual(3, extracted)
+
+        extracted = test.extract_binds['name'].extract(myjson)
+        self.assertEqual('bob', extracted)
+
+    def test_parse_extractor_errors(self):
+        """ Test that expected errors are thrown on parsing """
+        test_config = {
+            "url": '/api',
+            'extract_binds': {'id': {}}
+        }
+        try:
+            test = Test.build_test('', test_config)
+            self.fail("Should throw an error when doing empty mapping")
+        except TypeError:
+            pass
+
+        test_config['extract_binds']['id'] = {
+            'jsonpath_mini': 'query',
+            'test':'anotherquery'
+        }
+        try:
+            test = Test.build_test('', test_config)
+            self.fail("Should throw an error when given multiple extractors")
+        except ValueError as te:
+            pass
 
     def test_variable_binding(self):
         """ Test that tests successfully bind variables """
