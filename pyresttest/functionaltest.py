@@ -145,12 +145,10 @@ class RestTestCase(unittest.TestCase):
         failures = resttest.execute_testsets(tests)
         self.assertTrue(failures == 0, 'Simple tests failed where success expected')
 
-    @unittest.skip("Unexpected issues here...")
     def test_benchmark_get(self):
         """ Benchmark basic local get test """
-        test = Test()
-        test.url = self.prefix + '/api/person/'
         benchmark_config = resttest.Benchmark();
+        benchmark_config.url = self.prefix + '/api/person/'
         benchmark_config.add_metric('total_time').add_metric('total_time','median')
         benchmark_result = resttest.run_benchmark(benchmark_config)
         print "Benchmark - median request time: " + str(benchmark_result.aggregates[0])

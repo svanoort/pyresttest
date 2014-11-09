@@ -219,10 +219,7 @@ class Test(object):
         curl.setopt(curl.URL, str(self.url))
         curl.setopt(curl.TIMEOUT, timeout)
 
-        # HACK: process env vars again, since we have an extract capabilitiy in validation.. this is a complete hack, but I need functionality over beauty
         bod = self.body
-        if bod is not None:
-            bod = os.path.expandvars(bod)
 
         # Set read function for post/put bodies
         if self.method == u'POST' or self.method == u'PUT':
