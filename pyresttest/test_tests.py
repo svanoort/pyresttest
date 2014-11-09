@@ -123,6 +123,47 @@ class TestsTest(unittest.TestCase):
         except ValueError as te:
             pass
 
+    def test_parse_validator_comparator(self):
+        """ Test parsing a comparator validator """
+        test_config = {
+            'name': 'Default',
+            'url': '/api',
+            'validators': [
+                {'comparator':{'jsonpath_mini': 'id',
+                 'comparator': 'eq',
+                 'expected': {'template': '$id'}}}
+            ]
+        }
+        test = Test.build_test('', test_config)
+        self.assertTrue(test.validators)
+        self.assertEqual(1, len(test.validators))
+
+        context = Context()
+        context.bind_variable('id', 3)
+
+        myjson = '{"id": "3"}'
+        failure = test.validators[0].validate(myjson, context=context)
+        self.assertTrue(test.validators[0].validate(myjson, context=context))
+        self.assertFalse(test.validators[0].validate(myjson))
+
+
+    def test_parse_validator_extract_test(self):
+        """ Tests parsing extract-test validator """
+        test_config = {
+            'name': 'Default',
+            'url': '/api',
+            'validators': [
+                {'extract_test':{'jsonpath_mini': 'login',
+                 'test': 'exists'}}
+            ]
+        }
+        test = Test.build_test('', test_config)
+        self.assertTrue(test.validators)
+        self.assertEqual(1, len(test.validators))
+
+        myjson = '{"login": "testval"}'
+        self.assertTrue(test.validators[0].validate(myjson))
+
     def test_variable_binding(self):
         """ Test that tests successfully bind variables """
         element = 3

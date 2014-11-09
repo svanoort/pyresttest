@@ -38,6 +38,7 @@ COMPARATORS = {
     'less_than_or_equal': operator.lt,
     'eq': operator.eq,
     'equals': operator.eq,
+    'str_eq': lambda x,y: operator.eq(str(x), str(y)),
     'ne': operator.eq,
     'not_equals': operator.eq,
     'ge': operator.ge,
@@ -219,7 +220,7 @@ class ComparatorValidator(AbstractValidator):
             expected = parsing.lowercase_keys(expected)
             template = expected.get('template')
             if template:  # Templated string
-                if not isinstance(template, string):
+                if not isinstance(template, basestring):
                     raise ValueError("Can't template a comparator-validator unless template value is a string")
                 output.isTemplateExpected = True
                 output.expected = template
@@ -231,6 +232,7 @@ class ComparatorValidator(AbstractValidator):
         return output
 
 register_validator('comparator', ComparatorValidator.parse)
+register_validator('compare', ComparatorValidator.parse)
 
 
 class ExtractTestValidator(AbstractValidator):

@@ -105,6 +105,13 @@ class ValidatorsTest(unittest.TestCase):
         myjson = '{"key": {"val": 3}}'
         comp = validator.validate(myjson)
 
+        # Try it with templating
+        config['jsonpath_mini']={'template':'key.$node'}
+        validator = validators.parse_validator('comparator', config)
+        context = Context()
+        context.bind_variable('node','val')
+        comp = validator.validate(myjson, context=context)
+
     def test_validator_compare_basic(self):
         """ Basic tests of the comparison validators, and templating"""
         config = {

@@ -261,7 +261,8 @@ def run_test(mytest, test_config = TestConfig(), context = None):
     try:
         curl.perform() #Run the actual call
     except Exception as e:
-        print e  #TODO figure out how to handle failures where no output is generated IE connection refused
+        # TODO Add a failure result to the list
+        print e
 
     result.body = str(result.body)
 
@@ -283,16 +284,15 @@ def run_test(mytest, test_config = TestConfig(), context = None):
     # execute validator on body
     if result.passed is True:
         body = result.body
-        # TODO redo validator calls in test method!
         if mytest.validators is not None and isinstance(mytest.validators, list):
             logging.debug("executing this many validators: " + str(len(mytest.validators)))
             failures = list()
             for validator in mytest.validators:
-                result = validator.validate(body, context=my_context)
-                if not result:
+                validate_result = validator.validate(body, context=my_context)
+                if not validate_result:
                     result.passed = False
-                if isinstance(result, ValidationFailure):
-                    failures.add(result)
+                if isinstance(validate_result, ValidationFailure):
+                    failures.add(validate_result)
                 # TODO add printing of validation for interactive mode
             result.failures = failures
         else:

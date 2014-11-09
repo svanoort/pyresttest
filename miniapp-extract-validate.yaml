@@ -15,6 +15,9 @@
 - test:
     - name: "Get person you just created and validate them"
     - url: {'template': "/api/person/$id/"}
+    - validators:
+        - compare: {jsonpath_mini: 'id', comparator: 'str_eq', expected: {template: '$id'}}
+        - extract_test: {jsonpath_mini: 'login', test: 'exists'}
 - test:
     - name: "Delete person you just created"
     - url: {'template': "/api/person/$id/"}
