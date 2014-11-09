@@ -118,6 +118,9 @@ class TestResponse:
     response_headers = bytearray()
     failures = None
 
+    def __init__(self):
+        self.failures = list()
+
     def __str__(self):
         return json.dumps(self, default=lambda o: str(o) if isinstance(o, bytearray) else o.__dict__)
 
@@ -247,6 +250,7 @@ def run_test(mytest, test_config = TestConfig(), context = None):
     result.body = bytearray()
     curl.setopt(pycurl.WRITEFUNCTION, result.body_callback)
     curl.setopt(pycurl.HEADERFUNCTION, result.header_callback) #Gets headers
+    result.passed = None
 
     if test_config.interactive:
         print "==================================="
@@ -261,17 +265,27 @@ def run_test(mytest, test_config = TestConfig(), context = None):
     try:
         curl.perform() #Run the actual call
     except Exception as e:
-        # TODO Add a failure result to the list
-        print e
+        # Curl exception occurred (network error), do not pass go, do not collect $200
+        result.failures.append(ValidationFailure(message="Curl Exception: {0}".format(e), details=str(e)))
+        result.passed = False
+        curl.close()
+        return result
+
 
     result.body = str(result.body)
 
-    mytest.update_context_after(result.body, my_context)
     response_code = curl.getinfo(pycurl.RESPONSE_CODE)
     result.response_code = response_code
-    result.passed = response_code in mytest.expected_status
-    # TODO add listing to test failure reasons (test.failures)
-    logging.debug("Initial Test Result, based on expected response code: "+str(result.passed))
+
+    logging.debug("Initial Test Result, based on expected response code: "+str(response_code in mytest.expected_status))
+
+    if response_code in mytest.expected_status:
+        result.passed = True
+    else:
+        # Invalid response code
+        result.passed = False
+        failure_message = "Invalid HTTP response code: response code {0} not in expected codes [{1}]".format(response_code, mytest.expected_status)
+        result.failures.append(ValidationFailure(message=failure_message, details=None))
 
     #print str(test_config.print_bodies) + ',' + str(not result.passed) + ' , ' + str(test_config.print_bodies or not result.passed)
 
@@ -286,7 +300,7 @@ def run_test(mytest, test_config = TestConfig(), context = None):
         body = result.body
         if mytest.validators is not None and isinstance(mytest.validators, list):
             logging.debug("executing this many validators: " + str(len(mytest.validators)))
-            failures = list()
+            failures = result.failures
             for validator in mytest.validators:
                 validate_result = validator.validate(body, context=my_context)
                 if not validate_result:
@@ -294,9 +308,11 @@ def run_test(mytest, test_config = TestConfig(), context = None):
                 if isinstance(validate_result, ValidationFailure):
                     failures.add(validate_result)
                 # TODO add printing of validation for interactive mode
-            result.failures = failures
         else:
             logging.debug("no validators found")
+
+        # Only do context updates if test was successful
+        mytest.update_context_after(result.body, my_context)
 
     logging.debug(result)
 
