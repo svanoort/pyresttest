@@ -1,23 +1,23 @@
 # Simple tests to verify things work against a live REST service that returns JSON.. I picked github
 ---
-- config: 
+- config:
   - testset: "Simple github.com API Test"
 - test:
   - name: "Test with successful validations"
   - url: "/search/users?q=jewzaam"
   - group: "Successful"
   - validators: # operator is applied as: <actual> <operator> <expected>
-     - {query: "total_count",     operator: "eq",     expected: 1}
-     - {query: "total_count",     operator: "ge",     expected: 1}
-     - {query: "total_count",     operator: "gt",     expected: 0}
-     - {query: "total_count",                         expected: 1} # default operator of "eq"
-     - {query: "items",           operator: "count",  expected: 1}
-     - {query: "items/0/login",                       expected: "jewzaam"}
-     - {query: "items/0/id",      operator: "gt",     expected: 0}
-     - {query: "does_not_exist",  operator: "empty",  expected: ""} # have to put in expected or it fails..
+     - compare: {jsonpath_mini: "total_count",     comparator: "eq",     expected: 1}
+     - compare: {jsonpath_mini: "total_count",     comparator: "ge",     expected: 1}
+     - compare: {jsonpath_mini: "total_count",     comparator: "gt",     expected: 0}
+     - compare: {jsonpath_mini: "total_count",     comparator: "eq",     expected: 1} # default operator of "eq"
+     - compare: {jsonpath_mini: "items",           comparator: "count_eq",  expected: 1}
+     - compare: {jsonpath_mini: "items/0/login",   comparator: "eq",     expected: "jewzaam"}
+     - compare: {jsonpath_mini: "items/0/id",      comparator: "gt",     expected: 0}
+     - extract_test: {jsonpath_mini: "does_not_exist",  test: "not_exists"}
 - test:
   - name: "Test with validations that will fail"
   - url: "/search/users?q=someonethatdoesnotexist"
   - group: "Failure"
   - validators:
-     - {query: "total_count", operator: "eq", expected: 0}
+     - compare: {jsonpath_mini: "total_count", comparator: "eq", expected: 0}

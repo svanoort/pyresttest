@@ -29,9 +29,18 @@ VALIDATORS = dict()
 # Includes 'comparator,'extracttest'
 # Validators are registered once their parse functions exist
 
+def safe_length(var):
+    """ Exception-safe length check, returns -1 if no length on type or error """
+    output = -1
+    try:
+        output = len(var)
+    except:
+        pass
+    return output
 
 # Binary comparison tests
 COMPARATORS = {
+    'count_eq': lambda x,y: safe_length(x) == y,
     'lt': operator.lt,
     'less_than': operator.lt,
     'le': operator.lt,

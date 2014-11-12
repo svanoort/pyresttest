@@ -306,7 +306,7 @@ def run_test(mytest, test_config = TestConfig(), context = None):
                 if not validate_result:
                     result.passed = False
                 if isinstance(validate_result, ValidationFailure):
-                    failures.add(validate_result)
+                    failures.append(validate_result)
                 # TODO add printing of validation for interactive mode
         else:
             logging.debug("no validators found")
