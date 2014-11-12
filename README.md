@@ -29,7 +29,7 @@ Now, let's get started!  The following should work on most modern linux distros 
 # Quickstart Part 1: Setting Up a Sample REST Service
 In order to get started with PyRestTest, we will need a REST service with an API to work with.
 
-Fortunately, there is a small Restful API included with the project. 
+Fortunately, there is a small RESTful service included with the project. 
 
 Let's **grab a copy of the code** to start:
 ```shell
@@ -41,7 +41,7 @@ Then we'll **install the necessary dependencies** to run it (Django and Django T
 sudo pip install 'django >=1.6, <1.7' django-tastypie
 ```
 Now **we start a test server in one terminal** (on default port 8000) with some preloaded data, and we will test in a second terminal:
-``shell
+```shell
 cd pyresttest/pyresttest/testapp
 python manage.py testserver test_data.json
 ```
@@ -54,12 +54,13 @@ Traceback (most recent call last):
   File "/usr/lib64/python2.6/site-packages/django/core/management/__init__.py", line 68
     commands = {name: 'django.core' for name in find_commands(__path__[0])}
 ```
+
 This is easy enough to fix though by installing a compatible Django version:
 ```shell
 sudo pip uninstall -y django django-tastypie
 sudo pip install 'django >=1.6, <1.7' django-tastypie
 ```
-**Let's make sure that server works okay first though... in our second terminal, we run this:**
+**Before going deeper, let's make sure that server works okay... in our second terminal, we run this:**
 ```shell
 curl -s http://localhost:8000/api/person/2/ | python -m json.tool
 ```

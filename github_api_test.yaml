@@ -12,8 +12,8 @@
      - compare: {jsonpath_mini: "total_count",     comparator: "gt",     expected: 0}
      - compare: {jsonpath_mini: "total_count",     comparator: "eq",     expected: 1} # default operator of "eq"
      - compare: {jsonpath_mini: "items",           comparator: "count_eq",  expected: 1}
-     - compare: {jsonpath_mini: "items/0/login",   comparator: "eq",     expected: "jewzaam"}
-     - compare: {jsonpath_mini: "items/0/id",      comparator: "gt",     expected: 0}
+     - compare: {jsonpath_mini: "items.0.login",   comparator: "eq",     expected: "jewzaam"}
+     - compare: {jsonpath_mini: "items.0.id",      comparator: "gt",     expected: 0}
      - extract_test: {jsonpath_mini: "does_not_exist",  test: "not_exists"}
 - test:
   - name: "Test with validations that will fail"

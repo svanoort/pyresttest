@@ -521,9 +521,9 @@ def execute_testsets(testsets):
                 logging.error('Test Failed: '+test.name+" URL="+result.test.url+" Group="+test.group+" HTTP Status Code: "+str(result.response_code))
 
                 # Print test failure reasons
-                if test.failures:
-                    for failure in test.failures:
-                        logging.warning("Test Failure reason: {0}".format(failure))
+                if result.failures:
+                    for failure in result.failures:
+                        logging.error("Test Failure reason: {0}".format(failure))
 
                 #Increment test failure counts for that group (adding an entry if not present)
                 failures = group_failure_counts[test.group]
