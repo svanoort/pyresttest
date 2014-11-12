@@ -1,0 +1,41 @@
+# Test variable binding using included Django test app
+# First install python-django
+# Then launch the app in another terminal by doing
+#   cd testapp
+#   python manage.py testserver test_data.json
+# Once launched, tests can be executed via:
+# 	python resttest.py http://localhost:8000 miniapp-binding.yaml
+---
+- config:
+    - testset: "Tests using test app"
+    - variable_binds: {'id': 1, 'login': 'gbaltar'}
+
+- test: # create entity
+    - name: "Basic get"
+    - url: "/api/person/"
+    - variable_binds: {'id': 2, 'login': 'gbaltar2'}
+
+
+
+#- test: # create entity
+#    - name: "Get single person"
+#    - url: "/api/person/1/"
+#    - method: 'DELETE'
+#- test: # create entity by PUT
+#    - name: "Create/update person"
+#    - url: "/api/person/1/"
+#    - method: "PUT"
+#    - body: '{"first_name": "Gaius","id": 1,"last_name": "Baltar","login": "gbaltar"}'
+#    - headers: {'Content-Type': 'application/json'}
+#- test: # create entity
+#    - name: "Get single person"
+#    - url: "/api/person/1/"
+#- test: # create entity by POST
+#    - name: "Create person"
+#    - url: "/api/person/"
+#    - method: "POST"
+#    - body: '{"first_name": "Willim","last_name": "Adama","login": "theadmiral"}'
+#    - headers: {Content-Type: application/json}
+#- test: # create entity
+#    - name: "Get single person"
+#    - url: "/api/person/1/"

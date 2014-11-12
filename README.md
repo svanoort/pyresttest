@@ -2,18 +2,112 @@ pyresttest
 ==========
 
 # What?
-- Python utility for testing and benchmarking RESTful services.
-- Tests are defined with YAML or JSON config files
-
+- A simple but powerful REST testing and benchmarking framework
+- Tests are defined in basic YAML or JSON config files, no code needed
+- Logic is written and extensible in Python
+- Minimal dependencies
 
 # License
 Apache License, Version 2.0
 
-# Features
-* Easily define sets of tests in YAML or JSON files
-* Ability to import test sets into other test sets.
-* Optional interactive mode for debugging and demonstrations.
-* Benchmarking (soon)!
+# Installation
+The best way to install PyRestTest is via Python's pip packaging tool.
+
+If that is not installed, we'll need to install it first:
+```shell
+wget https://bootstrap.pypa.io/get-pip.py && sudo python get-pip.py
+```
+Then we install pyresttest:
+```shell
+sudo pip install pyresttest
+```
+
+There are also options to install from repo, or build an RPM for your use (see at bottom).
+
+Now, let's get started!  The following should work on most modern linux distros and perhaps on Mac OS X. 
+
+
+# Advanced Features/Syntax Guide
+There is [separate documentation](advanced_guide.md) for the advanced features (templating, generators, content extraction, complex validation).
+
+
+# Quickstart Part 1: Setting Up a Sample REST Service
+In order to get started with PyRestTest, we will need a REST service with an API to work with.
+
+Fortunately, there is a small RESTful service included with the project. 
+
+Let's **grab a copy of the code** to start:
+```shell
+git clone https://github.com/svanoort/pyresttest.git
+```
+
+Then we'll **install the necessary dependencies** to run it (Django and Django Tastypie):
+```shell
+sudo pip install 'django >=1.6, <1.7' django-tastypie
+```
+Now **we start a test server in one terminal** (on default port 8000) with some preloaded data, and we will test in a second terminal:
+```shell
+cd pyresttest/pyresttest/testapp
+python manage.py testserver test_data.json
+```
+
+**If you get an error like this**, it's because you're using Python 2.6, and are trying to run a Django version not compatible with that:
+```
+Traceback (most recent call last):
+  File "/usr/bin/django-admin.py", line 2, in <module>
+    from django.core import management
+  File "/usr/lib64/python2.6/site-packages/django/core/management/__init__.py", line 68
+    commands = {name: 'django.core' for name in find_commands(__path__[0])}
+```
+
+This is easy enough to fix though by installing a compatible Django version:
+```shell
+sudo pip uninstall -y django django-tastypie
+sudo pip install 'django >=1.6, <1.7' django-tastypie
+```
+**Before going deeper, let's make sure that server works okay... in our second terminal, we run this:**
+```shell
+curl -s http://localhost:8000/api/person/2/ | python -m json.tool
+```
+
+**If all is good, we ought to see a result like this:**
+```json
+{
+    "first_name": "Leeroy", 
+    "id": 2, 
+    "last_name": "Jenkins", 
+    "login": "jenkins", 
+    "resource_uri": "/api/person/2/"
+}
+```
+
+**Now, we've got a small but working REST API for PyRestTest to test on!**
+
+# Quickstart Part Two: Starting with testing
+TODO: Let's do some basic tests!
+
+
+# Key Features (not an exhaustive list)
+* Full functional testing of REST APIs
+* Full support for GET/PUT/POST/DELETE HTTP methods, and custom headers
+* Simple templating of HTTP request bodies, URLs, and validators, with user variables
+* Read HTTP request bodies from files or inline them
+* Generators to create dummy data for testing, with support for easily writing your own
+* Simple validation: ensure host is reachable and check HTTP response codes
+* Complex validation: check for values in HTTP responses, and do comparisons on them
+* Setup/Teardown: extract information from one test to use in the next ones
+* Import test sets in other test sets, to compose suites of tests easily
+* Easy benchmarking: convert any test to a benchmark, by changing the element type and setting output options if needed
+* Lightweight benchmarking: ~0.3 ms of overhead per request, and plans to reduce that in the future
+* Accurate benchmarking: network measurements come from native code in LibCurl, so test overhead doesn't alter them
+* Optional interactive mode for debugging and demos
+
+
+
+After this, you can execute the tests by:
+```
+resttest.py {host:port/endpoint} {testfile.yaml}
+```
 
 # Examples
 
@@ -62,11 +156,6 @@ python resttest.py https://api.github.com github_api_test.yaml --log debug
     # Print full response bodies
     - print_bodies: 'False'
 
-    # Not implemented yet, will allow retrying test on failure
-    - retries: 7
-
-    # Would allow parallel test execution, not implemented yet
-    - test_parallel: False
 - url: "/ping"  # Basic test, just a simple GET
 - test: {url: "/ping", method: "GET"}  # Specify method, in-line version
 - test: # Defined test
@@ -124,7 +213,7 @@ However, they do not perform validation on the HTTP response, instead they colle
 There are a few custom configuration options specific to benchmarks:
 - *warmup_runs*: (default 10 if unspecified) run the benchmark calls this many times before starting to collect data, to allow for JVM warmup, caching, etc
 - *benchmark_runs*: (default 100 if unspecified) run the benchmark this many times to collect data
-- *output_file*: file name to write benchmark output to (MUST be defined), will get overwritten with each run
+- *output_file*: (default is None) file name to write benchmark output to, will get overwritten with each run, if none given, will write to terminal only
 - *output_format*: (default CSV if unspecified) format to write the results in ('json' or 'csv'). More on this below.
 - *metrics*: which metrics to gather (explained below), MUST be specified or benchmark will do nothing
 
@@ -155,6 +244,7 @@ Aggregates are pretty straightforward:
 - *mean_harmonic*: harmonic mean of data (useful for rates)
 - *median*: median, the value in the middle of sorted result set
 - *std_deviation*: standard deviation of values, useful for measuring how consistent they are
+- *total* or *sum*: total up the values given
 
 Currently supported metrics are listed below, and these are a subset of Curl get_info variables.
 These variables are explained here (with the CURLINFO_ prefix removed): [curl_easy_get_info documentation](http://curl.haxx.se/libcurl/c/curl_easy_getinfo.html)
@@ -209,31 +299,108 @@ Samples:
     - output_file: 'miniapp-single.json'
 ```
 
-# Troubleshooting
+# Installation: Troubleshooting and Special Cases
 
-## Cannot find argparse, pycurl, or yaml
+# Installation without Pip
+```
+git clone https://github.com/svanoort/pyresttest.git
+cd pyresttest
+sudo python setup.py install
+```
+
+## Cannot find pycurl, or yaml
 ```
 sudo su -
-easy_install argparse pyyaml pycurl
+easy_install pyyaml pycurl
 exit
 ```
 
 OR via pip
 ```
 sudo su -
-pip install argparse pyyaml pycurl
+pip install pyyaml pycurl
 exit
 ```
+
+## Pure RPM-based install?
+It's not too complex to build and install from RPM, as long as you're building for systems with the same or higher minor version of Python.
+
+If you try to build on a {on a different version than built, there will be a dependency issue on RPM installation.
+
+See below for special cases with RHEL/CentOS 6.
+
+### Building a basic RPM
+```
+python setup.py bdist_rpm  # Build RPM
+find -iname '*.rpm'   # Gets the RPM name
+```
+
+### Installing from RPM
+```
+sudo yum localinstall my_rpm_name
+sudo yum install PyYAML
+```
+Note that the latter is necessary because Python can't translate python dependencies to RPM packages. 
+I am looking to fix this in the future, but it requires quite a bit of additional work.
+PyCurl is built in by default to both yum and apt-get, so generally you don't have to install it.
+
+
+## Building an RPM for RHEL 6/CentOS 6
+There are a couple special challenges building RPMs from Python for these operating systems. 
+- rpm-build is not installed by default, just RPM, and Python set up tools do not like this
+- These operating systems come with Python 2.6.x, not 2.7.  
+- If you build the RPM on a Python 2.7 system, that will be a dependency for the RPM
+
+For these operating systems, install RPM build, then build as above **from a system on the same OS version**:
+```
+sudo yum install rpm-build
+```
+
 
 # FAQ
 
 ## Why not pure-python tests?
 This is intended for use in an environment where Python isn't the primary language.  You only need to know a little YAML to be able to throw together a working test for a REST API written in Java, Ruby, Python, node.js, etc.
 
-That said, there's nothing stopping you from doing the tests in python.
+If you want to write tests in pure python, there's nothing stopping this, but a couple notes:
+- I've *tried* to separate config parsing and application logic, and test separately. 
+- Code is generally separated by concern and commented.  
+- Read before you assume, there are implementation details around templating, for example, which can be more complex than anticipated.
+- The framework run/execute methods in pyresttest/resttest.py do *quite* a bit of heavy lifting for now.
+- Internal implementation is far more subject to change than the YAML syntax
 
 
 ## Why YAML and not XML/JSON?
-- It's human readable and human editable
-- XML is extremely verbose, reducing readability, and tests are supposed to be written by people
-- JSON is actually a subset of YAML, so you still can use JSON to define tests, it's just more verbose. See miniapp-test.json for an example.  Just remember that you have to escape quotes when giving JSON input to request bodies.
+- It's concise, flexible and legitimately human readable and human editable, even more than JSON
+- XML is extremely verbose and has gotchas, reducing readability, and tests are supposed to be written by people
+- JSON is a subset of YAML, so you still can use JSON to define tests, it's just more verbose. See miniapp-test.json for an example.  Just remember that you have to escape quotes when giving JSON input to request bodies.
+- I feel the readability/writeability gains for YAML outweigh the costs of an extra dependency
+
+
+## Where does this come from?
+Pain and suffering. :)  
+
+No, seriously, this is an answer to a whole series of challenges encountered working with REST APIs.
+It started with a simple BASH script used to smoketest services after deployments and maintenance.
+Then, it just grew from there. 
+
+
+# Future Plans (rough priority order)
+0. Refactor complex runner/executor methods into extensible, composable structures for a testing lifecycle
+1. Support for cert-based authentication (simply add test config elements and parsing)
+2. Smarter reporting, better reporting/logging of test execution and failures
+3. Depends 0: support parallel execution of a test set where extract/generators not used
+4. Repeat tests (for fuzzing) and setUp/tearDown
+5. Hooks for reporting on test results
+6. Improve Python APIs and document how to do pure-python testing with this
+7. Tentative: add a one-pass optimizer for benchmark/test execution (remove redundant templating)
+
+## Feedback
+We welcome any feedback you have, including pull requests, reported issues, etc
+
+For pull requests to get easily merged, please:
+- Include unit tests
+- Include documentation as appropriate
+- Attempt to adhere to PEP8 style guidelines and project style
+
+Bear in mind that this is largely a one-man, outside-of-working-hours effort at the moment, so response times will vary.
