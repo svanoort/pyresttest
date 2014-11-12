@@ -24,7 +24,12 @@ sudo pip install pyresttest
 
 There are also options to install from repo, or build an RPM for your use (see at bottom).
 
-Now, let's get started!  The following should work on most modern linux distros and perhaps on Mac OS X.  It has been tested on Fedora 20, Ubuntu Server 14, Amazon Linux 2014.09.1, and Red Hat Enterprise Linux 6)
+Now, let's get started!  The following should work on most modern linux distros and perhaps on Mac OS X. 
+
+
+# Advanced Features/Syntax Guide
+There is [separate documentation](advanced_guide.md) for the advanced features (templating, generators, content extraction, complex validation).
+
 
 # Quickstart Part 1: Setting Up a Sample REST Service
 In order to get started with PyRestTest, we will need a REST service with an API to work with.
@@ -375,7 +380,7 @@ If you want to write tests in pure python, there's nothing stopping this, but a 
 ## Where does this come from?
 Pain and suffering. :)  
 
-No, seriously, this is an answer to a whole series of unpleasant problems encountered working with REST APIs.
+No, seriously, this is an answer to a whole series of challenges encountered working with REST APIs.
 It started with a simple BASH script used to smoketest services after deployments and maintenance.
 Then, it just grew from there. 
 

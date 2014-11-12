@@ -60,10 +60,10 @@ Currently, templating is only supported for the request body and URL.
 There are technical challenges adding it everywhere, but plans to add it where needed to other options.
 
 # Extractors Basics
-**TBD** when features are frozen. 
+**TBD** finish documenting
 
 # Validation Basics
-**TBD** when features are frozen. 
+**TBD** finish documenting
 
 # Lifecycles Of Different Operations
 ## TestSet Execution Lifecycle
@@ -122,44 +122,6 @@ Read an environment variable
 - variable_name: environment variable name, without prefix
  
 ### Example:
-EXAMPLe here
-
-
-## env_string
-
-
-## number_sequence
-
-### Configuration Elements:
-
-### Example:
-```yaml
----
-- config:
-    - testset: "Benchmark tests using test app"
-    - generators:
-        - 'id': {type: 'number_sequence', start: 10}
-
-- benchmark: # create entity
-    - generator_binds: {id: id}
-    - name: "Create person"
-    - url: {template: "/api/person/$id/"}
-    - method: 'PUT'
-    - headers: {'Content-Type': 'application/json'}
-    - body: {template: '{"first_name": "Gaius","id": "$id","last_name": "Baltar","login": "login$id"}'}
-    - metrics:
-        - total_time: total
-        - total_time: mean
-```
-
-
-
-  Name      |     Type      |        Arguments
-------------|---------------|-------------------
-number_sequence | sequence of numbers in order | 'start': first value, 'increment': amount to change by
-env_variable    | value of environment variable | 
-env_string      |  string with environment variable substitution done | string: the string to substitute
-random_int | random numbers | none
-random_text | random characters from character set | 
+Example here
 
 
