@@ -2,20 +2,83 @@ pyresttest
 ==========
 
 # What?
-- A simple but powerful and extensible REST testing and benchmarking framework
+- A simple but powerful REST testing and benchmarking framework
 - Tests are defined in basic YAML or JSON config files, no code needed
-- Logic is written and extensible in Python, but designed for use in a multi-language environment
-
-
-# Philosophy
-- Make common things simple, make it explicit when you're doing something more complex
-- Fail early when parsing configuration, fail late when executing
-- There's A Way To Do It
-- For tests: do it the Right Way, then worry about doing it the Fast Way
-
+- Logic is written and extensible in Python
+- Minimal dependencies
 
 # License
 Apache License, Version 2.0
+
+# Installation
+The best way to install PyRestTest is via Python's pip packaging tool.
+
+If that is not installed, we'll need to install it first:
+```shell
+wget https://bootstrap.pypa.io/get-pip.py && sudo python get-pip.py
+```
+Then we install pyresttest:
+```shell
+sudo pip install pyresttest
+```
+
+There are also options to install from repo, or build an RPM for your use (see at bottom).
+
+
+# Quickstart
+In order to get started with PyRestTest, we will need a REST service with an API to work with.
+
+Fortunately, there is a small Restful API included with the project. 
+
+Let's **grab a copy of the code** to start:
+```shell
+git clone https://github.com/svanoort/pyresttest.git
+```
+
+Then we'll **install the necessary dependencies** to run it (Django and Django Tastypie):
+```shell
+sudo pip install 'django >=1.6, <1.7' django-tastypie
+```
+Now **we start a test server in one terminal** (on default port 8000) with some preloaded data, and we will test in a second terminal:
+``shell
+cd pyresttest/pyresttest/testapp
+python manage.py testserver test_data.json
+```
+
+**If you get an error like this**, it's because you're using Python 2.6, and are trying to run a Django version not compatible with that:
+```
+Traceback (most recent call last):
+  File "/usr/bin/django-admin.py", line 2, in <module>
+    from django.core import management
+  File "/usr/lib64/python2.6/site-packages/django/core/management/__init__.py", line 68
+    commands = {name: 'django.core' for name in find_commands(__path__[0])}
+```
+This is easy enough to fix though by installing a compatible Django version:
+```shell
+sudo pip uninstall -y django django-tastypie
+sudo pip install 'django >=1.6, <1.7' django-tastypie
+```
+**Let's make sure that server works okay first though... in our second terminal, we run this:**
+```shell
+curl -s http://localhost:8000/api/person/2/ | python -m json.tool
+```
+
+**If all is good, we ought to see a result like this:**
+```json
+{
+    "first_name": "Leeroy", 
+    "id": 2, 
+    "last_name": "Jenkins", 
+    "login": "jenkins", 
+    "resource_uri": "/api/person/2/"
+}
+```
+
+**Now, we've got a small but working REST API for PyRestTest to test on!**
+TODO: Let's do some basic tests!
+
+# Starting with testing
+
 
 # Key Features (not an exhaustive list)
 * Full functional testing of REST APIs
@@ -32,12 +95,7 @@ Apache License, Version 2.0
 * Accurate benchmarking: network measurements come from native code in LibCurl, so test overhead doesn't alter them
 * Optional interactive mode for debugging and demos
 
-# Installation
-```
-git clone https://github.com/svanoort/pyresttest.git
-cd pyresttest
-sudo python setup.py install
-```
+
 
 After this, you can execute the tests by:
 ```
@@ -234,7 +292,14 @@ Samples:
     - output_file: 'miniapp-single.json'
 ```
 
-# Troubleshooting
+# Installation: Troubleshooting and Special Cases
+
+# Installation without Pip
+```
+git clone https://github.com/svanoort/pyresttest.git
+cd pyresttest
+sudo python setup.py install
+```
 
 ## Cannot find pycurl, or yaml
 ```
@@ -251,8 +316,10 @@ exit
 ```
 
 ## Pure RPM-based install?
-It's not too complex to build and install from RPM, as long as you're building for systems with the same minor version of Python.
-You must build on the same minor version of python, otherwise there will be a dependency issue on RPM installation.
+It's not too complex to build and install from RPM, as long as you're building for systems with the same or higher minor version of Python.
+
+If you try to build on a {on a different version than built, there will be a dependency issue on RPM installation.
+
 See below for special cases with RHEL/CentOS 6.
 
 ### Building a basic RPM
