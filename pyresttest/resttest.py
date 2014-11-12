@@ -524,6 +524,8 @@ def execute_testsets(testsets):
                 if result.failures:
                     for failure in result.failures:
                         logging.error("Test Failure reason: {0}".format(failure))
+                        if failure.details:
+                            logging.error("Validator/Error details:"+str(failure.details))
 
                 #Increment test failure counts for that group (adding an entry if not present)
                 failures = group_failure_counts[test.group]
