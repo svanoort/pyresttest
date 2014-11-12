@@ -154,7 +154,7 @@ class Benchmark(Test):
         super(Benchmark, self).__init__()
 
     def __str__(self):
-        return json.dumps(self, default=lambda o: o.__dict__)
+        return json.dumps(self, default=safe_to_json)
 
 def realize_partial(self, context=None):
     """ Attempt to template out what is possible for this benchmark """

@@ -205,7 +205,7 @@ class Test(object):
         self.templated = dict()
 
     def __str__(self):
-        return json.dumps(self, default=lambda o: o.__dict__)
+        return json.dumps(self, default=safe_to_json)
 
     def configure_curl(self, timeout=DEFAULT_TIMEOUT, context=None, curl_handle=None):
         """ Create and mostly configure a curl object for test, reusing existing if possible """

@@ -2,6 +2,15 @@
 Parsing utilities, pulled out so they can be used in multiple modules
 """
 
+def safe_to_json(in_obj):
+    """ Safely get dict from object if present for json dumping """
+    val = None
+    if isinstance(in_obj, bytearray):
+        return str(in_obj)
+    if hasattr(in_obj, '__dict__'):
+        return in_obj.__dict__
+    return str(in_obj)
+
 def flatten_dictionaries(input):
     """ Flatten a list of dictionaries into a single dictionary, to allow flexible YAML use
       Dictionary comprehensions can do this, but would like to allow for pre-Python 2.7 use

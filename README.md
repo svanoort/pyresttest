@@ -24,8 +24,9 @@ sudo pip install pyresttest
 
 There are also options to install from repo, or build an RPM for your use (see at bottom).
 
+Now, let's get started!  The following should work on most modern linux distros and perhaps on Mac OS X.  It has been tested on Fedora 20, Ubuntu Server 14, Amazon Linux 2014.09.1, and Red Hat Enterprise Linux 6)
 
-# Quickstart
+# Quickstart Part 1: Setting Up a Sample REST Service
 In order to get started with PyRestTest, we will need a REST service with an API to work with.
 
 Fortunately, there is a small Restful API included with the project. 
@@ -75,9 +76,9 @@ curl -s http://localhost:8000/api/person/2/ | python -m json.tool
 ```
 
 **Now, we've got a small but working REST API for PyRestTest to test on!**
-TODO: Let's do some basic tests!
 
-# Starting with testing
+# Quickstart Part Two: Starting with testing
+TODO: Let's do some basic tests!
 
 
 # Key Features (not an exhaustive list)

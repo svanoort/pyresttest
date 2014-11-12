@@ -19,14 +19,14 @@ except ImportError:
 if is_root_folder:  # Inside the module
     from binding import Context
     from generators import parse_generator
-    from parsing import flatten_dictionaries, lowercase_keys, safe_to_bool
+    from parsing import flatten_dictionaries, lowercase_keys, safe_to_bool, safe_to_json
     from validators import ValidationFailure
     from tests import Test, DEFAULT_TIMEOUT
     from benchmarks import Benchmark, AGGREGATES, METRICS, build_benchmark
 else:  # Importing as library
     from pyresttest.binding import Context
     from pyresttest.generators import parse_generator
-    from pyresttest.parsing import flatten_dictionaries, lowercase_keys, safe_to_bool
+    from pyresttest.parsing import flatten_dictionaries, lowercase_keys, safe_to_bool, safe_to_json
     from pyresttest.validators import ValidationFailure
     from pyresttest.tests import Test, DEFAULT_TIMEOUT
     from pyresttest.benchmarks import Benchmark, AGGREGATES, METRICS, build_benchmark
@@ -77,7 +77,7 @@ class TestConfig:
     generators = None  # Map of generator name to generator function
 
     def __str__(self):
-        return json.dumps(self, default=lambda o: o.__dict__)
+        return json.dumps(self, default=safe_to_json)
 
 class TestSet:
     """ Encapsulates a set of tests and test configuration for them """
@@ -91,7 +91,7 @@ class TestSet:
         self.benchmarks = list()
 
     def __str__(self):
-        return json.dumps(self, default=lambda o: o.__dict__)
+        return json.dumps(self, default=lambda o: safe_to_json)
 
 class BenchmarkResult:
     """ Stores results from a benchmark for reporting use """
@@ -107,7 +107,7 @@ class BenchmarkResult:
         self.results = list()
 
     def __str__(self):
-        return json.dumps(self, default=lambda o: o.__dict__)
+        return json.dumps(self, default=lambda o: safe_to_json)
 
 class TestResponse:
     """ Encapsulates everything about a test response """
@@ -122,7 +122,7 @@ class TestResponse:
         self.failures = list()
 
     def __str__(self):
-        return json.dumps(self, default=lambda o: str(o) if isinstance(o, bytearray) else o.__dict__)
+        return json.dumps(self, default=lambda o: safe_to_json(o))
 
     def body_callback(self, buf):
         """ Write response body by pyCurl callback """
@@ -459,7 +459,7 @@ def metrics_to_tuples(raw_metrics):
 
 def write_benchmark_json(file_out, benchmark_result, benchmark, test_config = TestConfig()):
     """ Writes benchmark to file as json """
-    json.dump(benchmark_result, file_out, default=lambda o: o.__dict__)
+    json.dump(benchmark_result, file_out, default=lambda o: safe_to_json)
 
 def write_benchmark_csv(file_out, benchmark_result, benchmark, test_config = TestConfig()):
     """ Writes benchmark to file as csv """
