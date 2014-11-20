@@ -7,9 +7,9 @@ Specifically **generators**, **variable binding,** **data extraction,** and **co
 # Templating and Context Basics
 - Tests and benchmarks may use variables to template out configuration dynamically.
 - Templating is performed using basic [Python string templating](https://docs.python.org/2/library/string.html#template-strings).  
-- Templating uses variables contained in a context, and are templates evaluated anew for each test run or benchmark iteration
+- Templating uses variables contained in a context, and **templates are evaluated freshly** for each test run or benchmark iteration
 - Contexts are either passed into a test, or created in the text if not supplied
-- Contexts are persistent within a TestSet. Once a variable is set, it can be used in all following tests
+- **Contexts are persistent within a TestSet. Once a variable is set, it can be used in all following tests**
 - **Context variables are modified and set** in 3 ways:
     1. **Variable values may be statically declared** with 'variable_binds' in TestSet config or the test
     2. **Generator output may be bound to a variable** with 'generator binds' in the test
@@ -60,10 +60,125 @@ Currently, templating is only supported for the request body and URL.
 There are technical challenges adding it everywhere, but plans to add it where needed to other options.
 
 # Extractors Basics
-**TBD** finish documenting
+Extractors are query-based ways to extract some part of an HTTP response body for use.
+
+This can be used as part of a validator or to capture values to a context variable for later use. 
+
+Current extractors are limited, but the functions are pluggable -- it is very easy to add full JsonPath, regex matching, xpath, xquery, etc and use them in your testing.
+
+**An extractor definition looks like this:**
+```yaml
+extractor_name: extractor_configuration
+```
+Extractor configuration may be a simple string query, a templated string, or a more complex object.  It's completely up to the extractor parsing function how to handle this.
+
+## Extractor: jsonpath_mini
+The basic 'jsonpath_mini' extractor provides a very limited [JsonPath](http://goessner.net/articles/JsonPath/)-like implementation to grab data from JSON, with no external library dependencies.
+
+The elements of this  syntax are a list of keys or indexes, descending down a tree, seperated by periods. Numbers are assumed to be array indices.
+
+**Example:**
+Given this JSON:
+```json
+{
+    "thing":{"foo":"bar"},
+    "link_ids": [1, 2, 3, 4]
+    "person":{
+        "firstname": "Bob",
+        "lastname": "Smith",
+        "age": 17
+    }
+}
+```
+
+- This query: 'person.lastname'
+Will return:  "Smith"
+
+- This query: 'person.is_a_ninja'
+Will return: NOTHING (None object) -- that key is not defined for 'person'.
+
+- This query: 'link_ids.1'
+ Will return: 2
+
+- This query: 'thing'
+Will return: {"foo":"bar"}
+
+- This query: 'thing.0'
+Will return: None -- trick question, 'thing' is not an array!
+
+Super simple, super basic, but it actually will cover a lot of useful cases. 
+
+**This extractor also supports templating:**
+```yaml
+jsonpath_mini: {template: $keyname.age}
+```
+
+- If the context variable 'keyname' is set to 'person', this will return 17.
+- If it is set to 'thing', then it will return nothing (because the 'thing' object lacks an 'age' key)
+
 
 # Validation Basics
-**TBD** finish documenting
+Validators test response bodies for correctness.  They perform a test on the response body, with context supplied, and return a value that will evaluate to boolean True or False. 
+
+Optionally, validators can return a ValidationFailure which evaluates to False, but supplies additional information. 
+
+## Current Validators:
+### Extract and test value:
+- **Name:** 'extract_test'
+- **Description:** run an extractor to extract a value from the body and test it using a function.
+- **Arguments:**
+    + (extractor): an extractor definition, see above, named by extractor type
+    + test: a test function to apply, which returns true or false (see list below)
+
+- **Examples:**
+```yaml
+- validators:
+    # Test key does not exist
+    - extract_test: {jsonpath_mini: "key_should_not_exist",  test: "not_exists"}
+```
+
+#### Test Functions
+'exists', 'not_exists' - check if there's a value or not
+
+
+### Extract And Compare:
+- **Name:** 'comparator' or 'compare'
+- **Description:** run an extractor and compare results to expected value
+- **Arguments:**
+    + (extractor): an extractor definition, see above, named by extractor type
+    + comparator: a comparator function to apply, which returns true or false (see list below)
+    + expected: value is:
+        + expected value (a literal) 
+        + a template: {template: 'template_string'} - gotcha here, you need to use 'str_eq' comparator if you want to template numeric values.
+        + an extractor definition. Yes, you can compare two parts of the response body.
+
+- **Examples:**
+```yaml
+- validators:
+     # Check the user name matches
+     - compare: {jsonpath_mini: "user_name", comparator: "eq", expected: 'neo'}
+     
+     # Check the total_count key has value over 10
+     - compare: {jsonpath_mini: "total_count", comparator: "gt", expected: 10}
+     
+     # Check the user's login
+     - compare: {jsonpath_mini: "total_count", comparator: "gt", expected: }
+```
+
+
+#### Comparator Functions:
+| Name(s)                                      |                Description                | Details for comparator(A, B)                                           |
+|----------------------------------------------|:-----------------------------------------:|------------------------------------------------------------------------|
+| 'count_eq': lambda x,y: safe_length(x) == y, | Check count of elements equals value      | length(A) == B                                                         |
+| 'lt', 'less_than':                           | Less Than                                 | A < B                                                                  |
+| 'le', 'less_than_or_equal'                   | Less Than Or Equal To                     | A <= B                                                                 |
+| 'eq', 'equals'                               | Equals                                    | A == B                                                                 |
+| 'str_eq'                                     | Values are Equal When Converted to String | str(A) == str(B) -- useful for comparing templated numbers/collections |
+| 'ne', 'not_equals'                           | Not Equals                                | A != B                                                                 |
+| 'ge', 'greater_than_or_equal'                | Greater Than Or Equal To                  | A >= B                                                                 |
+| 'gt', 'greater_than'                         | Greater Than                              | A > B                                                                  |
+
+
 
 # Lifecycles Of Different Operations
 ## TestSet Execution Lifecycle
