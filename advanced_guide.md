@@ -82,7 +82,7 @@ Given this JSON:
 ```json
 {
     "thing":{"foo":"bar"},
-    "link_ids": [1, 2, 3, 4]
+    "link_ids": [1, 2, 3, 4],
     "person":{
         "firstname": "Bob",
         "lastname": "Smith",
@@ -169,7 +169,7 @@ Optionally, validators can return a ValidationFailure which evaluates to False, 
 #### Comparator Functions:
 | Name(s)                                      |                Description                | Details for comparator(A, B)                                           |
 |----------------------------------------------|:-----------------------------------------:|------------------------------------------------------------------------|
-| 'count_eq': lambda x,y: safe_length(x) == y, | Check count of elements equals value      | length(A) == B                                                         |
+| 'count_eq' | Check count of elements equals value      | length(A) == B                                                         |
 | 'lt', 'less_than':                           | Less Than                                 | A < B                                                                  |
 | 'le', 'less_than_or_equal'                   | Less Than Or Equal To                     | A <= B                                                                 |
 | 'eq', 'equals'                               | Equals                                    | A == B                                                                 |
