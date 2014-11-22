@@ -177,6 +177,8 @@ Optionally, validators can return a ValidationFailure which evaluates to False, 
 | 'ne', 'not_equals'                           | Not Equals                                | A != B                                                                 |
 | 'ge', 'greater_than_or_equal'                | Greater Than Or Equal To                  | A >= B                                                                 |
 | 'gt', 'greater_than'                         | Greater Than                              | A > B                                                                  |
+| 'contains'                                   | Contains                                  | B in A                                                                 |
+| 'contained_by'                               | Contained By                              | A in B                                                                 |
 
 
 
