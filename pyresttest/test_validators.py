@@ -112,6 +112,16 @@ class ValidatorsTest(unittest.TestCase):
         context.bind_variable('node','val')
         comp = validator.validate(myjson, context=context)
 
+    def test_parse_validator_nocomparator(self):
+        """ Test that comparator validator with no comparator defaults to eq """
+        config = {
+            'jsonpath_mini': 'key.val',
+            'expected': 3
+        }
+        validator = validators.parse_validator('assertEqual', config)
+        self.assertEqual('eq', validator.comparator_name)
+        self.assertEqual(validators.COMPARATORS['eq'], validator.comparator)
+
     def test_validator_compare_basic(self):
         """ Basic tests of the comparison validators, and templating"""
         config = {

@@ -208,10 +208,10 @@ class ComparatorValidator(AbstractValidator):
         if output.extractor is None:
             raise ValueError("Extract function for comparison is not valid or not found!")
 
-        try:
+        if 'comparator' not in config:  # Equals comparator if unspecified
+            output.comparator_name = 'eq'
+        else:
             output.comparator_name = config['comparator'].lower()
-        except KeyError:
-            raise ValueError("No comparator found in comparator validator config, one must be!")
         output.comparator = COMPARATORS[output.comparator_name]
         if not output.comparator:
             raise ValueError("Invalid comparator given!")
@@ -242,6 +242,7 @@ class ComparatorValidator(AbstractValidator):
 
 register_validator('comparator', ComparatorValidator.parse)
 register_validator('compare', ComparatorValidator.parse)
+register_validator('assertEqual', ComparatorValidator.parse)
 
 
 class ExtractTestValidator(AbstractValidator):
@@ -281,6 +282,7 @@ class ExtractTestValidator(AbstractValidator):
             return failure
 
 register_validator('extract_test', ExtractTestValidator.parse)
+register_validator('assertTrue', ExtractTestValidator.parse)
 
 def parse_extractor_minijson(config):
     """ Creates an extractor function using the mini-json query functionality """
