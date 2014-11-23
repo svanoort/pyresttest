@@ -33,6 +33,38 @@ There is [separate documentation](advanced_guide.md) for the more advanced featu
 
 The root folder of this library also includes a ton of example tests.
 
+## Running A Simple Test
+
+Run a simple test that checks a URL returns a 200:
+
+```
+python resttest.py https://github.com simple_test.yaml
+```
+
+## Using JSON Validation
+
+A simple set of tests that show how json validation can be used to check contents of a response.
+Test includes both successful and unsuccessful validation using github API.
+
+```
+python resttest.py https://api.github.com github_api_test.yaml
+```
+
+(For help: python resttest.py  --help )
+
+## Interactive Mode
+Same as the other test but running in interactive mode.
+
+```
+python resttest.py https://api.github.com github_api_test.yaml --interactive true --print-bodies true
+```
+
+## Verbose Output
+
+```
+python resttest.py https://api.github.com github_api_test.yaml --log debug
+```
+
 # Getting Started: Quickstart Requirements
 Now, let's get started!  
 
@@ -282,52 +314,12 @@ Then let's add a test the person is really there after:
 # Other Goodies
 * Simple templating of HTTP request bodies, URLs, and validators, with user variables
 * Generators to create dummy data for testing, with support for easily writing your own
-* Setup/Teardown: extract information from one test to use in the next ones
+* Sequential tests: extract info from one test to use in the next
 * Import test sets in other test sets, to compose suites of tests easily
 * Easy benchmarking: convert any test to a benchmark, by changing the element type and setting output options if needed
 * Lightweight benchmarking: ~0.3 ms of overhead per request, and plans to reduce that in the future
 * Accurate benchmarking: network measurements come from native code in LibCurl, so test overhead doesn't alter them
 * Optional interactive mode for debugging and demos
-
-
-After this, you can execute the tests by:
-```
-resttest.py {host:port/endpoint} {testfile.yaml}
-```
-
-# Examples
-
-## Simple Test
-
-Run a simple test that checks a URL returns a 200:
-
-```
-python resttest.py https://github.com simple_test.yaml
-```
-
-## REST API with JSON Validation
-
-A simple set of tests that show how json validation can be used to check contents of a response.
-Test includes both successful and unsuccessful validation using github API.
-
-```
-python resttest.py https://api.github.com github_api_test.yaml
-```
-
-(For help: python resttest.py  --help )
-
-## Interactive Mode
-Same as the other test but running in interactive mode.
-
-```
-python resttest.py https://api.github.com github_api_test.yaml --interactive true --print-bodies true
-```
-
-## Verbose Output
-
-```
-python resttest.py https://api.github.com github_api_test.yaml --log debug
-```
 
 # Basic Test Set Syntax
 As you can see, tests are defined in [YAML](http://en.wikipedia.org/wiki/YAML) format.
@@ -468,67 +460,49 @@ exit
 ```
 
 ## Pure RPM-based install?
-It's not too complex to build and install from RPM, as long as you're building for systems with the same or higher minor version of Python.
+It's easy to build and install from RPM:
 
-If you try to build on a {on a different version than built, there will be a dependency issue on RPM installation.
-
-See below for special cases with RHEL/CentOS 6.
-
-### Building a basic RPM
-```
+## Building the RPM:
+```shell
 python setup.py bdist_rpm  # Build RPM
 find -iname '*.rpm'   # Gets the RPM name
 ```
-
 ### Installing from RPM
-```
+```shell
 sudo yum localinstall my_rpm_name
 sudo yum install PyYAML
 ```
-Note that the latter is necessary because Python can't translate python dependencies to RPM packages. 
-I am looking to fix this in the future, but it requires quite a bit of additional work.
-PyCurl is built in by default to both yum and apt-get, so generally you don't have to install it.
+- You need to install PyYAML manually because Python distutils can't translate python dependencies to RPM packages. 
+- This is not needed for PyCurl because it is built in by default
 
+**Gotcha:** Python distutils add a dependency on your major python version. 
+**This means you can't build an RPM for a system with Python 2.6 on a Python 2.7 system.**
 
 ## Building an RPM for RHEL 6/CentOS 6
-There are a couple special challenges building RPMs from Python for these operating systems. 
-- rpm-build is not installed by default, just RPM, and Python set up tools do not like this
-- These operating systems come with Python 2.6.x, not 2.7.  
-- If you build the RPM on a Python 2.7 system, that will be a dependency for the RPM
+You'll need to install rpm-build, and then it should work.
 
-For these operating systems, install RPM build, then build as above **from a system on the same OS version**:
-```
+```shell
 sudo yum install rpm-build
 ```
-
 
 # FAQ
 
 ## Why not pure-python tests?
-This is intended for use in an environment where Python isn't the primary language.  You only need to know a little YAML to be able to throw together a working test for a REST API written in Java, Ruby, Python, node.js, etc.
-
-If you want to write tests in pure python, there's nothing stopping this, but a couple notes:
-- I've *tried* to separate config parsing and application logic, and test separately. 
-- Code is generally separated by concern and commented.  
-- Read before you assume, there are implementation details around templating, for example, which can be more complex than anticipated.
-- The framework run/execute methods in pyresttest/resttest.py do *quite* a bit of heavy lifting for now.
-- Internal implementation is far more subject to change than the YAML syntax
-
+- This is written for an environment where Python is not the sole or primary langauge
+- **You totally can do pure-Python tests if you want!**  
+    - Gotcha: I will break back compatibility of the implementation often and badly, at least at first
+    - Read before you assume: template handling is more complex than you think.
+    - Framework run/execute methods in pyresttest/resttest.py do *quite* a bit of heavy lifting
 
 ## Why YAML and not XML/JSON?
-- It's concise, flexible and legitimately human readable and human editable, even more than JSON
-- XML is extremely verbose and has gotchas, reducing readability, and tests are supposed to be written by people
-- JSON is a subset of YAML, so you still can use JSON to define tests, it's just more verbose. See miniapp-test.json for an example.  Just remember that you have to escape quotes when giving JSON input to request bodies.
-- I feel the readability/writeability gains for YAML outweigh the costs of an extra dependency
-
-
-## Where does this come from?
-Pain and suffering. :)  
-
-No, seriously, this is an answer to a whole series of challenges encountered working with REST APIs.
+- XML is extremely verbose and has many gotchas for parsing
+- You **CAN use JSON for tests**, it's a subset of YAML. See [miniapp-test.json](miniapp-test.json) for an example. 
+- YAML tends to be the most concise, natural, and easy to write of these three options
 
 # Future Plans (rough priority order)
-Top priority: bugfixes and minor usability enhancements, before major changes.
+Top priority, before enhancements: 
+- bugfixes
+- high-value minor usability enhancements (defaults, better error case handling)
 
 0. Refactor complex runner/executor methods into extensible, composable structures for a testing lifecycle
 1. Support for cert-based authentication (simply add test config elements and parsing)
