@@ -621,9 +621,17 @@ if(__name__ == '__main__'):
     (args, unparsed_args) = parser.parse_args()
     args = vars(args)
 
-    if len(unparsed_args) != 2:
-        parser.error("wrong number of arguments, need both url and filename ")
-    else:
-        args[u'url'] = unparsed_args[0]
-        args[u'test'] = unparsed_args[1]
-        main(args)
+    # Handle url/test as named, or, failing that, positional arguments
+    if not args['url'] or not args['test']:
+        if len(unparsed_args) == 2:
+            args[u'url'] = unparsed_args[0]
+            args[u'test'] = unparsed_args[1]
+        elif len(unparsed_args) == 1 and args['url']:
+            args['test'] = unparsed_args[0]
+        elif len(unparsed_args) == 1 and args['test']:
+            args['url'] = unparsed_args[0]
+        else:
+            parser.print_help()
+            parser.error("wrong number of arguments, need both url and test filename, either as 1st and 2nd parameters or via --url and --test")
+
+    main(args)
