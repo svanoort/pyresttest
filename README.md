@@ -37,8 +37,8 @@ The root folder of this library also includes a ton of example tests.
 
 Run a simple test that checks a URL returns a 200:
 
-```
-python resttest.py https://github.com simple_test.yaml
+```shell
+resttest.py https://github.com simple_test.yaml
 ```
 
 ## Using JSON Validation
@@ -46,8 +46,8 @@ python resttest.py https://github.com simple_test.yaml
 A simple set of tests that show how json validation can be used to check contents of a response.
 Test includes both successful and unsuccessful validation using github API.
 
-```
-python resttest.py https://api.github.com github_api_test.yaml
+```shell
+resttest.py https://api.github.com github_api_test.yaml
 ```
 
 (For help: python resttest.py  --help )
@@ -55,14 +55,14 @@ python resttest.py https://api.github.com github_api_test.yaml
 ## Interactive Mode
 Same as the other test but running in interactive mode.
 
-```
-python resttest.py https://api.github.com github_api_test.yaml --interactive true --print-bodies true
+```python
+resttest.py https://api.github.com github_api_test.yaml --interactive true --print-bodies true
 ```
 
 ## Verbose Output
 
-```
-python resttest.py https://api.github.com github_api_test.yaml --log debug
+```shell
+resttest.py https://api.github.com github_api_test.yaml --log debug
 ```
 
 # Getting Started: Quickstart Requirements
