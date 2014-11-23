@@ -1,16 +1,16 @@
 pyresttest
 ==========
 
-# What?
+# What Is It?
 - A simple but powerful REST testing and benchmarking framework
+- Minimal dependencies, designed to slot into automated configuration management/orchestration tools
 - Tests are defined in basic YAML or JSON config files, no code needed
 - Logic is written and extensible in Python
-- Minimal dependencies
 
 # License
 Apache License, Version 2.0
 
-# Installation
+# How Do I Get It?
 The best way to install PyRestTest is via Python's pip packaging tool.
 
 If that is not installed, we'll need to install it first:
@@ -22,16 +22,33 @@ Then we install pyresttest:
 sudo pip install pyresttest
 ```
 
-There are also options to install from repo, or build an RPM for your use (see at bottom).
+There are also options to [install from repo](#installation-without-pip), or [build an RPM](#pure-rpm-based-install).
 
-Now, let's get started!  The following should work on most modern linux distros and perhaps on Mac OS X. 
+# How Do I Use It?
+The [Quickstart](#getting-started-quickstart-requirements) is below. 
 
+There's an explanation for how to use it with [benchmarking below](#benchmarking).
 
-# Advanced Features/Syntax Guide
-There is [separate documentation](advanced_guide.md) for the advanced features (templating, generators, content extraction, complex validation).
+There is [separate documentation](advanced_guide.md) for the more advanced features (templating, generators, content extraction, complex validation).
 
+The root folder of this library also includes a ton of example tests.
 
-# Quickstart Part 1: Setting Up a Sample REST Service
+# Getting Started: Quickstart Requirements
+Now, let's get started!  
+
+**Most quickstarts show a case where *everything works perfectly.***
+
+**That is *not* what we're going to do today.** 
+
+**We're going to break things horribly and enjoy it!**
+
+**This is what testing is for.**
+
+## System Requirements:
+- A semi-modern linux distro (or maybe Mac OS X)
+- Do not use a virtualenv (or have it custom configured to find libcurl)
+
+# Quickstart Part 0: Setting Up a Sample REST Service
 In order to get started with PyRestTest, we will need a REST service with an API to work with.
 
 Fortunately, there is a small RESTful service included with the project. 
@@ -83,25 +100,194 @@ curl -s http://localhost:8000/api/person/2/ | python -m json.tool
 
 **Now, we've got a small but working REST API for PyRestTest to test on!**
 
-# Quickstart Part Two: Starting with testing
-TODO: Let's do some basic tests!
+# Quickstart Part 1: Our First (Smoke) Test
+In our second terminal, we're going to create a basic REST smoketest, which can be used to test the server came up cleanly and works.
+
+Pop up ye olde text editor of choice and save this to a file named 'test.yaml':
+
+```yaml
+---
+- config:
+    - testset: "Quickstart app tests"
+
+- test:
+    - name: "Basic smoketest"
+    - url: "/api/people/"
+```
+
+And when we run it:
+```shell
+resttest.py http://localhost:8000 test.yaml
+```
+
+**OOPS!**  As the more observant people will notice, **we got the API URL wrong**, and the test failed, showing the unexpected 404, and reporting the test name.  At the end we see the summary, by test group ("Default" is exactly like what it sounds like).  
+
+**Let's fix that, add a test group name, and re-run it!**
+```yaml
+---
+- config:
+    - testset: "Quickstart app tests"
+
+- test:
+    - group: "Quickstart"
+    - name: "Basic smoketest"
+    - url: "/api/person/"
+```
+
+Ahh, *much* better!  But, that's very basic, surely we can do *better?*
 
 
-# Key Features (not an exhaustive list)
-* Full functional testing of REST APIs
-* Full support for GET/PUT/POST/DELETE HTTP methods, and custom headers
+# Quickstart Part 2: Functional Testing - Create/Update/Delete
+Let's build this out into a full test scenario, creating and deleting a user:
+
+We're going to add a create for a new user, that scoundrel Gaius Baltar:
+```yaml
+---
+- config:
+    - testset: "Quickstart app tests"
+
+- test:
+    - group: "Quickstart"
+    - name: "Basic smoketest"
+    - url: "/api/person/"
+
+- test:
+    - group: "Quickstart"
+    - name: "Create a person"
+    - url: "/api/person/10/"
+    - method: "PUT"
+    - body: '{"first_name": "Gaius","id": 10,"last_name": "Baltar","login": "baltarg"}'
+```
+... and when we run it, it fails (500 error).  That sneaky lowdown tried to sneak in without a Content-Type so the server knows what he is. 
+
+**Let's fix it...**
+
+```yaml
+- test:
+    - group: "Quickstart"
+    - name: "Create a person"
+    - url: "/api/person/10/"
+    - method: "PUT"
+    - body: '{"first_name": "Gaius","id": 10,"last_name": "Baltar","login": "baltarg"}'
+    - headers: {'Content-Type': 'application/json'}
+```
+
+... and now both tests will pass. 
+Then let's add a test the person is really there after:
+
+```yaml
+---
+- config:
+    - testset: "Quickstart app tests"
+
+- test:
+    - group: "Quickstart"
+    - name: "Basic smoketest"
+    - url: "/api/person/"
+
+- test:
+    - group: "Quickstart"
+    - name: "Create a person"
+    - url: "/api/person/10/"
+    - method: "PUT"
+    - body: '{"first_name": "Gaius","id": 10,"last_name": "Baltar","login": "baltarg"}'
+    - headers: {'Content-Type': 'application/json'}
+
+- test:
+    - group: "Quickstart"
+    - name: "Make sure Mr Baltar was added"
+    - url: "/api/person/10/"
+```
+
+**Except there is a problem with this... the third test will pass if Baltar already existed in the database.  Let's test he wasn't there beforehand...**
+
+```yaml
+---
+- config:
+    - testset: "Quickstart app tests"
+
+- test:
+    - group: "Quickstart"
+    - name: "Make sure Mr Baltar ISN'T there to begin with"
+    - url: "/api/person/10/"
+    - expected_status: [404]
+
+- test:
+    - group: "Quickstart"
+    - name: "Basic smoketest"
+    - url: "/api/person/"
+
+- test:
+    - group: "Quickstart"
+    - name: "Create a person"
+    - url: "/api/person/10/"
+    - method: "PUT"
+    - body: '{"first_name": "Gaius","id": 10,"last_name": "Baltar","login": "baltarg"}'
+    - headers: {'Content-Type': 'application/json'}
+
+- test:
+    - group: "Quickstart"
+    - name: "Make sure Mr Baltar is there after we added him"
+    - url: "/api/person/10/"
+```
+
+**Much better, now the first test fails... so, let's add a delete for that user at the end of the test, and check he's really gone.**
+
+```yaml
+---
+- config:
+    - testset: "Quickstart app tests"
+
+- test:
+    - group: "Quickstart"
+    - name: "Make sure Mr Baltar ISN'T there to begin with"
+    - url: "/api/person/10/"
+    - expected_status: [404]
+
+- test:
+    - group: "Quickstart"
+    - name: "Basic smoketest"
+    - url: "/api/person/"
+
+- test:
+    - group: "Quickstart"
+    - name: "Create a person"
+    - url: "/api/person/10/"
+    - method: "PUT"
+    - body: '{"first_name": "Gaius","id": 10,"last_name": "Baltar","login": "baltarg"}'
+    - headers: {'Content-Type': 'application/json'}
+
+- test:
+    - group: "Quickstart"
+    - name: "Make sure Mr Baltar is there after we added him"
+    - url: "/api/person/10/"
+
+- test:
+    - group: "Quickstart"
+    - name: "Get single person"
+    - url: "/api/person/10/"
+    - method: 'DELETE'
+
+- test:
+    - group: "Quickstart"
+    - name: "Make sure Mr Baltar ISN'T there after we deleted him"
+    - url: "/api/person/10/"
+    - expected_status: [404]
+```
+
+**And now we have a full lifecycle test of creating, fetching, and deleting a user via the API.**
+
+**This is just a starting point,** see the [advanced guide](advanced_guide.md) for the advanced features (templating, generators, content extraction, complex validation).
+
+# Other Goodies
 * Simple templating of HTTP request bodies, URLs, and validators, with user variables
-* Read HTTP request bodies from files or inline them
 * Generators to create dummy data for testing, with support for easily writing your own
-* Simple validation: ensure host is reachable and check HTTP response codes
-* Complex validation: check for values in HTTP responses, and do comparisons on them
 * Setup/Teardown: extract information from one test to use in the next ones
 * Import test sets in other test sets, to compose suites of tests easily
 * Easy benchmarking: convert any test to a benchmark, by changing the element type and setting output options if needed
 * Lightweight benchmarking: ~0.3 ms of overhead per request, and plans to reduce that in the future
 * Accurate benchmarking: network measurements come from native code in LibCurl, so test overhead doesn't alter them
 * Optional interactive mode for debugging and demos
-
 
 
 After this, you can execute the tests by:
@@ -143,48 +329,7 @@ python resttest.py https://api.github.com github_api_test.yaml --interactive tru
 python resttest.py https://api.github.com github_api_test.yaml --log debug
 ```
 
-# Test Configuration
-
-## Sample Test Syntax
-
-```
----
-- config:
-    # Name test sets
-    - testset: "Sample Tests"
-
-    # Print full response bodies
-    - print_bodies: 'False'
-
-- url: "/ping"  # Basic test, just a simple GET
-- test: {url: "/ping", method: "GET"}  # Specify method, in-line version
-- test: # Defined test
-    - url: "/complex"
-      group: "Complex"  # Named test group, tests pass/fail is reported by group
-      name: "Test complex object"
-      method: "GET"
-      expected_status: 200  # Expected HTTP Status Codes
-- test:
-    - url: "/object"
-    - method: "GET"
-    - headers: # HTTP headers for test
-        - Accept: application/json
-        - Content-Encoding: lzf
-- test:
-    - url: "/cheese"
-    # Yes, you can do PUT/POST/DELETE, and by default they'll look for 200/204 and 201/202 status codes
-    - method: "DELETE"
-    - headers: {Content-Type: application/xml, "Content-Encoding": "gzip"}
-- test:
-    - url: "/complex/100"
-    - method: "POST"
-    - body: "<xmlhere><tag>contents</tag></xmlhere>"  # Body for the POST method
-
-- import: "more_tests.yaml"  # Import another test file into this one
-```
-
-
-## Basic Test Set Syntax
+# Basic Test Set Syntax
 As you can see, tests are defined in [YAML](http://en.wikipedia.org/wiki/YAML) format.
 
 There are 5 top level test syntax elements:
@@ -381,15 +526,14 @@ If you want to write tests in pure python, there's nothing stopping this, but a 
 Pain and suffering. :)  
 
 No, seriously, this is an answer to a whole series of challenges encountered working with REST APIs.
-It started with a simple BASH script used to smoketest services after deployments and maintenance.
-Then, it just grew from there. 
-
 
 # Future Plans (rough priority order)
+Top priority: bugfixes and minor usability enhancements, before major changes.
+
 0. Refactor complex runner/executor methods into extensible, composable structures for a testing lifecycle
 1. Support for cert-based authentication (simply add test config elements and parsing)
 2. Smarter reporting, better reporting/logging of test execution and failures
-3. Depends 0: support parallel execution of a test set where extract/generators not used
+3. Depends on 0: support parallel execution of a test set where extract/generators not used
 4. Repeat tests (for fuzzing) and setUp/tearDown
 5. Hooks for reporting on test results
 6. Improve Python APIs and document how to do pure-python testing with this
