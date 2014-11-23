@@ -296,7 +296,7 @@ Then let's add a test the person is really there after:
 
 - test:
     - group: "Quickstart"
-    - name: "Get single person"
+    - name: "Get rid of Gaius Baltar!"
     - url: "/api/person/10/"
     - method: 'DELETE'
 
