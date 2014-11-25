@@ -1,11 +1,11 @@
 from distutils.core import setup
 
 setup(name='pyresttest',
-    version='1.0.1',
+    version='1.0.2',
     description='Python RESTful API Testing & Microbenchmarking Tool',
     long_description='Python RESTful API Testing & Microbenchmarking Tool',
     maintainer='Sam Van Oort',
-    maintainer_email='acetonespam@gmail.com',
+    maintainer_email='samvanoort@gmail.com',
     url='https://github.com/svanoort/pyresttest',
     keywords=['rest', 'web', 'http', 'testing'],
     classifiers = [
