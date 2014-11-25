@@ -91,7 +91,7 @@ class TestSet:
         self.benchmarks = list()
 
     def __str__(self):
-        return json.dumps(self, default=lambda o: safe_to_json)
+        return json.dumps(self, default=safe_to_json)
 
 class BenchmarkResult:
     """ Stores results from a benchmark for reporting use """
@@ -107,7 +107,7 @@ class BenchmarkResult:
         self.results = list()
 
     def __str__(self):
-        return json.dumps(self, default=lambda o: safe_to_json)
+        return json.dumps(self, default=safe_to_json)
 
 class TestResponse:
     """ Encapsulates everything about a test response """
@@ -122,7 +122,7 @@ class TestResponse:
         self.failures = list()
 
     def __str__(self):
-        return json.dumps(self, default=lambda o: safe_to_json(o))
+        return json.dumps(self, default=safe_to_json)
 
     def body_callback(self, buf):
         """ Write response body by pyCurl callback """
@@ -459,7 +459,7 @@ def metrics_to_tuples(raw_metrics):
 
 def write_benchmark_json(file_out, benchmark_result, benchmark, test_config = TestConfig()):
     """ Writes benchmark to file as json """
-    json.dump(benchmark_result, file_out, default=lambda o: safe_to_json)
+    json.dump(benchmark_result, file_out, default=safe_to_json)
 
 def write_benchmark_csv(file_out, benchmark_result, benchmark, test_config = TestConfig()):
     """ Writes benchmark to file as csv """
