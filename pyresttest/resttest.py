@@ -290,7 +290,7 @@ def run_test(mytest, test_config = TestConfig(), context = None):
     #print str(test_config.print_bodies) + ',' + str(not result.passed) + ' , ' + str(test_config.print_bodies or not result.passed)
 
     #Print response body if override is set to print all *OR* if test failed (to capture maybe a stack trace)
-    if test_config.print_bodies:
+    if test_config.print_bodies or not result.passed:
         if test_config.interactive:
             print "RESPONSE:"
         print result.body
@@ -598,7 +598,7 @@ def main(args):
 
     # Override configs from command line if config set
     for t in tests:
-        if 'print_bodies' in args and args['print_bodies'] is not None and not bool(args['print_bodies']):
+        if 'print_bodies' in args and args['print_bodies'] is not None and bool(args['print_bodies']):
             t.config.print_bodies = safe_to_bool(args['print_bodies'])
 
         if 'interactive' in args and args['interactive'] is not None:
