@@ -1,0 +1,10 @@
+# Simple tests to verify things work against a live REST service that returns JSON.. I picked github
+---
+- config:
+  - testset: "Simple github.com API Test with custom validator"
+- test:
+  - name: "Test with successful validations"
+  - url: "/search/users?q=jewzaam"
+  - group: "Successful"
+  - validators:
+     - contains: 'subscriptions_url'

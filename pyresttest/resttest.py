@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import sys
 import os
+import inspect
 import yaml
 import pycurl
 import json
@@ -592,6 +593,18 @@ def main(args):
     if 'log' in args and args['log'] is not None:
         logging.basicConfig(level=LOGGING_LEVELS.get(args['log'].lower(), logging.NOTSET))
 
+    if 'import_extensions' in args:
+        extensions = args['import_extensions'].split(';')
+        print extensions
+
+        # We need to add current folder to working path to import modules
+        working_folder = args['cwd']
+        if working_folder not in sys.path:
+            sys.path.insert(0, working_folder)
+
+        map(__import__, extensions)
+        # DOES NOT WORK, CURRENTLY!
+
     test_file = args['test']
     test_structure = read_test_file(test_file)
     tests = build_testsets(args['url'], test_structure, working_directory=os.path.dirname(test_file))
@@ -617,6 +630,7 @@ if(__name__ == '__main__'):
     parser.add_option(u"--interactive", help="Interactive mode", action="store", type="string")
     parser.add_option(u"--url", help="Base URL to run tests against", action="store", type="string")
     parser.add_option(u"--test", help="Test file to use", action="store", type="string")
+    parser.add_option(u'--import_extensions', help='Extensions to import, separated by semicolons', action="store", type="string")
 
     (args, unparsed_args) = parser.parse_args()
     args = vars(args)
@@ -634,4 +648,5 @@ if(__name__ == '__main__'):
             parser.print_help()
             parser.error("wrong number of arguments, need both url and test filename, either as 1st and 2nd parameters or via --url and --test")
 
+    args['cwd'] = os.path.realpath(os.path.abspath(os.getcwd()))  # So modules can be loaded from current folder
     main(args)
