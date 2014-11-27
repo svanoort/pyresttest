@@ -490,7 +490,8 @@ sudo yum install rpm-build
 ## Why not pure-python tests?
 - This is written for an environment where Python is not the sole or primary langauge
 - **You totally can do pure-Python tests if you want!**  
-    - Gotcha: I will break back compatibility of the implementation often and badly, at least at first
+    - Gotcha: the project is still young, so internal implementation may change often, much more than YAML features
+    - Extensions are intended specifically for adding functionality, they will be the most stable part
     - Read before you assume: template handling is more complex than you think.
     - Framework run/execute methods in pyresttest/resttest.py do *quite* a bit of heavy lifting
 
