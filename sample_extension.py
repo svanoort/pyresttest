@@ -25,5 +25,8 @@ class ContainsValidator(validators.AbstractValidator):
         validator.contains_string = config
         return validator
 
-VALIDATOR_NAME = 'contains'
-VALIDATOR_FUNCTION = ContainsValidator.parse
+# This is where the magic happens, each one of these is a registry of validators/extractors/generators to use
+VALIDATORS = {'contains': ContainsValidator.parse}
+#EXTRACTORS = {}
+#VALIDATOR_TESTS = {}
+#VALIDATOR_COMPARATORS = {}

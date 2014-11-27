@@ -19,6 +19,7 @@ except ImportError:
 
 if is_root_folder:  # Inside the module
     from binding import Context
+    import generators
     from generators import parse_generator
     from parsing import flatten_dictionaries, lowercase_keys, safe_to_bool, safe_to_json
     import validators
@@ -27,6 +28,7 @@ if is_root_folder:  # Inside the module
     from benchmarks import Benchmark, AGGREGATES, METRICS, build_benchmark
 else:  # Importing as library
     from pyresttest.binding import Context
+    import pyresttest.generators
     from pyresttest.generators import parse_generator
     from pyresttest.parsing import flatten_dictionaries, lowercase_keys, safe_to_bool, safe_to_json
     import pyresttest.validators
@@ -584,7 +586,21 @@ def register_extensions(modules):
     """ Import the modules and register their respective extensions """
     for ext in modules:
         module = __import__(ext)
-        validators.register_validator(module.VALIDATOR_NAME, module.VALIDATOR_FUNCTION)
+
+        # Extensions are registered by applying a register function to sets of name/function pairs
+        extension_applies = {
+            'VALIDATORS': validators.register_validator,
+            'VALIDATOR_COMPARATORS': validators.register_comparator,
+            'VALIDATOR_TESTS': validators.register_test,
+            'VALIDATOR_EXTRACTORS': validators.register_extractor,
+            'GENERATORS': generators.register_generator
+        }
+
+        for registry_name, register_function in extension_applies.items():
+            if hasattr(module, registry_name):
+                registry = getattr(module, registry_name)
+                for key, val in registry.items():
+                    register_function(key, val)
 
 def main(args):
     """
