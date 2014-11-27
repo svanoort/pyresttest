@@ -21,6 +21,7 @@ if is_root_folder:  # Inside the module
     from binding import Context
     from generators import parse_generator
     from parsing import flatten_dictionaries, lowercase_keys, safe_to_bool, safe_to_json
+    import validators
     from validators import ValidationFailure
     from tests import Test, DEFAULT_TIMEOUT
     from benchmarks import Benchmark, AGGREGATES, METRICS, build_benchmark
@@ -28,6 +29,7 @@ else:  # Importing as library
     from pyresttest.binding import Context
     from pyresttest.generators import parse_generator
     from pyresttest.parsing import flatten_dictionaries, lowercase_keys, safe_to_bool, safe_to_json
+    import pyresttest.validators
     from pyresttest.validators import ValidationFailure
     from pyresttest.tests import Test, DEFAULT_TIMEOUT
     from pyresttest.benchmarks import Benchmark, AGGREGATES, METRICS, build_benchmark
@@ -578,6 +580,12 @@ def execute_testsets(testsets):
 
     return total_failures
 
+def register_extensions(modules):
+    """ Import the modules and register their respective extensions """
+    for ext in modules:
+        module = __import__(ext)
+        validators.register_validator(module.VALIDATOR_NAME, module.VALIDATOR_FUNCTION)
+
 def main(args):
     """
     Execute a test against the given base url.
@@ -595,14 +603,16 @@ def main(args):
 
     if 'import_extensions' in args:
         extensions = args['import_extensions'].split(';')
-        print extensions
 
         # We need to add current folder to working path to import modules
         working_folder = args['cwd']
         if working_folder not in sys.path:
             sys.path.insert(0, working_folder)
 
-        map(__import__, extensions)
+        register_extensions(extensions)
+
+        print 'Has validator: {0}'.format('contains' in validators.VALIDATORS)
+        print 'est lib Has validator: {0}'.format(Test.has_contains())
         # DOES NOT WORK, CURRENTLY!
 
     test_file = args['test']
