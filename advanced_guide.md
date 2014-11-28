@@ -101,22 +101,27 @@ Python internal character sets come from the [String constants](https://docs.pyt
 
 **Reference:**
 
-| Description                                                       | Text Name       | Source                            |
-|-------------------------------------------------------------------|-----------------|-----------------------------------|
-| ASCII Letters, upper and lowercase, no whitespace                 | ascii_letters   | Python internal                   |
-| ASCII Letters, lowercase, no whitespace                           | ascii_lowercase | Python internal                   |
-| ASCII Letters, uppercase only, no whitespace                      | ascii_uppercase | Python internal                   |
-| Digits, 0-9                                                       | digits          | Python internal                   |
-| Hexadecimal digits, mixed upper and lowercase                     | hexdigits       | Python internal                   |
-| Hexadecimal digits, all lowercase                                 | hex_lower       | string.digits+abcdef,             |
-| Hexadecimal digits, all uppercase                                 | hex_upper       | string.digits+ABCDEF,             |
-| Letters                                                           | letters         | Python internal, locale-dependent |
-| Lowercase letters                                                 | lowercase       | Python internal, locale-dependent |
-| Octal digits (0-7)                                                | octdigits       | Python internal                   |
-| Punctuation characters, pipe plus !"#$%&'()*+,-./:;<=>?@[\]^_`{}~ | punctuation     | Python internal                   |
-| All printable characters, includes whitespace                     | printable       | Python internal, locale-dependent |
-| Uppercase letters                                                 | uppercase       | Python internal, locale-dependent |
-| Whitespace characters                                             | whitespace      | Python internal, locale-dependent |
+| Description                                                       | Text Name          | Source                                        |
+|-------------------------------------------------------------------|--------------------|-----------------------------------------------|
+| ASCII Letters, upper and lowercase, no whitespace                 | ascii_letters      | Python internal                               |
+| ASCII Letters, lowercase, no whitespace                           | ascii_lowercase    | Python internal                               |
+| ASCII Letters, uppercase only, no whitespace                      | ascii_uppercase    | Python internal                               |
+| Digits, 0-9                                                       | digits             | Python internal                               |
+| Hexadecimal digits, mixed upper and lowercase                     | hexdigits          | Python internal                               |
+| Hexadecimal digits, all lowercase                                 | hex_lower          | string.digits+abcdef,                         |
+| Hexadecimal digits, all uppercase                                 | hex_upper          | string.digits+ABCDEF,                         |
+| Letters                                                           | letters            | Python internal, locale-dependent             |
+| Lowercase letters                                                 | lowercase          | Python internal, locale-dependent             |
+| Octal digits (0-7)                                                | octdigits          | Python internal                               |
+| Punctuation characters, pipe plus !"#$%&'()*+,-./:;<=>?@[\]^_`{}~ | punctuation        | Python internal                               |
+| All printable characters, includes whitespace                     | printable          | Python internal, locale-dependent             |
+| Uppercase letters                                                 | uppercase          | Python internal, locale-dependent             |
+| Whitespace characters                                             | whitespace         | Python internal, locale-dependent             |
+| URL Slug characters (lowercase ASCII and dashes)                  | url.slug           | string.ascii_lowercase + string.digits + '-'  |
+| URL Safe (unreserved characters from RFC3986)                     | url.safe           | string.ascii_letters + string.digits + '-~_.' |
+| Alphanumeric                                                      | alphanumeric       | string.ascii_letters + string.digits          |
+| Alphanumeric, lowercase only                                      | alphanumeric_lower | string.ascii_lowercase + string.digits        |
+| Alphanumeric, uppercase only                                      | alphanumeric_upper | string.ascii_uppercase + string.digits        |
 
 
 # Extractors Basics

@@ -29,7 +29,12 @@ CHARACTER_SETS = {
     'punctuation': string.punctuation,
     'printable': string.printable,
     'uppercase': string.uppercase,
-    'whitespace': string.whitespace
+    'whitespace': string.whitespace,
+    'url.slug': string.ascii_lowercase+string.digits+'-',
+    'url.safe': string.ascii_letters+string.digits+'-~_.',
+    'alphanumeric': string.ascii_letters + string.digits,
+    'alphanumeric_lower': string.ascii_lowercase + string.digits,
+    'alphanumeric_upper': string.ascii_uppercase + string.digits
 }
 
 def factory_generate_ids(starting_id=1, increment=1):
