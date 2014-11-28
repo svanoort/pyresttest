@@ -355,9 +355,9 @@ def register_extractor(extractor_name, parse_function):
 
 def register_test(test_name, test_function):
     """ Register a new one-argument test function """
-    if not isinstance(extractor_name, basestring):
+    if not isinstance(test_name, basestring):
         raise TypeError("Cannot register a non-string test name")
-    elif extractor_name in TESTS:
+    elif test_name in TESTS:
         raise ValueError("Cannot register a test name that already exists: {0}".format(test_name))
     TESTS[test_name] = test_function
 
@@ -365,9 +365,9 @@ def register_comparator(comparator_name, comparator_function):
     """ Register a new twpo-argument comparator function returning true or false """
     if not isinstance(comparator_name, basestring):
         raise TypeError("Cannot register a non-string comparator name")
-    elif extractor_name in COMPARATORS:
+    elif comparator_name in COMPARATORS:
         raise ValueError("Cannot register a comparator name that already exists: {0}".format(comparator_name))
-    TESTS[comparator_name] = comparator_function
+    COMPARATORS[comparator_name] = comparator_function
 
 def _get_extractor(config_dict):
     """ Utility function, get an extract function for a single valid extractor name in config

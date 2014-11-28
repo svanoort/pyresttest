@@ -587,7 +587,7 @@ def register_extensions(modules):
     for ext in modules:
         module = __import__(ext)
 
-        # Extensions are registered by applying a register function to sets of name/function pairs
+        # Extensions are registered by applying a register function to sets of registry name/function pairs inside an object
         extension_applies = {
             'VALIDATORS': validators.register_validator,
             'VALIDATOR_COMPARATORS': validators.register_comparator,
@@ -624,12 +624,7 @@ def main(args):
         working_folder = args['cwd']
         if working_folder not in sys.path:
             sys.path.insert(0, working_folder)
-
         register_extensions(extensions)
-
-        print 'Has validator: {0}'.format('contains' in validators.VALIDATORS)
-        print 'est lib Has validator: {0}'.format(Test.has_contains())
-        # DOES NOT WORK, CURRENTLY!
 
     test_file = args['test']
     test_structure = read_test_file(test_file)

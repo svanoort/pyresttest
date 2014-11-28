@@ -8,3 +8,6 @@
   - group: "Successful"
   - validators:
      - contains: 'subscriptions_url'
+     #- extract_test: {jsonpath_mini: 'items', test: 'has_braces'}
+     - compare: {jsonpath_mini: 'items.0.login', comparator: 'str.eq.lower', expected: 'JewZaam'}
+     #- extract_test: {'weirdzo': 'blah', test: 'exists'}
