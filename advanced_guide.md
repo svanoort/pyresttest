@@ -59,6 +59,66 @@ To demonstrate static variable binding, this does binding for both first and las
 Currently, templating is only supported for the request body and URL.
 There are technical challenges adding it everywhere, but plans to add it where needed to other options.
 
+# Generators Listing
+List of all generators and their configuration elements (required, optional, and meaning).
+
+| Description                                                    | Name (in YAML): | Output Type | Parameters                                                                                                                                                                                                                                                       |
+|----------------------------------------------------------------|-----------------|-------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Environment Variable                                           | env_variable    | any         | required: 'variable_name', type: string (environment variable to use, no $ or % prefix)                                                                                                                                                                          |
+| Environment String, with variable subsitution                  | env_string      | string      | required: 'string', type: string with env variables to substitute                                                                                                                                                                                                |
+| Integer sequence                                               | number_sequence | integer     | optional: 'start', type: integer, default: 1 optional: 'increment', type: integer, default 1                                                                                                                                                                     |
+| Integer - Random (32 bit)                                      | random_int      | integer     |                                                                                                                                                                                                                                                                  |
+| Text - Random                                                  | random_test     | string      | optional: 'character set' OR 'characters', type: string, default: string.ascii_letters optional: 'min_length', type: integer, default: 8 optional: 'max_length', type: integer, default: 8 optional: 'length', (can either have length or min/min), type integer |
+| Choice of random values from input list                        | choice          | any         | required: 'values',  type: array of anything                                                                                                                                                                                                                     |
+| Sequence of values from input list of values, looping in order | fixed_sequence  | any         | required: 'values, type: array of anything                                                                                                                                                                                                                       |                                                                                                                                                                                                  |
+
+## Additional Details For Generators
+### env_variable: explanation
+The variable name is used to lookup the environment variable. 
+For example, if you used $HOST in a shellscript, the 'variable_name' value for the generator would be 'HOST'
+
+### env_string: explanation
+This is a string substitution with potentially multiple environment variables used. 
+BASH: `echo "$USER logged into $HOSTNAME"`
+becomes generator: 
+```yaml
+{type: 'env_string', 'string': "$USER logged into $HOSTNAME"}
+``` 
+
+### random_text: explanation
+This generates strings of random characters.
+All it needs is the:
+- legal length ranges:
+  + a 'length' sets it to a constant, fixed length
+  + a 'min_length' and 'max_length' allow it to be randomly size, in that range
+
+- valid characters to use, defined one of two ways:
+  + a 'characters': you supply a list of valid characters to use, as a string
+  + a 'character_set': a named character set of values, see below for table
+
+### Character Sets Reference
+Python internal character sets come from the [String constants](https://docs.python.org/2/library/string.html#string-constants) in the string module. 
+
+**Reference:**
+
+| Description                                                       | Text Name       | Source                            |
+|-------------------------------------------------------------------|-----------------|-----------------------------------|
+| ASCII Letters, upper and lowercase, no whitespace                 | ascii_letters   | Python internal                   |
+| ASCII Letters, lowercase, no whitespace                           | ascii_lowercase | Python internal                   |
+| ASCII Letters, uppercase only, no whitespace                      | ascii_uppercase | Python internal                   |
+| Digits, 0-9                                                       | digits          | Python internal                   |
+| Hexadecimal digits, mixed upper and lowercase                     | hexdigits       | Python internal                   |
+| Hexadecimal digits, all lowercase                                 | hex_lower       | string.digits+abcdef,             |
+| Hexadecimal digits, all uppercase                                 | hex_upper       | string.digits+ABCDEF,             |
+| Letters                                                           | letters         | Python internal, locale-dependent |
+| Lowercase letters                                                 | lowercase       | Python internal, locale-dependent |
+| Octal digits (0-7)                                                | octdigits       | Python internal                   |
+| Punctuation characters, pipe plus !"#$%&'()*+,-./:;<=>?@[\]^_`{}~ | punctuation     | Python internal                   |
+| All printable characters, includes whitespace                     | printable       | Python internal, locale-dependent |
+| Uppercase letters                                                 | uppercase       | Python internal, locale-dependent |
+| Whitespace characters                                             | whitespace      | Python internal, locale-dependent |
+
+
 # Extractors Basics
 Extractors are query-based ways to extract some part of an HTTP response body for use.
 
@@ -228,17 +288,5 @@ Optionally, validators can return a ValidationFailure which evaluates to False, 
 * They do NOT currently check HTTP response codes (this may be added later)
 * Benchmarks track a static failure count, to account for network issues
 * Benchmarks will try to optimize out as much templating as they can safely. 
-
-# Generators Listing
-List of all generators and their configuration elements (required, optional, and meaning).
-
-## env_variable
-Read an environment variable
-
-### Configuration elements:
-- variable_name: environment variable name, without prefix
- 
-### Example:
-Example here
 
 
