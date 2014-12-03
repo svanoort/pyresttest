@@ -30,9 +30,19 @@ def test_has_braces(input_string):
     return '{' in input_string or '}' in input_string
 
 
-def extract_weirdzo(body, context=None):
-    """ Extractor function that always returns 'zorba' """
-    return 'zorba'
+class WeirdzoExtractor(validators.AbstractExtractor):
+    extractor_type = 'weirdozo'
+    is_body_extractor = True
+
+    @classmethod
+    def parse(cls, config, extractor_base=None):
+        if not extractor_base:
+            extractor_base = WeirdzoExtractor()
+        super(WeirdzoExtractor, cls).parse(config, extractor_base)
+        return extractor_base
+
+    def extract_internal(self, query=None, args=None, body=None, headers=None):
+        return 'zorba'
 
 
 def parse_extractor_weirdzo(config):
@@ -47,4 +57,4 @@ VALIDATOR_TESTS = {'has_braces': test_has_braces}
 # Converts to lowercase and tests for equality
 VALIDATOR_COMPARATORS = {'str.eq.lower': lambda a,b: str(a).lower() == str(b).lower()}
 
-EXTRACTORS = {'weirdzo': parse_extractor_weirdzo}
+EXTRACTORS = {'weirdzo': WeirdzoExtractor.parse}

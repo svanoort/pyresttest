@@ -307,7 +307,8 @@ def run_test(mytest, test_config = TestConfig(), context = None):
             logging.debug("executing this many validators: " + str(len(mytest.validators)))
             failures = result.failures
             for validator in mytest.validators:
-                validate_result = validator.validate(body, context=my_context)
+                # TODO add header parsing
+                validate_result = validator.validate(body=body, context=my_context)
                 if not validate_result:
                     result.passed = False
                 if isinstance(validate_result, ValidationFailure):
@@ -617,7 +618,7 @@ def main(args):
     if 'log' in args and args['log'] is not None:
         logging.basicConfig(level=LOGGING_LEVELS.get(args['log'].lower(), logging.NOTSET))
 
-    if 'import_extensions' in args:
+    if 'import_extensions' in args and args['import_extensions']:
         extensions = args['import_extensions'].split(';')
 
         # We need to add current folder to working path to import modules

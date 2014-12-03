@@ -116,28 +116,111 @@ class ValidationFailure(object):
         self.validator = validator
 
 
+class AbstractExtractor(object):
+    """ Basic extractor, you only need to implement full_extract """
 
-class Extractor(object):
-    """ Encapsulates extractor function in a readable format so people can understand
-        what the parsed extract function should be doing """
-    extractor_type = None  # Name
-    config = None  # Settings info for printing, ONLY USED TO DISPLAY,
-    extract_fn = None  # Actual extract function, does execution and is parsed already
-
-    def config_string(self, context=None):
-        """ Print a config string describing what comparator does, for detailed debugging
-            Context is supplied so can show pre/post substitution
-        """
-        lines = list()
-        lines.append("Extractor named: {0}".format(extractor_type))
-        lines.append("Extractor config: {0}".format(config))
-        return os.linesep.join(lines)  #Output lines joined by separator
+    extractor_type = None
+    query = None
+    is_templated = False
+    is_body_extractor = False  # Uses response body
+    is_header_extractor = False  # Uses response headers
+    args = None
 
     def __str__(self):
-        return "Extractor type: {0} and config: {1}".format(self.extractor_type, self.config)
+        return "Extractor type: {0}, query: {1}, is_templated: {2}, args: {3}".format(self.extractor_type, self.query, self.is_templated, self.args)
 
-    def extract(self, body, context=None):
-        return self.extract_fn(body, context=context)
+    def extract_internal(self, query=None, body=None, headers=None, args=None):
+        """ Do extraction, query should be pre-templated """
+        pass
+
+    def extract(self, body=None, headers=None, context=None):
+        """ Extract data """
+        query = self.query
+        args = self.args
+
+        if self.is_templated and context:
+            query = string.Template(query).safe_substitute(context.get_values())
+
+        return self.extract_internal(query=query, body=body, headers=headers, args=self.args)
+
+    @classmethod
+    def parse(cls, config, extractor_base=None):
+        """ Parse config object to create an abstractor
+            Configures an extractor_base if none given, else inits one
+        """
+
+        if not extractor_base:
+            extractor_base = AbstractExtractor()
+        is_templated = False
+
+        if isinstance(config, dict):
+            try:
+                config = config['template']
+                extractor_base.is_templated = True
+                extractor_base.query = config
+            except KeyError:
+                raise ValueError("Cannot define a dictionary config for abstract extractor without it having template key")
+        elif isinstance(config, basestring):
+            extractor_base.query = config
+        else:
+            raise TypeError("Base extractor must have a string or {template: querystring} configuration node!")
+        return extractor_base
+
+
+class MiniJsonExtractor(AbstractExtractor):
+    """ Extractor that uses jsonpath_mini syntax
+        IE key.key or array_index.key extraction
+    """
+    extractor_type = 'jsonpath_mini'
+    is_body_extractor = True
+
+    def extract_internal(self, query=None, args=None, body=None, headers=None):
+        try:
+            body = json.loads(body)
+            return self.query_dictionary(query, body)
+        except ValueError:
+            raise ValueError("Not legal JSON!")
+
+    @staticmethod
+    def query_dictionary(query, dictionary, delimiter='.'):
+        """ Do an xpath-like query with dictionary, using a template if relevant """
+        # Based on http://stackoverflow.com/questions/7320319/xpath-like-query-for-nested-python-dictionaries
+
+        try:
+            for x in query.strip(delimiter).split(delimiter):
+                try:
+                    x = int(x)
+                    dictionary = dictionary[x]
+                except ValueError:
+                    dictionary = dictionary[x]
+        except:
+            return None
+        return dictionary
+
+    @classmethod
+    def parse(cls, config, extractor_base=None):
+        if not extractor_base:
+            extractor_base = MiniJsonExtractor()
+        super(MiniJsonExtractor, cls).parse(config, extractor_base)
+        return extractor_base
+
+
+class HeaderExtractor(AbstractExtractor):
+    """ Extractor that pulls out a named header """
+    extractor_type = 'header'
+    is_header_extractor = True
+
+    def extract_internal(self, query=None, args=None, body=None, headers=None):
+        try:
+            return headers[query]
+        except Exception:
+            return None
+
+    @classmethod
+    def parse(cls, config, extractor_base=None):
+        if not extractor_base:
+            extractor_base = HeaderExtractor()
+        super(HeaderExtractor, cls).parse(config, extractor_base)
 
 
 class AbstractValidator(object):
@@ -160,7 +243,7 @@ class ComparatorValidator(AbstractValidator):
     expected = None
     isTemplateExpected = False
 
-    def validate(self, body, context=None):
+    def validate(self, body=None, headers=None, context=None):
         try :
             extracted_val = self.extractor.extract(body, context=context)
         except Exception as e:
@@ -168,9 +251,9 @@ class ComparatorValidator(AbstractValidator):
 
         # Compute expected output, either templating or using expected value
         expected_val = None
-        if isinstance(self.expected, Extractor):
+        if isinstance(self.expected, AbstractExtractor):
             try:
-                expected_val = self.expected.extract(body, context=context)
+                expected_val = self.expected.extract(body=body, headers=headers, context=context)
             except Exception as e:
                 return ValidationFailure(message="Expected value extractor threw exception", details=e, validator=self)
         elif self.isTemplateExpected and context:
@@ -284,32 +367,9 @@ class ExtractTestValidator(AbstractValidator):
 register_validator('extract_test', ExtractTestValidator.parse)
 register_validator('assertTrue', ExtractTestValidator.parse)
 
-def parse_extractor_minijson(config):
-    """ Creates an extractor function using the mini-json query functionality """
-    if isinstance(config, dict):
-        try:
-            config = config['template']
-            isTemplate = True
-        except KeyError:
-            raise ValueError("Cannot define a dictionary config for mini-json extractor without it having template key")
-    elif isinstance(config, basestring):
-        isTemplate = False
-    else:
-        raise TypeError("Mini-json extractor must have a string or {template: querystring} configuration node!")
-
-    # Closure: config information is closed over in scope
-    def extract(body, context=None):
-        try:
-            body = json.loads(body)
-        except ValueError:
-            raise ValueError("Not legal JSON!")
-        return query_dictionary(config, body, context=context, isTemplate=isTemplate)
-
-    return extract
-
 # Extractor parse functions
 EXTRACTORS = {
-    'jsonpath_mini': parse_extractor_minijson
+    'jsonpath_mini': MiniJsonExtractor.parse
     # ENHANCEME: add JsonPath-rw support for full JsonPath syntax
     # ENHANCEME: add elementree support for xpath extract on XML, very simple no?
     #  See: https://docs.python.org/2/library/xml.etree.elementtree.html, findall syntax
@@ -327,17 +387,10 @@ def parse_extractor(extractor_type, config):
         raise ValueError("Extractor {0} is not a valid extractor type".format(extractor_type))
     parsed = parse(config)
 
-    if isinstance(parsed, Extractor):  # Parser gave a full extractor
+    if isinstance(parsed, AbstractExtractor):  # Parser gave a full extractor
         return parsed
-    elif callable(parsed):  # Create an extractor using returned extraction function
-        extractor = Extractor()
-        extractor.extractor_type = extractor_type
-        extractor.config = config
-        extractor.extract_fn = parsed
-        return extractor
     else:
-        raise TypeError("Parsing functions for extractors must return either an extraction function or an Extractor instance!")
-
+        raise TypeError("Parsing functions for extractors must return an AbstractExtractor instance!")
 
 def register_extractor(extractor_name, parse_function):
     """ Register a new body extraction function """
@@ -379,21 +432,3 @@ def _get_extractor(config_dict):
             return parse_extractor(key, value)
     else:  # No valid extractor
         return None
-
-
-def query_dictionary(query, dictionary, delimiter='.', context=None, isTemplate=False):
-    """ Do an xpath-like query with dictionary, using a template if relevant """
-    # Based on http://stackoverflow.com/questions/7320319/xpath-like-query-for-nested-python-dictionaries
-
-    if isTemplate and context:
-        query = string.Template(query).safe_substitute(context.get_values())
-    try:
-        for x in query.strip(delimiter).split(delimiter):
-            try:
-                x = int(x)
-                dictionary = dictionary[x]
-            except ValueError:
-                dictionary = dictionary[x]
-    except:
-        return None
-    return dictionary
