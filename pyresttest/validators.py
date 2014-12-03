@@ -122,7 +122,6 @@ class AbstractExtractor(object):
 
         if not extractor_base:
             extractor_base = AbstractExtractor()
-        is_templated = False
 
         if isinstance(config, dict):
             try:
@@ -133,6 +132,7 @@ class AbstractExtractor(object):
                 raise ValueError("Cannot define a dictionary config for abstract extractor without it having template key")
         elif isinstance(config, basestring):
             extractor_base.query = config
+            extractor_base.is_templated = False
         else:
             raise TypeError("Base extractor must have a string or {template: querystring} configuration node!")
         return extractor_base

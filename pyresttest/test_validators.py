@@ -67,6 +67,43 @@ class ValidatorsTest(unittest.TestCase):
         extract = validators.MiniJsonExtractor.parse(config)
         self.assertEqual(3, extract.extract(myjson, context=context))
 
+    def test_abstract_extractor_parse(self):
+        """ Test parsing a basic abstract extractor """
+        ext = validators.AbstractExtractor()
+        ext = validators.AbstractExtractor.parse('val', ext)
+        self.assertEqual('val', ext.query)
+        self.assertEqual(False, ext.is_templated)
+
+        validators.AbstractExtractor.parse({'template': '$var'}, ext)
+        self.assertEqual(True, ext.is_templated)
+        self.assertEqual('$var', ext.query)
+
+    def test_abstract_extractor_string(self):
+        """ Test abstract extractor to_string method """
+        ext = validators.AbstractExtractor()
+        ext.is_templated = True
+        ext.is_header_extractor = True
+        ext.is_body_extractor = True
+        ext.query = 'gooblyglah'
+        ext.extractor_type = 'bleh'
+        ext.args = {'cheesy': 'poofs'}
+
+        expected = "Extractor type: {0}, query: {1}, is_templated: {2}, args: {3}".format(ext.extractor_type, ext.query, ext.is_templated, ext.args)
+        self.assertEqual(expected, str(ext))
+
+    def test_abstract_extractor_templating(self):
+        """ Test that abstract extractors template the query """
+        ext = validators.AbstractExtractor()
+        ext.query = '$val.vee'
+        ext.is_templated = True
+        context = Context()
+        context.bind_variable('val', 'foo')
+        self.assertEqual('$val.vee', ext.templated_query())
+        self.assertEqual('foo.vee', ext.templated_query(context=context))
+
+        ext.is_templated = False
+        self.assertEqual('$val.vee', ext.templated_query(context=context))
+
     def test_parse_extractor(self):
         """ Test parsing an extractor using the registry """
         config = 'key.val'
