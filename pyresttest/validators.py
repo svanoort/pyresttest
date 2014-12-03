@@ -24,20 +24,6 @@ Validators:
 
 """
 
-
-VALIDATORS = dict()
-# Includes 'comparator,'extracttest'
-# Validators are registered once their parse functions exist
-
-def safe_length(var):
-    """ Exception-safe length check, returns -1 if no length on type or error """
-    output = -1
-    try:
-        output = len(var)
-    except:
-        pass
-    return output
-
 # Binary comparison tests
 COMPARATORS = {
     'count_eq': lambda x,y: safe_length(x) == y,
@@ -64,35 +50,18 @@ TESTS = {
     'not_exists' : lambda x: not bool(x)
 }
 
-def parse_validator(name, config_node):
-    '''Parse a validator from configuration and use it '''
-    name = name.lower()
-    if name not in VALIDATORS:
-        raise ValueError("Name {0} is not a named validator type!".format(name))
-    valid = VALIDATORS[name](config_node)
+# Validators and Extractors are registered once their parse functions exist
+EXTRACTORS = dict()
+VALIDATORS = dict()
 
-    if valid.name is None:  # Carry over validator name if none set in parser
-        valid.name = name
-    if valid.config is None:  # Store config info if absent
-        valid.config = config_node
-    return valid
-
-def register_validator(name, parse_function):
-    ''' Registers a validator for use by this library
-        Name is the string name for validator
-
-        Parse function does parse(config_node) and returns a Validator object
-        Validator functions have signature:
-            validate(response_body, context=None) - context is a bindings.Context object
-
-        Validators return true or false and optionally can return a ValidationFailure instead of false
-        This allows for passing more details
-    '''
-    name = name.lower()
-    if name in VALIDATORS:
-        raise Exception("Validator exists with this name: {0}".format(name))
-
-    VALIDATORS[name] = parse_function
+def safe_length(var):
+    """ Exception-safe length check, returns -1 if no length on type or error """
+    output = -1
+    try:
+        output = len(var)
+    except:
+        pass
+    return output
 
 class ValidationFailure(object):
     """ Encapsulates why and how a validation failed for user consumption
@@ -135,13 +104,15 @@ class AbstractExtractor(object):
 
     def extract(self, body=None, headers=None, context=None):
         """ Extract data """
-        query = self.query
+        query = self.templated_query(context=context)
         args = self.args
-
-        if self.is_templated and context:
-            query = string.Template(query).safe_substitute(context.get_values())
-
         return self.extract_internal(query=query, body=body, headers=headers, args=self.args)
+
+    def templated_query(self, context=None):
+        query = self.query
+        if context and self.is_templated:
+            query = string.Template(query).safe_substitute(context.get_values())
+        return query
 
     @classmethod
     def parse(cls, config, extractor_base=None):
@@ -222,6 +193,17 @@ class HeaderExtractor(AbstractExtractor):
             extractor_base = HeaderExtractor()
         super(HeaderExtractor, cls).parse(config, extractor_base)
 
+
+def _get_extractor(config_dict):
+    """ Utility function, get an extract function for a single valid extractor name in config
+        and error if more than one or none """
+    extractor = None
+    extract_config = None
+    for key, value in config_dict.items():
+        if key in EXTRACTORS:
+            return parse_extractor(key, value)
+    else:  # No valid extractor
+        return None
 
 class AbstractValidator(object):
     """ Encapsulates basic validator handling """
@@ -323,11 +305,6 @@ class ComparatorValidator(AbstractValidator):
 
         return output
 
-register_validator('comparator', ComparatorValidator.parse)
-register_validator('compare', ComparatorValidator.parse)
-register_validator('assertEqual', ComparatorValidator.parse)
-
-
 class ExtractTestValidator(AbstractValidator):
     """ Does extract and test from request body """
     name = 'ExtractTestValidator'
@@ -364,17 +341,6 @@ class ExtractTestValidator(AbstractValidator):
             failure.message = "Extract and test validator failed on test: {0}({1})".format(self.test_name, extracted)
             return failure
 
-register_validator('extract_test', ExtractTestValidator.parse)
-register_validator('assertTrue', ExtractTestValidator.parse)
-
-# Extractor parse functions
-EXTRACTORS = {
-    'jsonpath_mini': MiniJsonExtractor.parse
-    # ENHANCEME: add JsonPath-rw support for full JsonPath syntax
-    # ENHANCEME: add elementree support for xpath extract on XML, very simple no?
-    #  See: https://docs.python.org/2/library/xml.etree.elementtree.html, findall syntax
-}
-
 def parse_extractor(extractor_type, config):
     """ Convert extractor type and config to an extractor instance
         Uses registered parse function for that extractor type
@@ -391,6 +357,36 @@ def parse_extractor(extractor_type, config):
         return parsed
     else:
         raise TypeError("Parsing functions for extractors must return an AbstractExtractor instance!")
+
+def parse_validator(name, config_node):
+    '''Parse a validator from configuration and use it '''
+    name = name.lower()
+    if name not in VALIDATORS:
+        raise ValueError("Name {0} is not a named validator type!".format(name))
+    valid = VALIDATORS[name](config_node)
+
+    if valid.name is None:  # Carry over validator name if none set in parser
+        valid.name = name
+    if valid.config is None:  # Store config info if absent
+        valid.config = config_node
+    return valid
+
+def register_validator(name, parse_function):
+    ''' Registers a validator for use by this library
+        Name is the string name for validator
+
+        Parse function does parse(config_node) and returns a Validator object
+        Validator functions have signature:
+            validate(response_body, context=None) - context is a bindings.Context object
+
+        Validators return true or false and optionally can return a ValidationFailure instead of false
+        This allows for passing more details
+    '''
+    name = name.lower()
+    if name in VALIDATORS:
+        raise Exception("Validator exists with this name: {0}".format(name))
+
+    VALIDATORS[name] = parse_function
 
 def register_extractor(extractor_name, parse_function):
     """ Register a new body extraction function """
@@ -422,13 +418,14 @@ def register_comparator(comparator_name, comparator_function):
         raise ValueError("Cannot register a comparator name that already exists: {0}".format(comparator_name))
     COMPARATORS[comparator_name] = comparator_function
 
-def _get_extractor(config_dict):
-    """ Utility function, get an extract function for a single valid extractor name in config
-        and error if more than one or none """
-    extractor = None
-    extract_config = None
-    for key, value in config_dict.items():
-        if key in EXTRACTORS:
-            return parse_extractor(key, value)
-    else:  # No valid extractor
-        return None
+# --- REGISTRY OF EXTRACTORS AND VALIDATORS ---
+register_extractor('jsonpath_mini', MiniJsonExtractor.parse)
+# ENHANCEME: add JsonPath-rw support for full JsonPath syntax
+# ENHANCEME: add elementree support for xpath extract on XML, very simple no?
+#  See: https://docs.python.org/2/library/xml.etree.elementtree.html, findall syntax
+
+register_validator('comparator', ComparatorValidator.parse)
+register_validator('compare', ComparatorValidator.parse)
+register_validator('assertEqual', ComparatorValidator.parse)
+register_validator('extract_test', ExtractTestValidator.parse)
+register_validator('assertTrue', ExtractTestValidator.parse)
