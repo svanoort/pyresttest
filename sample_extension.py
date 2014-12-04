@@ -33,10 +33,8 @@ class WeirdzoExtractor(validators.AbstractExtractor):
 
     @classmethod
     def parse(cls, config, extractor_base=None):
-        if not extractor_base:
-            extractor_base = WeirdzoExtractor()
-        super(WeirdzoExtractor, cls).parse(config, extractor_base)
-        return extractor_base
+        base = WeirdzoExtractor()
+        return cls.configure_base(config, base)
 
     def extract_internal(self, query=None, args=None, body=None, headers=None):
         return 'zorba'

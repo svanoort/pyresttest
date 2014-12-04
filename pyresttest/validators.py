@@ -115,13 +115,9 @@ class AbstractExtractor(object):
         return query
 
     @classmethod
-    def parse(cls, config, extractor_base=None):
-        """ Parse config object to create an abstractor
-            Configures an extractor_base if none given, else inits one
+    def configure_base(cls, config, extractor_base):
+        """ Parse config object and do basic config on an Extractor
         """
-
-        if not extractor_base:
-            extractor_base = AbstractExtractor()
 
         if isinstance(config, dict):
             try:
@@ -169,11 +165,10 @@ class MiniJsonExtractor(AbstractExtractor):
         return dictionary
 
     @classmethod
-    def parse(cls, config, extractor_base=None):
-        if not extractor_base:
-            extractor_base = MiniJsonExtractor()
-        super(MiniJsonExtractor, cls).parse(config, extractor_base)
-        return extractor_base
+    def parse(cls, config):
+        base = MiniJsonExtractor()
+        return cls.configure_base(config, base)
+        return base
 
 
 class HeaderExtractor(AbstractExtractor):
@@ -189,9 +184,8 @@ class HeaderExtractor(AbstractExtractor):
 
     @classmethod
     def parse(cls, config, extractor_base=None):
-        if not extractor_base:
-            extractor_base = HeaderExtractor()
-        super(HeaderExtractor, cls).parse(config, extractor_base)
+        base = HeaderExtractor()
+        return cls.configure_base(config, base)
 
 
 def _get_extractor(config_dict):

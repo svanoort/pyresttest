@@ -70,11 +70,11 @@ class ValidatorsTest(unittest.TestCase):
     def test_abstract_extractor_parse(self):
         """ Test parsing a basic abstract extractor """
         ext = validators.AbstractExtractor()
-        ext = validators.AbstractExtractor.parse('val', ext)
+        ext = validators.AbstractExtractor.configure_base('val', ext)
         self.assertEqual('val', ext.query)
         self.assertEqual(False, ext.is_templated)
 
-        validators.AbstractExtractor.parse({'template': '$var'}, ext)
+        validators.AbstractExtractor.configure_base({'template': '$var'}, ext)
         self.assertEqual(True, ext.is_templated)
         self.assertEqual('$var', ext.query)
 
