@@ -5,7 +5,7 @@ pyresttest
 - A simple but powerful REST testing and benchmarking framework
 - Minimal dependencies, designed to slot into automated configuration management/orchestration tools
 - Tests are defined in basic YAML or JSON config files, no code needed
-- Logic is written and extensible in Python
+- Logic is written and [extensible](extensions.md) in Python
 
 # License
 Apache License, Version 2.0
@@ -25,11 +25,10 @@ sudo pip install pyresttest
 There are also options to [install from repo](#installation-without-pip), or [build an RPM](#pure-rpm-based-install).
 
 # How Do I Use It?
-The [Quickstart](#getting-started-quickstart-requirements) is below. 
-
-There's an explanation for how to use it with [benchmarking below](#benchmarking).
-
-There is [separate documentation](advanced_guide.md) for the more advanced features (templating, generators, content extraction, complex validation).
+- The [Quickstart](#getting-started-quickstart-requirements) is below. 
+- Benchmarking has its [own section](#benchmarking) below
+- Advanced features have [separate documentation](advanced_guide.md) (templating, generators, content extraction, complex validation).
+- How to [extend PyRestTest](extensions.md) is its own document
 
 The root folder of this library also includes a ton of example tests.
 

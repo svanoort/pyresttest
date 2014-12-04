@@ -17,7 +17,7 @@ Extractors:
 
 Validators:
     - TEST validator, config includes and extractor function and test name, applies test to extract results
-        - Uses TESTS, for pluggable test functions
+        - Uses VALIDATOR_TESTS, for pluggable test functions
     - comparator validator:
         - runs named extractor, compares to expected value (can be template or extractor)
         - uses (pluggable) comparator function for comparison
@@ -45,7 +45,7 @@ COMPARATORS = {
 }
 
 # Unury comparison tests
-TESTS = {
+VALIDATOR_TESTS = {
     'exists': lambda x: bool(x),
     'not_exists' : lambda x: not bool(x)
 }
@@ -317,7 +317,7 @@ class ExtractTestValidator(AbstractValidator):
 
         test_name = config['test']
         output.test_name = test_name
-        test_fn = TESTS[test_name]
+        test_fn = VALIDATOR_TESTS[test_name]
         output.test_fn = test_fn
         return output
 
@@ -405,9 +405,9 @@ def register_test(test_name, test_function):
     """ Register a new one-argument test function """
     if not isinstance(test_name, basestring):
         raise TypeError("Cannot register a non-string test name")
-    elif test_name in TESTS:
+    elif test_name in VALIDATOR_TESTS:
         raise ValueError("Cannot register a test name that already exists: {0}".format(test_name))
-    TESTS[test_name] = test_function
+    VALIDATOR_TESTS[test_name] = test_function
 
 def register_comparator(comparator_name, comparator_function):
     """ Register a new twpo-argument comparator function returning true or false """

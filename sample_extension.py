@@ -40,7 +40,8 @@ class WeirdzoExtractor(validators.AbstractExtractor):
         return 'zorba'
 
 def parse_generator_doubling(config):
-    """ Returns generators that double with each value returned, config includes start value """
+    """ Returns generators that double with each value returned
+        Config includes optional start value """
     start = 1
     if 'start' in config:
         start = int(config['start'])
