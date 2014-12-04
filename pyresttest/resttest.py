@@ -23,18 +23,18 @@ if is_root_folder:  # Inside the module
     from generators import parse_generator
     from parsing import flatten_dictionaries, lowercase_keys, safe_to_bool, safe_to_json
     import validators
-    from validators import ValidationFailure
+    from validators import Failure
     from tests import Test, DEFAULT_TIMEOUT
-    from benchmarks import Benchmark, AGGREGATES, METRICS, build_benchmark
+    from benchmarks import Benchmark, AGGREGATES, METRICS, parse_benchmark
 else:  # Importing as library
     from pyresttest.binding import Context
     import pyresttest.generators
     from pyresttest.generators import parse_generator
     from pyresttest.parsing import flatten_dictionaries, lowercase_keys, safe_to_bool, safe_to_json
     import pyresttest.validators
-    from pyresttest.validators import ValidationFailure
+    from pyresttest.validators import Failure
     from pyresttest.tests import Test, DEFAULT_TIMEOUT
-    from pyresttest.benchmarks import Benchmark, AGGREGATES, METRICS, build_benchmark
+    from pyresttest.benchmarks import Benchmark, AGGREGATES, METRICS, parse_benchmark
 
 """
 Executable class, ties everything together into the framework.
@@ -146,7 +146,7 @@ def read_test_file(path):
     teststruct = yaml.safe_load(os.path.expandvars(read_file(path)))
     return teststruct
 
-def build_testsets(base_url, test_structure, test_files = set(), working_directory = None):
+def parse_testsets(base_url, test_structure, test_files = set(), working_directory = None):
     """ Convert a Python datastructure read from validated YAML to a set of structured testsets
     The data stucture is assumed to be a list of dictionaries, each of which describes:
         - a tests (test structure)
@@ -180,7 +180,7 @@ def build_testsets(base_url, test_structure, test_files = set(), working_directo
                         test_files.add(importfile)
                         import_test_structure = read_test_file(importfile)
                         with cd(os.path.dirname(os.path.realpath(importfile))):
-                            import_testsets = build_testsets(base_url, import_test_structure, test_files)
+                            import_testsets = parse_testsets(base_url, import_test_structure, test_files)
                             testsets.extend(import_testsets)
                 elif key == u'url': #Simple test, just a GET to a URL
                     mytest = Test()
@@ -191,13 +191,13 @@ def build_testsets(base_url, test_structure, test_files = set(), working_directo
                 elif key == u'test': #Complex test with additional parameters
                     with cd(working_directory):
                         child = node[key]
-                        mytest = Test.build_test(base_url, child)
+                        mytest = Test.parse_test(base_url, child)
                         tests_out.append(mytest)
                 elif key == u'benchmark':
-                    benchmark = build_benchmark(base_url, node[key])
+                    benchmark = parse_benchmark(base_url, node[key])
                     benchmarks.append(benchmark)
                 elif key == u'config' or key == u'configuration':
-                    test_config = make_configuration(node[key])
+                    test_config = parse_configuration(node[key])
     testset = TestSet()
     testset.tests = tests_out
     testset.config = test_config
@@ -205,8 +205,8 @@ def build_testsets(base_url, test_structure, test_files = set(), working_directo
     testsets.append(testset)
     return testsets
 
-def make_configuration(node):
-    """ Convert input object to configuration information """
+def parse_configuration(node):
+    """ Parse input config to configuration information """
     test_config = TestConfig()
 
     node = lowercase_keys(flatten_dictionaries(node))  # Make it usable
@@ -271,7 +271,7 @@ def run_test(mytest, test_config = TestConfig(), context = None):
         curl.perform() #Run the actual call
     except Exception as e:
         # Curl exception occurred (network error), do not pass go, do not collect $200
-        result.failures.append(ValidationFailure(message="Curl Exception: {0}".format(e), details=str(e)))
+        result.failures.append(Failure(message="Curl Exception: {0}".format(e), details=str(e)))
         result.passed = False
         curl.close()
         return result
@@ -290,7 +290,7 @@ def run_test(mytest, test_config = TestConfig(), context = None):
         # Invalid response code
         result.passed = False
         failure_message = "Invalid HTTP response code: response code {0} not in expected codes [{1}]".format(response_code, mytest.expected_status)
-        result.failures.append(ValidationFailure(message=failure_message, details=None))
+        result.failures.append(Failure(message=failure_message, details=None))
 
     #print str(test_config.print_bodies) + ',' + str(not result.passed) + ' , ' + str(test_config.print_bodies or not result.passed)
 
@@ -311,7 +311,7 @@ def run_test(mytest, test_config = TestConfig(), context = None):
                 validate_result = validator.validate(body=body, context=my_context)
                 if not validate_result:
                     result.passed = False
-                if isinstance(validate_result, ValidationFailure):
+                if isinstance(validate_result, Failure):
                     failures.append(validate_result)
                 # TODO add printing of validation for interactive mode
         else:
@@ -485,7 +485,7 @@ def write_benchmark_csv(file_out, benchmark_result, benchmark, test_config = Tes
 # Method to call when writing benchmark file
 OUTPUT_METHODS = {u'csv' : write_benchmark_csv, u'json': write_benchmark_json}
 
-def execute_testsets(testsets):
+def run_testsets(testsets):
     """ Execute a set of tests, using given TestSet list input """
     group_results = dict() #results, by group
     group_failure_counts = dict()
@@ -629,7 +629,7 @@ def main(args):
 
     test_file = args['test']
     test_structure = read_test_file(test_file)
-    tests = build_testsets(args['url'], test_structure, working_directory=os.path.dirname(test_file))
+    tests = parse_testsets(args['url'], test_structure, working_directory=os.path.dirname(test_file))
 
     # Override configs from command line if config set
     for t in tests:
@@ -640,7 +640,7 @@ def main(args):
             t.config.interactive = safe_to_bool(args['interactive'])
 
     # Execute all testsets
-    failures = execute_testsets(tests)
+    failures = run_testsets(tests)
 
     sys.exit(failures)
 

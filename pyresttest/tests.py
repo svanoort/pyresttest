@@ -253,7 +253,7 @@ class Test(object):
         return curl
 
     @classmethod
-    def build_test(cls, base_url, node, input_test = None, test_path=None):
+    def parse_test(cls, base_url, node, input_test = None, test_path=None):
         """ Create or modify a test, input_test, using configuration in node, and base_url
         If no input_test is given, creates a new one
 

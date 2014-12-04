@@ -63,7 +63,7 @@ def safe_length(var):
         pass
     return output
 
-class ValidationFailure(object):
+class Failure(object):
     """ Encapsulates why and how a validation failed for user consumption
         Message is a short explanation, details is a longer, multiline reason
         Validator is the validator that failed (for config info)
@@ -73,7 +73,7 @@ class ValidationFailure(object):
     validator = None
 
     def __nonzero__(self):
-        """ ValidationFailure objects test as False, simplifies coding with them """
+        """ Failure objects test as False, simplifies coding with them """
         return False
 
     def __str__(self):
@@ -205,7 +205,7 @@ class AbstractValidator(object):
     config = None
 
     def validate(self, body=None, headers=None, context=None):
-        """ Run the validation function, return true or a ValidationFailure """
+        """ Run the validation function, return true or a Failure """
         pass
 
 class ComparatorValidator(AbstractValidator):
@@ -223,7 +223,7 @@ class ComparatorValidator(AbstractValidator):
         try :
             extracted_val = self.extractor.extract(body=body, headers=headers, context=context)
         except Exception as e:
-            return ValidationFailure(message="Extractor threw exception", details=e, validator=self)
+            return Failure(message="Extractor threw exception", details=e, validator=self)
 
         # Compute expected output, either templating or using expected value
         expected_val = None
@@ -231,7 +231,7 @@ class ComparatorValidator(AbstractValidator):
             try:
                 expected_val = self.expected.extract(body=body, headers=headers, context=context)
             except Exception as e:
-                return ValidationFailure(message="Expected value extractor threw exception", details=e, validator=self)
+                return Failure(message="Expected value extractor threw exception", details=e, validator=self)
         elif self.isTemplateExpected and context:
             expected_val = string.Template(self.expected).safe_substitute(context.get_values())
         else:
@@ -239,7 +239,7 @@ class ComparatorValidator(AbstractValidator):
 
         comparison = self.comparator(extracted_val, expected_val)
         if not comparison:
-            failure = ValidationFailure(validator=self)
+            failure = Failure(validator=self)
             failure.message = "Comparison failed, evaluating {0}({1}, {2}) returned False".format(self.comparator_name, extracted_val, expected_val)
             failure.details = self.config
             return failure
@@ -325,13 +325,13 @@ class ExtractTestValidator(AbstractValidator):
         try:
             extracted = self.extractor.extract(body=body, headers=headers, context=context)
         except Exception as e:
-            return ValidationFailure(message="Exception thrown while running extraction from body", details=e, validator=self)
+            return Failure(message="Exception thrown while running extraction from body", details=e, validator=self)
 
         tested = self.test_fn(extracted)
         if tested:
             return True
         else:
-            failure = ValidationFailure(details=self.config, validator=self)
+            failure = Failure(details=self.config, validator=self)
             failure.message = "Extract and test validator failed on test: {0}({1})".format(self.test_name, extracted)
             return failure
 
@@ -378,7 +378,7 @@ def register_validator(name, parse_function):
         Validator functions have signature:
             validate(response_body, context=None) - context is a bindings.Context object
 
-        Validators return true or false and optionally can return a ValidationFailure instead of false
+        Validators return true or false and optionally can return a Failure instead of false
         This allows for passing more details
     '''
     name = name.lower()

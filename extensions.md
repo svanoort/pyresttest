@@ -158,13 +158,13 @@ class ExtractTestValidator(AbstractValidator):
         try:
             extracted = self.extractor.extract(body=body, headers=headers, context=context)
         except Exception as e:
-            return ValidationFailure(message="Exception thrown while running extraction from body", details=e, validator=self)
+            return Failure(message="Exception thrown while running extraction from body", details=e, validator=self)
 
         tested = self.test_fn(extracted)
         if tested:
             return True
         else:
-            failure = ValidationFailure(details=self.config, validator=self)
+            failure = Failure(details=self.config, validator=self)
             failure.message = "Extract and test validator failed on test: {0}({1})".format(self.test_name, extracted)
             return failure
     ```

@@ -187,7 +187,7 @@ jsonpath_mini: {template: $keyname.age}
 # Validation Basics
 Validators test response bodies for correctness.  They perform a test on the response body, with context supplied, and return a value that will evaluate to boolean True or False. 
 
-Optionally, validators can return a ValidationFailure which evaluates to False, but supplies additional information. 
+Optionally, validators can return a Failure which evaluates to False, but supplies additional information. 
 
 ## Current Validators:
 ### Extract and test value:

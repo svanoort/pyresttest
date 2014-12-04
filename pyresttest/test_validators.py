@@ -220,7 +220,7 @@ class ValidatorsTest(unittest.TestCase):
         self.assertEqual(comp, failure.validator)
 
         failure = comp.validate(body='{"id": 3, "key": {"val": 4}')
-        self.assertTrue(isinstance(failure, validators.ValidationFailure))
+        self.assertTrue(isinstance(failure, validators.Failure))
 
     def test_parse_validator_extracttest(self):
         """ Test parsing for extract test """
@@ -236,7 +236,7 @@ class ValidatorsTest(unittest.TestCase):
 
         validation_result = validator.validate(body=myjson_fail)
         self.assertFalse(validation_result)
-        self.assertTrue(isinstance(validation_result, validators.ValidationFailure))
+        self.assertTrue(isinstance(validation_result, validators.Failure))
         self.assertEqual(validation_result.message, "Extract and test validator failed on test: exists(None)")
 
 if __name__ == '__main__':

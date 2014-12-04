@@ -14,7 +14,7 @@ class ContainsValidator(validators.AbstractValidator):
             return True
         else:  # Return failure object with additional information
             message = "Request body did not contain string: {0}".format(self.contains_string)
-            return validators.ValidationFailure(message=message, details=None, validator=self)
+            return validators.Failure(message=message, details=None, validator=self)
 
     @staticmethod
     def parse(config):

@@ -16,7 +16,7 @@ class BenchmarkTest(unittest.TestCase):
                         {'pretransfer_time': 'mean_harmonic'}]
             }];
 
-        cfg = build_benchmark('what', struct)
+        cfg = parse_benchmark('what', struct)
 
         self.assertEqual(7, cfg.warmup_runs)
         self.assertEqual(101, cfg.benchmark_runs)

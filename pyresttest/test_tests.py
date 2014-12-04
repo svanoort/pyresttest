@@ -8,11 +8,11 @@ import generators
 class TestsTest(unittest.TestCase):
     """ Testing for basic rest test methods """
 
-    def test_build_test(self):
+    def test_parse_test(self):
         """ Test basic ways of creating test objects from input object structure """
         #Most basic case
         input = {"url": "/ping", "method": "DELETE", "NAME":"foo", "group":"bar", "body":"<xml>input</xml>","headers":{"Accept":"Application/json"}}
-        test = Test.build_test('',input)
+        test = Test.parse_test('',input)
         self.assertTrue(test.url == input['url'])
         self.assertTrue(test.method == input['method'])
         self.assertTrue(test.name == input['NAME'])
@@ -23,14 +23,14 @@ class TestsTest(unittest.TestCase):
 
         #Happy path, only gotcha is that it's a POST, so must accept 200 or 204 response code
         input = {"url": "/ping", "meThod": "POST"}
-        test = Test.build_test('',input)
+        test = Test.parse_test('',input)
         self.assertTrue(test.url == input['url'])
         self.assertTrue(test.method == input['meThod'])
         self.assertTrue(test.expected_status == [200,201,204])
 
         #Test that headers propagate
         input = {"url": "/ping", "method": "GET", "headers" : [{"Accept":"application/json"},{"Accept-Encoding":"gzip"}] }
-        test = Test.build_test('',input)
+        test = Test.parse_test('',input)
         expected_headers = {"Accept":"application/json","Accept-Encoding":"gzip"}
 
         self.assertTrue(test.url == input['url'])
@@ -44,7 +44,7 @@ class TestsTest(unittest.TestCase):
 
         #Test expected status propagates and handles conversion to integer
         input = [{"url": "/ping"},{"name": "cheese"},{"expected_status":["200",204,"202"]}]
-        test = Test.build_test('',input)
+        test = Test.parse_test('',input)
         self.assertTrue(test.name == "cheese")
         self.assertTrue(test.expected_status == [200,204,202])
         self.assertFalse(test.is_context_modifier())
@@ -60,7 +60,7 @@ class TestsTest(unittest.TestCase):
             {'extract_test': {'jsonpath_mini': 'key.val', 'test':'exists'}}
         ]}
 
-        test = Test.build_test('',input)
+        test = Test.parse_test('',input)
         self.assertTrue(test.validators)
         self.assertEqual(2, len(test.validators))
         self.assertTrue(isinstance(test.validators[0], validators.ComparatorValidator))
@@ -73,7 +73,7 @@ class TestsTest(unittest.TestCase):
         """ Test an invalid validator syntax throws exception """
         input = {"url": '/test', 'validators' : ['comparator']}
         try:
-            test = Test.build_test('', input)
+            test = Test.parse_test('', input)
             self.fail("Should throw exception if not giving a dictionary-type comparator")
         except TypeError:
             pass
@@ -87,7 +87,7 @@ class TestsTest(unittest.TestCase):
                 'name': {'jsonpath_mini': 'firstname'}
             }
         }
-        test = Test.build_test('', test_config)
+        test = Test.parse_test('', test_config)
         self.assertTrue(test.extract_binds)
         self.assertEqual(2, len(test.extract_binds))
         self.assertTrue('id' in test.extract_binds)
@@ -108,7 +108,7 @@ class TestsTest(unittest.TestCase):
             'extract_binds': {'id': {}}
         }
         try:
-            test = Test.build_test('', test_config)
+            test = Test.parse_test('', test_config)
             self.fail("Should throw an error when doing empty mapping")
         except TypeError:
             pass
@@ -118,7 +118,7 @@ class TestsTest(unittest.TestCase):
             'test':'anotherquery'
         }
         try:
-            test = Test.build_test('', test_config)
+            test = Test.parse_test('', test_config)
             self.fail("Should throw an error when given multiple extractors")
         except ValueError as te:
             pass
@@ -134,7 +134,7 @@ class TestsTest(unittest.TestCase):
                  'expected': {'template': '$id'}}}
             ]
         }
-        test = Test.build_test('', test_config)
+        test = Test.parse_test('', test_config)
         self.assertTrue(test.validators)
         self.assertEqual(1, len(test.validators))
 
@@ -157,7 +157,7 @@ class TestsTest(unittest.TestCase):
                  'test': 'exists'}}
             ]
         }
-        test = Test.build_test('', test_config)
+        test = Test.parse_test('', test_config)
         self.assertTrue(test.validators)
         self.assertEqual(1, len(test.validators))
 
@@ -170,7 +170,7 @@ class TestsTest(unittest.TestCase):
         input = [{"url": "/ping"},{"name": "cheese"},{"expected_status":["200",204,"202"]}]
         input.append({"variable_binds":{'var':'value'}})
 
-        test = Test.build_test('', input)
+        test = Test.parse_test('', input)
         binds = test.variable_binds
         self.assertEqual(1, len(binds))
         self.assertEqual('value', binds['var'])

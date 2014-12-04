@@ -173,14 +173,14 @@ def configure_curl(self, timeout=tests.DEFAULT_TIMEOUT, context=None, curl_handl
     curl.setopt(pycurl.FORBID_REUSE, 1)  # Simulate results from different users hitting server
     return curl
 
-def build_benchmark(base_url, node):
+def parse_benchmark(base_url, node):
     """ Try building a benchmark configuration from deserialized configuration root node """
     node = lowercase_keys(flatten_dictionaries(node))  # Make it usable
 
     benchmark = Benchmark()
 
     # Read & set basic test parameters
-    benchmark = Test.build_test(base_url, node, benchmark)
+    benchmark = Test.parse_test(base_url, node, benchmark)
 
     # Complex parsing because of list/dictionary/singleton legal cases
     for key, value in node.items():
