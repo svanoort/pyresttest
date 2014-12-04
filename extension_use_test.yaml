@@ -2,12 +2,28 @@
 ---
 - config:
   - testset: "Simple github.com API Test with custom validator"
+  - generators:
+    - 'number' : {type: 'doubling', start: 8}
 - test:
   - name: "Test with successful validations"
   - url: "/search/users?q=jewzaam"
   - group: "Successful"
   - validators:
      - contains: 'subscriptions_url'
-     #- extract_test: {jsonpath_mini: 'items', test: 'has_braces'}
+     - extract_test: {jsonpath_mini: 'items.0', test: 'is_dict'}
      - compare: {jsonpath_mini: 'items.0.login', comparator: 'str.eq.lower', expected: 'JewZaam'}
-     #- extract_test: {'weirdzo': 'blah', test: 'exists'}
+     - extract_test: {'weirdzo': 'blah', test: 'exists'}
+- test:
+  - generator_binds: {num: number}
+  - name: "Test with generator"
+  - url: {template: "/search/users?q=$num&in=id"}
+  - group: "Successful"
+  - validators:
+     - compare: {jsonpath_mini: 'items.0.login', comparator: 'contains', expected: '8'}
+- test:
+  - generator_binds: {num: number}
+  - name: "Test with generator run 2"
+  - url: {template: "/search/users?q=$num&in=id"}
+  - group: "Successful"
+  - validators:
+     - compare: {jsonpath_mini: 'items.0.login', comparator: 'contains', expected: '16'}

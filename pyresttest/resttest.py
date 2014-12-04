@@ -591,9 +591,9 @@ def register_extensions(modules):
         # Extensions are registered by applying a register function to sets of registry name/function pairs inside an object
         extension_applies = {
             'VALIDATORS': validators.register_validator,
-            'VALIDATOR_COMPARATORS': validators.register_comparator,
+            'COMPARATORS': validators.register_comparator,
             'VALIDATOR_TESTS': validators.register_test,
-            'VALIDATOR_EXTRACTORS': validators.register_extractor,
+            'EXTRACTORS': validators.register_extractor,
             'GENERATORS': generators.register_generator
         }
 

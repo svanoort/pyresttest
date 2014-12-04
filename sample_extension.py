@@ -25,13 +25,10 @@ class ContainsValidator(validators.AbstractValidator):
         validator.contains_string = config
         return validator
 
-def test_has_braces(input_string):
-    """ Test if input string contains a brace ({}) """
-    return '{' in input_string or '}' in input_string
-
-
 class WeirdzoExtractor(validators.AbstractExtractor):
-    extractor_type = 'weirdozo'
+    """ Always returns 'zorba' """
+
+    extractor_type = 'weirdzo'
     is_body_extractor = True
 
     @classmethod
@@ -44,17 +41,30 @@ class WeirdzoExtractor(validators.AbstractExtractor):
     def extract_internal(self, query=None, args=None, body=None, headers=None):
         return 'zorba'
 
+def parse_generator_doubling(config):
+    """ Returns generators that double with each value returned, config includes start value """
+    start = 1
+    if 'start' in config:
+        start = int(config['start'])
 
-def parse_extractor_weirdzo(config):
-    """ Parser for extractor config that always ignores config
-        and returns the extract_weirdzo function """
-    return extract_weirdzo
+    # We cannot simply use start as the variable, because of scoping limitations
+    def generator():
+        val = start
+        while(True):
+            yield val
+            val = val*2
+    return generator()
 
+def test_is_dict(input):
+    """ Simple test that returns true if item is a dictionary """
+    return isinstance(input, dict)
 
 # This is where the magic happens, each one of these is a registry of validators/extractors/generators to use
 VALIDATORS = {'contains': ContainsValidator.parse}
-VALIDATOR_TESTS = {'has_braces': test_has_braces}
+VALIDATOR_TESTS = {'is_dict': test_is_dict}
+
 # Converts to lowercase and tests for equality
-VALIDATOR_COMPARATORS = {'str.eq.lower': lambda a,b: str(a).lower() == str(b).lower()}
+COMPARATORS = {'str.eq.lower': lambda a,b: str(a).lower() == str(b).lower()}
 
 EXTRACTORS = {'weirdzo': WeirdzoExtractor.parse}
+GENERATORS = {'doubling': parse_generator_doubling}

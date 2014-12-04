@@ -203,14 +203,14 @@ def _get_extractor(config_dict):
         if key in EXTRACTORS:
             return parse_extractor(key, value)
     else:  # No valid extractor
-        return None
+        raise Exception('No valid extractor name to use in input: {0}'.format(config_dict))
 
 class AbstractValidator(object):
     """ Encapsulates basic validator handling """
     name = None
     config = None
 
-    def validate(self, body, context=None):
+    def validate(self, body=None, headers=None, context=None):
         """ Run the validation function, return true or a ValidationFailure """
         pass
 
@@ -227,7 +227,7 @@ class ComparatorValidator(AbstractValidator):
 
     def validate(self, body=None, headers=None, context=None):
         try :
-            extracted_val = self.extractor.extract(body, context=context)
+            extracted_val = self.extractor.extract(body=body, headers=headers, context=context)
         except Exception as e:
             return ValidationFailure(message="Extractor threw exception", details=e, validator=self)
 
@@ -327,9 +327,9 @@ class ExtractTestValidator(AbstractValidator):
         output.test_fn = test_fn
         return output
 
-    def validate(self, body, context=None):
+    def validate(self, body=None, headers=None, context=None):
         try:
-            extracted = self.extractor.extract(body, context=context)
+            extracted = self.extractor.extract(body=body, headers=headers, context=context)
         except Exception as e:
             return ValidationFailure(message="Exception thrown while running extraction from body", details=e, validator=self)
 
@@ -354,6 +354,11 @@ def parse_extractor(extractor_type, config):
     parsed = parse(config)
 
     if isinstance(parsed, AbstractExtractor):  # Parser gave a full extractor
+        return parsed
+
+    # Look for matching attributes... simple inheritance has issues because of cross-module loading
+    items = AbstractExtractor().__dict__
+    if set(parsed.__dict__.keys()).issuperset(set(items.keys())):
         return parsed
     else:
         raise TypeError("Parsing functions for extractors must return an AbstractExtractor instance!")
