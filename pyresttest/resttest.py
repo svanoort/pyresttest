@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import sys
 import os
+import inspect
 import yaml
 import pycurl
 import json
@@ -18,15 +19,19 @@ except ImportError:
 
 if is_root_folder:  # Inside the module
     from binding import Context
+    import generators
     from generators import parse_generator
     from parsing import flatten_dictionaries, lowercase_keys, safe_to_bool, safe_to_json
+    import validators
     from validators import ValidationFailure
     from tests import Test, DEFAULT_TIMEOUT
     from benchmarks import Benchmark, AGGREGATES, METRICS, build_benchmark
 else:  # Importing as library
     from pyresttest.binding import Context
+    import pyresttest.generators
     from pyresttest.generators import parse_generator
     from pyresttest.parsing import flatten_dictionaries, lowercase_keys, safe_to_bool, safe_to_json
+    import pyresttest.validators
     from pyresttest.validators import ValidationFailure
     from pyresttest.tests import Test, DEFAULT_TIMEOUT
     from pyresttest.benchmarks import Benchmark, AGGREGATES, METRICS, build_benchmark
@@ -302,7 +307,8 @@ def run_test(mytest, test_config = TestConfig(), context = None):
             logging.debug("executing this many validators: " + str(len(mytest.validators)))
             failures = result.failures
             for validator in mytest.validators:
-                validate_result = validator.validate(body, context=my_context)
+                # TODO add header parsing
+                validate_result = validator.validate(body=body, context=my_context)
                 if not validate_result:
                     result.passed = False
                 if isinstance(validate_result, ValidationFailure):
@@ -577,6 +583,26 @@ def execute_testsets(testsets):
 
     return total_failures
 
+def register_extensions(modules):
+    """ Import the modules and register their respective extensions """
+    for ext in modules:
+        module = __import__(ext)
+
+        # Extensions are registered by applying a register function to sets of registry name/function pairs inside an object
+        extension_applies = {
+            'VALIDATORS': validators.register_validator,
+            'COMPARATORS': validators.register_comparator,
+            'VALIDATOR_TESTS': validators.register_test,
+            'EXTRACTORS': validators.register_extractor,
+            'GENERATORS': generators.register_generator
+        }
+
+        for registry_name, register_function in extension_applies.items():
+            if hasattr(module, registry_name):
+                registry = getattr(module, registry_name)
+                for key, val in registry.items():
+                    register_function(key, val)
+
 def main(args):
     """
     Execute a test against the given base url.
@@ -591,6 +617,15 @@ def main(args):
 
     if 'log' in args and args['log'] is not None:
         logging.basicConfig(level=LOGGING_LEVELS.get(args['log'].lower(), logging.NOTSET))
+
+    if 'import_extensions' in args and args['import_extensions']:
+        extensions = args['import_extensions'].split(';')
+
+        # We need to add current folder to working path to import modules
+        working_folder = args['cwd']
+        if working_folder not in sys.path:
+            sys.path.insert(0, working_folder)
+        register_extensions(extensions)
 
     test_file = args['test']
     test_structure = read_test_file(test_file)
@@ -617,6 +652,7 @@ if(__name__ == '__main__'):
     parser.add_option(u"--interactive", help="Interactive mode", action="store", type="string")
     parser.add_option(u"--url", help="Base URL to run tests against", action="store", type="string")
     parser.add_option(u"--test", help="Test file to use", action="store", type="string")
+    parser.add_option(u'--import_extensions', help='Extensions to import, separated by semicolons', action="store", type="string")
 
     (args, unparsed_args) = parser.parse_args()
     args = vars(args)
@@ -634,4 +670,5 @@ if(__name__ == '__main__'):
             parser.print_help()
             parser.error("wrong number of arguments, need both url and test filename, either as 1st and 2nd parameters or via --url and --test")
 
+    args['cwd'] = os.path.realpath(os.path.abspath(os.getcwd()))  # So modules can be loaded from current folder
     main(args)

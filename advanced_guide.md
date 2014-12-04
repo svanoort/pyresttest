@@ -4,6 +4,8 @@ Advanced Guide For PyRestTest:
 This provides a more detailed guide to using the advanced features of PyRestTest.
 Specifically **generators**, **variable binding,** **data extraction,** and **content validators.**
 
+For how to write custom Python extensions, see the [extensions guide](extensions.md).
+
 # Templating and Context Basics
 - Tests and benchmarks may use variables to template out configuration dynamically.
 - Templating is performed using basic [Python string templating](https://docs.python.org/2/library/string.html#template-strings).  

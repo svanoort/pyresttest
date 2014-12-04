@@ -16,6 +16,7 @@ This module implements the internal responsibilities of a test object:
 - Parsing of test configuration from results of YAML read
 """
 
+
 DEFAULT_TIMEOUT = 10  # Seconds
 
 #Map HTTP method names to curl methods
@@ -66,6 +67,11 @@ class Test(object):
     variable_binds = None
     generator_binds = None  # Dict of variable name and then generator name
     extract_binds = None  # Dict of variable name and extract function to run
+
+    @staticmethod
+    def has_contains():
+        return 'contains' in validators.VALIDATORS
+
 
     def ninja_copy(self):
         """ Optimization: limited copy of test object, for realize() methods
@@ -142,7 +148,7 @@ class Test(object):
         """ Run the extraction routines to update variables based on HTTP response body """
         if self.extract_binds:
             for key, value in self.extract_binds.items():
-                result = value.extract(response_body, context=context)
+                result = value.extract(body=response_body, context=context)
                 print 'Result: {0}'.format(result)
                 context.bind_variable(key, result)
 
