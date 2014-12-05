@@ -1,6 +1,7 @@
 import logging
 import json
 import operator
+import traceback
 import string
 import parsing
 import os
@@ -63,12 +64,21 @@ def safe_length(var):
         pass
     return output
 
+# Validator Failure Reasons
+FAILURE_INVALID_RESPONSE = 'Invalid HTTP Response Code'
+FAILURE_CURL_EXCEPTION = 'Curl Exception'
+FAILURE_TEST_EXCEPTION = 'Test Execution Exception'
+FAILURE_VALIDATOR_FAILED = 'Validator Failed'
+FAILURE_VALIDATOR_EXCEPTION = 'Validator Exception'
+FAILURE_EXTRACTOR_EXCEPTION = 'Extractor Exception'
+
 class Failure(object):
     """ Encapsulates why and how a validation failed for user consumption
         Message is a short explanation, details is a longer, multiline reason
         Validator is the validator that failed (for config info)
     """
     message = None
+    failure_type = None
     details = None
     validator = None
 
@@ -79,10 +89,11 @@ class Failure(object):
     def __str__(self):
         return self.message
 
-    def __init__(self, message="", details="", validator=None):
+    def __init__(self, message="", details="", failure_type=None, validator=None):
         self.message = message
         self.details = details
         self.validator = validator
+        self.failure_type = failure_type
 
 
 class AbstractExtractor(object):
@@ -223,7 +234,8 @@ class ComparatorValidator(AbstractValidator):
         try :
             extracted_val = self.extractor.extract(body=body, headers=headers, context=context)
         except Exception as e:
-            return Failure(message="Extractor threw exception", details=e, validator=self)
+            trace = traceback.format_exc()
+            return Failure(message="Extractor threw exception", details=trace, validator=self, failure_type=FAILURE_EXTRACTOR_EXCEPTION)
 
         # Compute expected output, either templating or using expected value
         expected_val = None
@@ -231,7 +243,8 @@ class ComparatorValidator(AbstractValidator):
             try:
                 expected_val = self.expected.extract(body=body, headers=headers, context=context)
             except Exception as e:
-                return Failure(message="Expected value extractor threw exception", details=e, validator=self)
+                trace = traceback.format_exc()
+                return Failure(message="Expected value extractor threw exception", details=trace, validator=self, failure_type=FAILURE_EXTRACTOR_EXCEPTION)
         elif self.isTemplateExpected and context:
             expected_val = string.Template(self.expected).safe_substitute(context.get_values())
         else:
@@ -241,7 +254,8 @@ class ComparatorValidator(AbstractValidator):
         if not comparison:
             failure = Failure(validator=self)
             failure.message = "Comparison failed, evaluating {0}({1}, {2}) returned False".format(self.comparator_name, extracted_val, expected_val)
-            failure.details = self.config
+            failure.details = self.config  # TODO: We can do better than this
+            failure.failure_type = FAILURE_VALIDATOR_FAILED
             return failure
         else:
             return True
@@ -325,14 +339,16 @@ class ExtractTestValidator(AbstractValidator):
         try:
             extracted = self.extractor.extract(body=body, headers=headers, context=context)
         except Exception as e:
-            return Failure(message="Exception thrown while running extraction from body", details=e, validator=self)
+            trace = traceback.format_exc()
+            return Failure(message="Exception thrown while running extraction from body", details=trace, validator=self, failure_type=FAILURE_EXTRACTOR_EXCEPTION)
 
         tested = self.test_fn(extracted)
         if tested:
             return True
         else:
-            failure = Failure(details=self.config, validator=self)
+            failure = Failure(details=self.config, validator=self, failure_type=FAILURE_VALIDATOR_FAILED)
             failure.message = "Extract and test validator failed on test: {0}({1})".format(self.test_name, extracted)
+            # TODO can we do better with details?
             return failure
 
 def parse_extractor(extractor_type, config):
