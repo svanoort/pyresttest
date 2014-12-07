@@ -312,7 +312,8 @@ def run_test(mytest, test_config = TestConfig(), context = None):
                 validate_result = validator.validate(body=body, context=my_context)
                 if not validate_result:
                     result.passed = False
-                if isinstance(validate_result, Failure):
+				# Proxy for checking if it is a Failure object, because of import issues with isinstance there
+                if hasattr(validate_result, 'details'):  
                     failures.append(validate_result)
                 # TODO add printing of validation for interactive mode
         else:
