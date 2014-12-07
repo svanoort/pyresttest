@@ -2,6 +2,7 @@
 import sys
 import os
 import inspect
+import traceback
 import yaml
 import pycurl
 import json
@@ -45,7 +46,6 @@ Module responsibilities:
 - Collect and report on test/benchmark results
 - Perform analysis on benchmark results
 """
-
 
 LOGGING_LEVELS = {'debug': logging.DEBUG,
     'info': logging.INFO,
@@ -269,9 +269,10 @@ def run_test(mytest, test_config = TestConfig(), context = None):
 
     try:
         curl.perform() #Run the actual call
-    except Exception as e:
+    except Exception, e:
         # Curl exception occurred (network error), do not pass go, do not collect $200
-        result.failures.append(Failure(message="Curl Exception: {0}".format(e), details=str(e)))
+        trace = traceback.format_exc()
+        result.failures.append(Failure(message="Curl Exception: {0}".format(e), details=trace, failure_type=validators.FAILURE_CURL_EXCEPTION))
         result.passed = False
         curl.close()
         return result
@@ -290,7 +291,7 @@ def run_test(mytest, test_config = TestConfig(), context = None):
         # Invalid response code
         result.passed = False
         failure_message = "Invalid HTTP response code: response code {0} not in expected codes [{1}]".format(response_code, mytest.expected_status)
-        result.failures.append(Failure(message=failure_message, details=None))
+        result.failures.append(Failure(message=failure_message, details=None, failure_type=validators.FAILURE_INVALID_RESPONSE))
 
     #print str(test_config.print_bodies) + ',' + str(not result.passed) + ' , ' + str(test_config.print_bodies or not result.passed)
 
@@ -485,6 +486,12 @@ def write_benchmark_csv(file_out, benchmark_result, benchmark, test_config = Tes
 # Method to call when writing benchmark file
 OUTPUT_METHODS = {u'csv' : write_benchmark_csv, u'json': write_benchmark_json}
 
+def log_failure(failure, context=None, test_config=TestConfig()):
+    """ Log a failure from a test """
+    logging.error("Test Failure, failure type: {0}, Reason: {1}".format(failure.failure_type, failure.message))
+    if failure.details:
+        logging.error("Validator/Error details:"+str(failure.details))
+
 def run_testsets(testsets):
     """ Execute a set of tests, using given TestSet list input """
     group_results = dict() #results, by group
@@ -529,9 +536,7 @@ def run_testsets(testsets):
                 # Print test failure reasons
                 if result.failures:
                     for failure in result.failures:
-                        logging.error("Test Failure reason: {0}".format(failure))
-                        if failure.details:
-                            logging.error("Validator/Error details:"+str(failure.details))
+                        log_failure(failure, context=context, test_config=myconfig)
 
                 #Increment test failure counts for that group (adding an entry if not present)
                 failures = group_failure_counts[test.group]
