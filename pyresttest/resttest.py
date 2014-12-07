@@ -272,7 +272,7 @@ def run_test(mytest, test_config = TestConfig(), context = None):
     except Exception, e:
         # Curl exception occurred (network error), do not pass go, do not collect $200
         trace = traceback.format_exc()
-        result.failures.append(Failure(message="Curl Exception: {0}".format(e), details=trace, failure_type=validators.FAILURE_CURL_EXCEPTION)
+        result.failures.append(Failure(message="Curl Exception: {0}".format(e), details=trace, failure_type=validators.FAILURE_CURL_EXCEPTION))
         result.passed = False
         curl.close()
         return result

@@ -240,6 +240,17 @@ class ComparatorValidator(AbstractValidator):
     expected = None
     isTemplateExpected = False
 
+    def get_readable_config(self, context=None):
+        """ Get a human-readable config string """
+        string_frags = list()
+        string_frags.append("Extractor: "+self.extractor.get_readable_config(context=context))
+        if isinstance(self.expected, AbstractExtractor):
+            string_frags.append("Expected value extractor: "+self.expected.get_readable_config(context=context))
+        elif self.isTemplateExpected:
+            string_frags.append('Expected is templated, raw value: {0}'.format(self.expected))
+        return os.linesep.join(string_frags)
+
+
     def validate(self, body=None, headers=None, context=None):
         try :
             extracted_val = self.extractor.extract(body=body, headers=headers, context=context)
@@ -264,7 +275,7 @@ class ComparatorValidator(AbstractValidator):
         if not comparison:
             failure = Failure(validator=self)
             failure.message = "Comparison failed, evaluating {0}({1}, {2}) returned False".format(self.comparator_name, extracted_val, expected_val)
-            failure.details = self.config  # TODO: We can do better than this
+            failure.details = self.get_readable_config(context=context)
             failure.failure_type = FAILURE_VALIDATOR_FAILED
             return failure
         else:
@@ -331,6 +342,10 @@ class ExtractTestValidator(AbstractValidator):
     test_name = None
     config = None
 
+    def get_readable_config(self, context=None):
+        """ Get a human-readable config string """
+        return "Extractor: "+self.extractor.get_readable_config(context=context)
+
     @staticmethod
     def parse(config):
         output = ExtractTestValidator()
@@ -356,7 +371,7 @@ class ExtractTestValidator(AbstractValidator):
         if tested:
             return True
         else:
-            failure = Failure(details=self.config, validator=self, failure_type=FAILURE_VALIDATOR_FAILED)
+            failure = Failure(details=self.get_readable_config(context=context), validator=self, failure_type=FAILURE_VALIDATOR_FAILED)
             failure.message = "Extract and test validator failed on test: {0}({1})".format(self.test_name, extracted)
             # TODO can we do better with details?
             return failure

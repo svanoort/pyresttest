@@ -242,7 +242,9 @@ class ValidatorsTest(unittest.TestCase):
         self.assertFalse(failure)
         self.assertEqual(failure.message, 'Comparison failed, evaluating eq(4, 3) returned False')
         self.assertEqual(failure.message, str(failure))
-        self.assertTrue(failure.details)
+        self.assertEqual(failure.failure_type, validators.FAILURE_VALIDATOR_FAILED)
+        expected_details = 'Extractor: Extractor Type: jsonpath_mini,  Query: "key.val", Templated?: False'
+        self.assertEqual(expected_details, failure.details)
         print "Failure config: "+str(failure.details)
         self.assertEqual(comp, failure.validator)
 
