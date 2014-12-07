@@ -104,6 +104,33 @@ class ValidatorsTest(unittest.TestCase):
         ext.is_templated = False
         self.assertEqual('$val.vee', ext.templated_query(context=context))
 
+    def test_abstract_extractor_readableconfig(self):
+        """ Test human-readable extractor config string output """
+        config = 'key.val'
+        extractor = validators.parse_extractor('jsonpath_mini', config)
+        expected_string = 'Extractor Type: jsonpath_mini,  Query: "key.val", Templated?: False'
+        self.assertEqual(expected_string, extractor.get_readable_config())
+
+        # Check empty context & args uses okay
+        context = Context()
+        self.assertEqual(expected_string, extractor.get_readable_config(context=context))
+        context.bind_variable('foo', 'bar')
+        self.assertEqual(expected_string, extractor.get_readable_config(context=context))
+        extractor.args = dict()
+        self.assertEqual(expected_string, extractor.get_readable_config(context=context))
+
+        # Check args output is handled correctly
+        extractor.args = {'caseSensitive': True}
+        self.assertEqual(expected_string+", Args: "+str(extractor.args), extractor.get_readable_config(context=context))
+
+        # Check template handling is okay
+        config = {'template': 'key.$templated'}
+        context.bind_variable('templated', 'val')
+        extractor = validators.parse_extractor('jsonpath_mini', config)
+        expected_string = 'Extractor Type: jsonpath_mini,  Query: "key.val", Templated?: True'
+        self.assertEqual(expected_string, extractor.get_readable_config(context=context))
+
+
     def test_parse_extractor(self):
         """ Test parsing an extractor using the registry """
         config = 'key.val'

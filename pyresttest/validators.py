@@ -125,6 +125,16 @@ class AbstractExtractor(object):
             query = string.Template(query).safe_substitute(context.get_values())
         return query
 
+    def get_readable_config(self, context=None):
+        """ Print a human-readable version of the configuration """
+        query = self.templated_query(context=context)
+        output = 'Extractor Type: {0},  Query: "{1}", Templated?: {2}'.format(self.extractor_type, query, self.is_templated)
+        args_string = None
+        if self.args:
+            args_string = ", Args: " + str(self.args)
+            output = output + args_string
+        return output
+
     @classmethod
     def configure_base(cls, config, extractor_base):
         """ Parse config object and do basic config on an Extractor
