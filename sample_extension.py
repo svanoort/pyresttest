@@ -8,7 +8,7 @@ class ContainsValidator(validators.AbstractValidator):
     # Sample validator that verifies a string is contained in the request body
     contains_string = None
 
-    def validate(self, body, context=None):
+    def validate(self, body=None, context=None):
         result = self.contains_string in body
         if result:
             return True
