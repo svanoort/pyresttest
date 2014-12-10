@@ -4,13 +4,11 @@ import json
 import yaml
 import jsonschema
 
-import pyresttest.validators as validators
-from pyresttest.binding import Context
-from pyresttest.parsing import lowercase_keys
-from pyresttest.contenthandling import ContentHandler
+import validators as validators
+from binding import Context
+from parsing import lowercase_keys
+from contenthandling import ContentHandler
 
-# TODO figure out package management for coupling with main module
-# TODO test out autoloading and autoloading with install
 
 class JsonSchemaValidator(validators.AbstractValidator):
     """ Json schema validator using the jsonschema library """

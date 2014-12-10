@@ -313,7 +313,7 @@ def run_test(mytest, test_config = TestConfig(), context = None):
                 if not validate_result:
                     result.passed = False
 				# Proxy for checking if it is a Failure object, because of import issues with isinstance there
-                if hasattr(validate_result, 'details'):  
+                if hasattr(validate_result, 'details'):
                     failures.append(validate_result)
                 # TODO add printing of validation for interactive mode
         else:
@@ -591,8 +591,14 @@ def run_testsets(testsets):
 
 def register_extensions(modules):
     """ Import the modules and register their respective extensions """
+    if isinstance(modules, basestring):  # Catch supplying just a string arg
+        modules = [modules]
     for ext in modules:
-        module = __import__(ext)
+        # Get the package prefix and final module name
+        segments = ext.split('.')
+        module = segments.pop()
+        package = '.'.join(segments)
+        module = __import__(ext, globals(), locals(), package)  # Necessary to get the root module back
 
         # Extensions are registered by applying a register function to sets of registry name/function pairs inside an object
         extension_applies = {
@@ -603,11 +609,28 @@ def register_extensions(modules):
             'GENERATORS': generators.register_generator
         }
 
+        has_registry = False
         for registry_name, register_function in extension_applies.items():
             if hasattr(module, registry_name):
                 registry = getattr(module, registry_name)
                 for key, val in registry.items():
                     register_function(key, val)
+                if registry:
+                    has_registry = True
+
+        if not has_registry:
+            raise ImportError("Extension to register did not contain any registries: {0}".format(ext))
+
+# AUTOIMPORTS, these should run just before the main method, to ensure everything else is loaded
+try:
+    import jsonschema
+    if is_root_folder:
+        register_extensions('ext.validator_jsonschema')
+    else:
+        register_extensions('pyresttest.ext.validator_jsonschema')
+except ImportError, ie:
+    logging.error("Failed to load jsonschema validator")
+    raise ie
 
 def main(args):
     """

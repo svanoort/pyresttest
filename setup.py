@@ -21,7 +21,7 @@ setup(name='pyresttest',
     ],
     py_modules=['pyresttest.resttest','pyresttest.generators','pyresttest.binding',
         'pyresttest.parsing', 'pyresttest.validators', 'pyresttest.contenthandling',
-        'pyresttest.benchmarks','pyresttest.tests'],
+        'pyresttest.benchmarks','pyresttest.tests', 'pyresttest.ext.validator_jsonschema'],
     license='Apache License, Version 2.0',
     requires=['yaml','pycurl'],
     scripts=['pyresttest/resttest.py'], #Make this executable from command line when installed
