@@ -4,11 +4,17 @@ import json
 import yaml
 import jsonschema
 
-import validators as validators
-from binding import Context
-from parsing import lowercase_keys
-from contenthandling import ContentHandler
-
+# TODO see if there's a clever way to avoid this nastiness
+try:
+    import validators
+    import binding
+    import parsing
+    import contenthandling
+except ImportError:
+    from pyresttest import validators
+    from pyresttest import binding
+    from pyresttest import parsing
+    from pyresttest import contenthandling
 
 class JsonSchemaValidator(validators.AbstractValidator):
     """ Json schema validator using the jsonschema library """
@@ -33,10 +39,10 @@ class JsonSchemaValidator(validators.AbstractValidator):
     @classmethod
     def parse(cls, config):
         validator = JsonSchemaValidator()
-        config = lowercase_keys(config)
+        config = parsing.lowercase_keys(config)
         if 'schema' not in config:
             raise ValueError("Cannot create schema validator without a 'schema' configuration element!")
-        validator.schema = ContentHandler.parse_content(config['schema'])
+        validator.schema = contenthandling.ContentHandler.parse_content(config['schema'])
         return validator
 
 VALIDATORS = {'json_schema': JsonSchemaValidator.parse}

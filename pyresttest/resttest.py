@@ -10,33 +10,15 @@ import csv
 import logging
 from optparse import OptionParser
 
-# Allow execution from anywhere as long as library is installed
-is_root_folder = False
-try:
-    import binding
-    is_root_folder = True
-except ImportError:
-    pass
-
-if is_root_folder:  # Inside the module
-    from binding import Context
-    import generators
-    from generators import parse_generator
-    from parsing import flatten_dictionaries, lowercase_keys, safe_to_bool, safe_to_json
-    import validators
-    from validators import Failure
-    from tests import Test, DEFAULT_TIMEOUT
-    from benchmarks import Benchmark, AGGREGATES, METRICS, parse_benchmark
-else:  # Importing as library
-    from pyresttest.binding import Context
-    import pyresttest.generators
-    from pyresttest.generators import parse_generator
-    from pyresttest.parsing import flatten_dictionaries, lowercase_keys, safe_to_bool, safe_to_json
-    import pyresttest.validators
-    from pyresttest.validators import Failure
-    from pyresttest.tests import Test, DEFAULT_TIMEOUT
-    from pyresttest.benchmarks import Benchmark, AGGREGATES, METRICS, parse_benchmark
-
+# Pyresttest internals
+from binding import Context
+import generators
+from generators import parse_generator
+from parsing import flatten_dictionaries, lowercase_keys, safe_to_bool, safe_to_json
+import validators
+from validators import Failure
+from tests import Test, DEFAULT_TIMEOUT
+from benchmarks import Benchmark, AGGREGATES, METRICS, parse_benchmark
 """
 Executable class, ties everything together into the framework.
 Module responsibilities:
@@ -624,13 +606,9 @@ def register_extensions(modules):
 # AUTOIMPORTS, these should run just before the main method, to ensure everything else is loaded
 try:
     import jsonschema
-    if is_root_folder:
-        register_extensions('ext.validator_jsonschema')
-    else:
-        register_extensions('pyresttest.ext.validator_jsonschema')
+    register_extensions('ext.validator_jsonschema')
 except ImportError, ie:
-    logging.error("Failed to load jsonschema validator")
-    raise ie
+    logging.warn("Failed to load jsonschema validator, make sure the jsonschema module is installed if you wish to use schema validators.")
 
 def main(args):
     """
@@ -673,8 +651,8 @@ def main(args):
 
     sys.exit(failures)
 
-#Allow import into another module without executing the main method
-if(__name__ == '__main__'):
+def command_line_run(args_in):
+    """ Runs everything needed to execute from the command line, so main method is callable without arg parsing """
     parser = OptionParser(usage="usage: %prog base_url test_filename.yaml [options] ")
     parser.add_option(u"--print-bodies", help="Print all response bodies", action="store", type="string", dest="print_bodies")
     parser.add_option(u"--log", help="Logging level", action="store", type="string")
@@ -683,7 +661,7 @@ if(__name__ == '__main__'):
     parser.add_option(u"--test", help="Test file to use", action="store", type="string")
     parser.add_option(u'--import_extensions', help='Extensions to import, separated by semicolons', action="store", type="string")
 
-    (args, unparsed_args) = parser.parse_args()
+    (args, unparsed_args) = parser.parse_args(args_in)
     args = vars(args)
 
     # Handle url/test as named, or, failing that, positional arguments
@@ -701,3 +679,7 @@ if(__name__ == '__main__'):
 
     args['cwd'] = os.path.realpath(os.path.abspath(os.getcwd()))  # So modules can be loaded from current folder
     main(args)
+
+#Allow import into another module without executing the main method
+if(__name__ == '__main__'):
+    command_line_run(sys.argv[1:])

@@ -1,3 +1,7 @@
 # Allow extensions to see root folder
 import sys
-sys.path.insert(0, '..')
+
+try:
+    import pyresttest
+except ImportError:
+    sys.path.insert(0, '..')
