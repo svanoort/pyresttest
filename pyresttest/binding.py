@@ -5,6 +5,8 @@ import types
 Basic context implementation for binding variables to values
 """
 
+logger = logging.getLogger('pyresttest.binding')
+
 class Context(object):
     """ Manages binding of variables & generators, with both variable name and generator name being strings """
 
