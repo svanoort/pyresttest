@@ -135,6 +135,29 @@ class Test(object):
         return val
     url = property(get_url, set_url, None, 'URL fragment for request')
 
+    NAME_HEADERS = 'headers'
+    # Totally different from others
+    def set_headers(self, value, isTemplate=False):
+        """ Set headers, passing flag if using a template """
+        if isTemplate:
+            self.set_template(self.NAME_HEADERS, value)
+        else:
+            self.del_template(self.NAME_HEADERS)
+        self._headers = value
+
+    def get_headers(self, context=None):
+        """ Get headers, applying template if pertinent """
+        if not context or not self.templates or self.NAME_HEADERS not in self.templates:
+            return self._headers
+
+        # We need to apply templating to both keys and values
+        vals = context.get_values()
+        def template_tuple(tuple_input):
+            return (string.Template(str(tuple_item)).safe_substitute(vals) for tuple_item in tuple_input)
+        return dict(map(template_tuple, self._headers.items()))
+
+    headers = property(get_headers, set_headers, None, 'Headers dictionary for request')
+
 
     def update_context_before(self, context):
         """ Make pre-test context updates, by applying variable and generator updates """
