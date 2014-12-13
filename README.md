@@ -10,6 +10,37 @@ pyresttest
 # License
 Apache License, Version 2.0
 
+# Sample Test
+**This will check that APIs accept operations, and will smoketest an application**
+```yaml
+---
+- config:
+    - testset: "Basic tests"
+
+- test: # create entity
+    - name: "Basic get"
+    - url: "/api/person/"
+- test: # create entity
+    - name: "Get single person"
+    - url: "/api/person/1/"
+- test: # create entity
+    - name: "Delete a single person, verify that works"
+    - url: "/api/person/1/"
+    - method: 'DELETE'
+- test: # create entity by PUT
+    - name: "Create/update person"
+    - url: "/api/person/1/"
+    - method: "PUT"
+    - body: '{"first_name": "Gaius","id": 1,"last_name": "Baltar","login": "gbaltar"}'
+    - headers: {'Content-Type': 'application/json'}
+- test: # create entity by POST
+    - name: "Create person"
+    - url: "/api/person/"
+    - method: "POST"
+    - body: '{"first_name": "Willim","last_name": "Adama","login": "theadmiral"}'
+    - headers: {Content-Type: application/json}
+  ```
+
 # How Do I Get It?
 The best way to install PyRestTest is via Python's pip packaging tool.
 
