@@ -53,6 +53,9 @@ LOGGING_LEVELS = {'debug': logging.DEBUG,
     'error': logging.ERROR,
     'critical': logging.CRITICAL}
 
+logging.basicConfig(format='%(levelname)s:%(message)s')
+logger = logging.getLogger('pyresttest')
+
 class cd:
     """Context manager for changing the current working directory"""
     # http://stackoverflow.com/questions/431684/how-do-i-cd-in-python/13197763#13197763
@@ -176,7 +179,7 @@ def parse_testsets(base_url, test_structure, test_files = set(), working_directo
                 if key == u'import':
                     importfile = node[key] #import another file
                     if importfile not in test_files:
-                        logging.debug("Importing test sets: " + importfile)
+                        logger.debug("Importing test sets: " + importfile)
                         test_files.add(importfile)
                         import_test_structure = read_test_file(importfile)
                         with cd(os.path.dirname(os.path.realpath(importfile))):
@@ -283,7 +286,7 @@ def run_test(mytest, test_config = TestConfig(), context = None):
     response_code = curl.getinfo(pycurl.RESPONSE_CODE)
     result.response_code = response_code
 
-    logging.debug("Initial Test Result, based on expected response code: "+str(response_code in mytest.expected_status))
+    logger.debug("Initial Test Result, based on expected response code: "+str(response_code in mytest.expected_status))
 
     if response_code in mytest.expected_status:
         result.passed = True
@@ -305,7 +308,7 @@ def run_test(mytest, test_config = TestConfig(), context = None):
     if result.passed is True:
         body = result.body
         if mytest.validators is not None and isinstance(mytest.validators, list):
-            logging.debug("executing this many validators: " + str(len(mytest.validators)))
+            logger.debug("executing this many validators: " + str(len(mytest.validators)))
             failures = result.failures
             for validator in mytest.validators:
                 # TODO add header parsing
@@ -316,12 +319,12 @@ def run_test(mytest, test_config = TestConfig(), context = None):
                     failures.append(validate_result)
                 # TODO add printing of validation for interactive mode
         else:
-            logging.debug("no validators found")
+            logger.debug("no validators found")
 
         # Only do context updates if test was successful
         mytest.update_context_after(result.body, my_context)
 
-    logging.debug(result)
+    logger.debug(result)
 
     curl.close()
     return result
@@ -363,7 +366,7 @@ def run_benchmark(benchmark, test_config = TestConfig(), context = None):
     curl = pycurl.Curl()
 
     #Benchmark warm-up to allow for caching, JIT compiling, on client
-    logging.info('Warmup: ' + message + ' started')
+    logger.info('Warmup: ' + message + ' started')
     for x in xrange(0, warmup_runs):
         benchmark.update_context_before(my_context)
         templated = benchmark.realize(my_context)
@@ -371,9 +374,9 @@ def run_benchmark(benchmark, test_config = TestConfig(), context = None):
         curl.setopt(pycurl.WRITEFUNCTION, lambda x: None) #Do not store actual response body at all.
         curl.perform()
 
-    logging.info('Warmup: ' + message + ' finished')
+    logger.info('Warmup: ' + message + ' finished')
 
-    logging.info('Benchmark: ' + message + ' starting')
+    logger.info('Benchmark: ' + message + ' starting')
 
     for x in xrange(0, benchmark_runs):  # Run the actual benchmarks
         # Setup benchmark
@@ -396,7 +399,7 @@ def run_benchmark(benchmark, test_config = TestConfig(), context = None):
 
 
     curl.close()
-    logging.info('Benchmark: ' + message + ' ending')
+    logger.info('Benchmark: ' + message + ' ending')
 
     temp_results = dict()
     for i in xrange(0, len(metricnames)):
@@ -488,9 +491,9 @@ OUTPUT_METHODS = {u'csv' : write_benchmark_csv, u'json': write_benchmark_json}
 
 def log_failure(failure, context=None, test_config=TestConfig()):
     """ Log a failure from a test """
-    logging.error("Test Failure, failure type: {0}, Reason: {1}".format(failure.failure_type, failure.message))
+    logger.error("Test Failure, failure type: {0}, Reason: {1}".format(failure.failure_type, failure.message))
     if failure.details:
-        logging.error("Validator/Error details:"+str(failure.details))
+        logger.error("Validator/Error details:"+str(failure.details))
 
 def run_testsets(testsets):
     """ Execute a set of tests, using given TestSet list input """
@@ -531,7 +534,7 @@ def run_testsets(testsets):
 
             if not result.passed: #Print failure, increase failure counts for that test group
                 # Use result test URL to allow for templating
-                logging.error('Test Failed: '+test.name+" URL="+result.test.url+" Group="+test.group+" HTTP Status Code: "+str(result.response_code))
+                logger.error('Test Failed: '+test.name+" URL="+result.test.url+" Group="+test.group+" HTTP Status Code: "+str(result.response_code))
 
                 # Print test failure reasons
                 if result.failures:
@@ -544,7 +547,7 @@ def run_testsets(testsets):
                 group_failure_counts[test.group] = failures
 
             else: #Test passed, print results
-                logging.info('Test Succeeded: '+test.name+" URL="+test.url+" Group="+test.group)
+                logger.info('Test Succeeded: '+test.name+" URL="+test.url+" Group="+test.group)
 
             #Add results for this test group to the resultset
             group_results[test.group].append(result)
@@ -556,19 +559,19 @@ def run_testsets(testsets):
 
         for benchmark in mybenchmarks:  # Run benchmarks, analyze, write
             if not benchmark.metrics:
-                logging.debug('Skipping benchmark, no metrics to collect')
+                logger.debug('Skipping benchmark, no metrics to collect')
                 continue
 
-            logging.info("Benchmark Starting: "+benchmark.name+" Group: "+benchmark.group)
+            logger.info("Benchmark Starting: "+benchmark.name+" Group: "+benchmark.group)
             benchmark_result = run_benchmark(benchmark, myconfig, context=context)
             print benchmark_result
-            logging.info("Benchmark Done: "+benchmark.name+" Group: "+benchmark.group)
+            logger.info("Benchmark Done: "+benchmark.name+" Group: "+benchmark.group)
 
             if benchmark.output_file:  # Write file
-                logging.debug('Writing benchmark to file in format: '+benchmark.output_format)
+                logger.debug('Writing benchmark to file in format: '+benchmark.output_format)
                 write_method = OUTPUT_METHODS[benchmark.output_format]
                 my_file =  open(benchmark.output_file, 'w')  # Overwrites file
-                logging.debug("Benchmark writing to file: " + benchmark.output_file)
+                logger.debug("Benchmark writing to file: " + benchmark.output_file)
                 write_method(my_file, benchmark_result, benchmark, test_config = myconfig)
                 my_file.close()
 
@@ -621,7 +624,7 @@ def main(args):
     """
 
     if 'log' in args and args['log'] is not None:
-        logging.basicConfig(level=LOGGING_LEVELS.get(args['log'].lower(), logging.NOTSET))
+        logger.setLevel(LOGGING_LEVELS.get(args['log'].lower(), logging.NOTSET))
 
     if 'import_extensions' in args and args['import_extensions']:
         extensions = args['import_extensions'].split(';')

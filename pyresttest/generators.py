@@ -1,6 +1,7 @@
 import random
 import string
 import os
+import logging
 
 from parsing import flatten_dictionaries, lowercase_keys, safe_to_bool
 import parsing
@@ -13,6 +14,7 @@ Example: generators that case-swap
 
 INT32_MAX_VALUE = 2147483647  # Max of 32 bit unsigned int
 
+logger = logging.getLogger('pyresttest.generators')
 
 # Character sets to use in text generation, python string plus extras
 CHARACTER_SETS = {

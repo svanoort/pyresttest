@@ -25,6 +25,9 @@ Validators:
 
 """
 
+logger = logging.getLogger('pyresttest.validators')
+
+
 # Binary comparison tests
 COMPARATORS = {
     'count_eq': lambda x,y: safe_length(x) == y,
