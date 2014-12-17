@@ -9,12 +9,13 @@
 # 	python resttest.py http://localhost:8000 {this_file_name}
 ---
 - config:
-    - testset: "Test content/url templating & file read"
+    - testset: "Test content/url/header templating & file read"
+    - variable_binds: {'headername': 'Content-Type', 'headervalue': 'application/json'}
 - test:
     - name: "Create/update person 7, no template"
     - url: "/api/person/7/"
     - method: "PUT"
-    - headers: {'Content-Type': 'application/json'}
+    - headers: {template: {'$headername': '$headervalue'}}
     - body: '{"first_name": "Gaius","id": "7","last_name": "Romani","login": "gromani"}'
 - test:
     - name: "Basic get for simple user"
@@ -108,4 +109,3 @@
     - name: "Cleanup person 12"
     - url: "/api/person/12/"
     - method: 'DELETE'
-

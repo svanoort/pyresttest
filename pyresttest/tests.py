@@ -53,7 +53,7 @@ class Test(object):
     _url  = None
     expected_status = [200]  # expected HTTP status code or codes
     _body = None
-    headers = dict() #HTTP Headers
+    _headers = dict() #HTTP Headers
     method = u'GET'
     group = u'Default'
     name = u'Unnamed'
@@ -140,7 +140,7 @@ class Test(object):
     def set_headers(self, value, isTemplate=False):
         """ Set headers, passing flag if using a template """
         if isTemplate:
-            self.set_template(self.NAME_HEADERS, value)
+            self.set_template(self.NAME_HEADERS, 'Dict_Templated')
         else:
             self.del_template(self.NAME_HEADERS)
         self._headers = value
@@ -183,7 +183,7 @@ class Test(object):
 
     def is_dynamic(self):
         """ Returns true if this test does templating """
-        if self.templates and self.templates.keys():
+        if self.templates:
             return True
         elif isinstance(self._body, ContentHandler) and self._body.is_dynamic():
             return True
@@ -265,9 +265,10 @@ class Test(object):
         elif self.method == u'DELETE':
             curl.setopt(curl.CUSTOMREQUEST,'DELETE')
 
-
-        if self.headers: #Convert headers dictionary to list of header entries, tested and working
-            headers = [str(headername)+':'+str(headervalue) for headername, headervalue in self.headers.items()]
+        head = self.get_headers(context=context)
+        print self.templates
+        if head: #Convert headers dictionary to list of header entries, tested and working
+            headers = [str(headername)+':'+str(headervalue) for headername, headervalue in head.items()]
         else:
             headers = list()
         headers.append("Expect:")  # Fix for expecting 100-continue from server, which not all servers will send!
@@ -354,7 +355,22 @@ class Test(object):
                 # Note: os.path.expandirs removed
                 mytest.body = ContentHandler.parse_content(configvalue)
             elif configelement == 'headers': #HTTP headers to use, flattened to a single string-string dictionary
-                mytest.headers = flatten_dictionaries(configvalue)
+                mytest.headers
+                configvalue = flatten_dictionaries(configvalue)
+
+                if isinstance(configvalue, dict):
+                    templates = filter(lambda x: str(x[0]).lower() == 'template', configvalue.items())
+                else:
+                    templates = None
+
+                if templates:
+                    # Should have single entry in dictionary keys
+                    mytest.set_headers(templates[0][1], isTemplate=True)
+                elif isinstance(configvalue, dict):
+                    mytest.headers = configvalue
+                else:
+                    raise TypeError("Illegal header type: headers must be a dictionary or list of dictionary keys")
+
             elif configelement == 'expected_status': #List of accepted HTTP response codes, as integers
                 expected = list()
                 #If item is a single item, convert to integer and make a list of 1
