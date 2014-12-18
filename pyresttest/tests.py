@@ -53,7 +53,7 @@ class Test(object):
     _url  = None
     expected_status = [200]  # expected HTTP status code or codes
     _body = None
-    headers = dict() #HTTP Headers
+    _headers = dict() #HTTP Headers
     method = u'GET'
     group = u'Default'
     name = u'Unnamed'
@@ -135,6 +135,29 @@ class Test(object):
         return val
     url = property(get_url, set_url, None, 'URL fragment for request')
 
+    NAME_HEADERS = 'headers'
+    # Totally different from others
+    def set_headers(self, value, isTemplate=False):
+        """ Set headers, passing flag if using a template """
+        if isTemplate:
+            self.set_template(self.NAME_HEADERS, 'Dict_Templated')
+        else:
+            self.del_template(self.NAME_HEADERS)
+        self._headers = value
+
+    def get_headers(self, context=None):
+        """ Get headers, applying template if pertinent """
+        if not context or not self.templates or self.NAME_HEADERS not in self.templates:
+            return self._headers
+
+        # We need to apply templating to both keys and values
+        vals = context.get_values()
+        def template_tuple(tuple_input):
+            return (string.Template(str(tuple_item)).safe_substitute(vals) for tuple_item in tuple_input)
+        return dict(map(template_tuple, self._headers.items()))
+
+    headers = property(get_headers, set_headers, None, 'Headers dictionary for request')
+
 
     def update_context_before(self, context):
         """ Make pre-test context updates, by applying variable and generator updates """
@@ -160,7 +183,7 @@ class Test(object):
 
     def is_dynamic(self):
         """ Returns true if this test does templating """
-        if self.templates and self.templates.keys():
+        if self.templates:
             return True
         elif isinstance(self._body, ContentHandler) and self._body.is_dynamic():
             return True
@@ -178,6 +201,7 @@ class Test(object):
             if isinstance(self._body, ContentHandler):
                 selfcopy._body = self._body.get_content(context)
             selfcopy._url = self.get_url(context=context)
+            selfcopy._headers = self.get_headers(context=context)
             return selfcopy
 
     def realize_partial(self, context=None):
@@ -242,9 +266,9 @@ class Test(object):
         elif self.method == u'DELETE':
             curl.setopt(curl.CUSTOMREQUEST,'DELETE')
 
-
-        if self.headers: #Convert headers dictionary to list of header entries, tested and working
-            headers = [str(headername)+':'+str(headervalue) for headername, headervalue in self.headers.items()]
+        head = self.get_headers(context=context)
+        if head: #Convert headers dictionary to list of header entries, tested and working
+            headers = [str(headername)+':'+str(headervalue) for headername, headervalue in head.items()]
         else:
             headers = list()
         headers.append("Expect:")  # Fix for expecting 100-continue from server, which not all servers will send!
@@ -331,7 +355,22 @@ class Test(object):
                 # Note: os.path.expandirs removed
                 mytest.body = ContentHandler.parse_content(configvalue)
             elif configelement == 'headers': #HTTP headers to use, flattened to a single string-string dictionary
-                mytest.headers = flatten_dictionaries(configvalue)
+                mytest.headers
+                configvalue = flatten_dictionaries(configvalue)
+
+                if isinstance(configvalue, dict):
+                    templates = filter(lambda x: str(x[0]).lower() == 'template', configvalue.items())
+                else:
+                    templates = None
+
+                if templates:
+                    # Should have single entry in dictionary keys
+                    mytest.set_headers(templates[0][1], isTemplate=True)
+                elif isinstance(configvalue, dict):
+                    mytest.headers = configvalue
+                else:
+                    raise TypeError("Illegal header type: headers must be a dictionary or list of dictionary keys")
+
             elif configelement == 'expected_status': #List of accepted HTTP response codes, as integers
                 expected = list()
                 #If item is a single item, convert to integer and make a list of 1

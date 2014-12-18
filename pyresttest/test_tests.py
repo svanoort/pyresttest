@@ -49,6 +49,38 @@ class TestsTest(unittest.TestCase):
         self.assertTrue(test.expected_status == [200,204,202])
         self.assertFalse(test.is_context_modifier())
 
+    def test_parse_test_templated_headers(self):
+        """ Test parsing with templated headers """
+
+        heads = {"Accept":"Application/json", "$AuthHeader":"$AuthString"}
+        templated_heads = {"Accept":"Application/json", "apikey":"magic_passWord"}
+        context = Context()
+        context.bind_variables({'AuthHeader': 'apikey', 'AuthString':'magic_passWord'})
+
+        # If this doesn't throw errors we have silent failures
+        input_invalid = {"url": "/ping", "method": "DELETE", "NAME":"foo", "group":"bar", "body":"<xml>input</xml>","headers": 'goat'}
+        try:
+            test = Test.parse_test('', input_invalid)
+            test.fail("Expected error not thrown")
+        except TypeError:
+            pass
+
+        def assert_dict_eq(dict1, dict2):
+            """ Test dicts are equal """
+            self.assertEqual(2, len(set(dict1.items()) & set(dict2.items())))
+
+        # Before templating is used
+        input = {"url": "/ping", "method": "DELETE", "NAME":"foo", "group":"bar", "body":"<xml>input</xml>","headers": heads}
+        test = Test.parse_test('', input)
+        assert_dict_eq(heads, test.headers)
+        assert_dict_eq(heads, test.get_headers(context=context))
+
+        # After templating applied
+        input_templated = {"url": "/ping", "method": "DELETE", "NAME":"foo", "group":"bar", "body":"<xml>input</xml>","headers": {'tEmplate': heads}}
+        test2 = Test.parse_test('', input_templated)
+        assert_dict_eq(heads, test2.get_headers())
+        assert_dict_eq(templated_heads, test2.get_headers(context=context))
+
     def test_parse_test_validators(self):
         """ Test that for a test it can parse the validators section correctly """
         input = {"url": '/test', 'validators' : [
@@ -207,6 +239,32 @@ class TestsTest(unittest.TestCase):
         templated = test.realize(context=context)
         self.assertEqual(string.Template(handler.content).safe_substitute(context.get_values()),
             templated.body)
+
+    def test_header_templating(self):
+        test = Test()
+        head_templated = {'$key': "$val"}
+        context = Context()
+        context.bind_variables({'key': 'cheese', 'val':'gouda'})
+
+        # No templating applied
+        test.headers = head_templated
+        head = test.get_headers()
+        self.assertEqual(1, len(head))
+        self.assertEqual('$val', head['$key'])
+
+        test.set_headers(head_templated, isTemplate=True)
+        self.assertTrue(test.templates)
+        self.assertTrue(test.NAME_HEADERS in test.templates)
+
+        # No context, no templating
+        head = test.headers
+        self.assertEqual(1, len(head))
+        self.assertEqual('$val', head['$key'])
+
+        # Templated with context
+        head = test.get_headers(context=context)
+        self.assertEqual(1, len(head))
+        self.assertEqual('gouda', head['cheese'])
 
     def test_update_context_variables(self):
         test = Test()
