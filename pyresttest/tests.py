@@ -201,6 +201,7 @@ class Test(object):
             if isinstance(self._body, ContentHandler):
                 selfcopy._body = self._body.get_content(context)
             selfcopy._url = self.get_url(context=context)
+            selfcopy._headers = self.get_headers(context=context)
             return selfcopy
 
     def realize_partial(self, context=None):
@@ -266,7 +267,6 @@ class Test(object):
             curl.setopt(curl.CUSTOMREQUEST,'DELETE')
 
         head = self.get_headers(context=context)
-        print self.templates
         if head: #Convert headers dictionary to list of header entries, tested and working
             headers = [str(headername)+':'+str(headervalue) for headername, headervalue in head.items()]
         else:

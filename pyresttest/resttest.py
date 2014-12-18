@@ -299,7 +299,7 @@ def run_test(mytest, test_config = TestConfig(), context = None):
     if test_config.print_bodies or not result.passed:
         if test_config.interactive:
             print "RESPONSE:"
-        print result.body
+        print result.body.decode("string-escape")
 
     # execute validator on body
     if result.passed is True:
