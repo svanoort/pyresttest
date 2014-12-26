@@ -50,8 +50,8 @@ COMPARATORS = {
 
 # Unury comparison tests
 VALIDATOR_TESTS = {
-    'exists': lambda x: bool(x),
-    'not_exists' : lambda x: not bool(x)
+    'exists': lambda x: x is not None,
+    'not_exists' : lambda x: x is None
 }
 
 # Validators and Extractors are registered once their parse functions exist

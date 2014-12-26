@@ -280,12 +280,6 @@ def run_test(mytest, test_config = TestConfig(), context = None):
 
     #print str(test_config.print_bodies) + ',' + str(not result.passed) + ' , ' + str(test_config.print_bodies or not result.passed)
 
-    #Print response body if override is set to print all *OR* if test failed (to capture maybe a stack trace)
-    if test_config.print_bodies or not result.passed:
-        if test_config.interactive:
-            print "RESPONSE:"
-        print result.body.decode("string-escape")
-
     # execute validator on body
     if result.passed is True:
         body = result.body
@@ -307,6 +301,13 @@ def run_test(mytest, test_config = TestConfig(), context = None):
         # Only do context updates if test was successful
         mytest.update_context_after(result.body, my_context)
 
+    #Print response body if override is set to print all *OR* if test failed (to capture maybe a stack trace)
+    if test_config.print_bodies or not result.passed:
+        if test_config.interactive:
+            print "RESPONSE:"
+        print result.body.decode("string-escape")
+
+    # TODO add string escape on body output
     logger.debug(result)
 
     curl.close()

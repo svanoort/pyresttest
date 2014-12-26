@@ -11,6 +11,7 @@ from django.core.management import call_command
 
 from tests import Test
 import resttest
+import validators
 
 #Django testing settings, initial configuration
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "testapp.settings")
@@ -44,6 +45,44 @@ class RestTestCase(unittest.TestCase):
         test_response = resttest.run_test(test)
         self.assertTrue(test_response.passed)
         self.assertEqual(200, test_response.response_code)
+
+    def test_get_validators(self):
+        """ Test that validators work correctly """
+        test = Test()
+        test.url = self.prefix + '/api/person/'
+        
+        # Validators need library calls to configure them
+        test.validators = list()
+        cfg_exists = {'jsonpath_mini': "objects.0", 'test':'exists'}
+        test.validators.append(validators.parse_validator('extract_test', cfg_exists))
+        cfg_exists_0 = {'jsonpath_mini': "meta.offset", 'test':'exists'}
+        test.validators.append(validators.parse_validator('extract_test', cfg_exists_0))
+        cfg_not_exists = {'jsonpath_mini': "objects.100", 'test':'not_exists'}
+        test.validators.append(validators.parse_validator('extract_test', cfg_not_exists))
+        cfg_compare_login = {'jsonpath_mini': 'objects.0.login', 'expected': 'gbaltar'}
+        test.validators.append(validators.parse_validator('compare', cfg_compare_login))
+        cfg_compare_id = {'jsonpath_mini': 'objects.1.id', 'comparator':'gt', 'expected': -1}
+        test.validators.append(validators.parse_validator('compare', cfg_compare_id))
+
+        test_response = resttest.run_test(test)
+        for failure in test_response.failures:
+            print "REAL FAILURE"
+            print "Test Failure, failure type: {0}, Reason: {1}".format(failure.failure_type, failure.message)
+            if failure.details:
+                print "Validator/Error details: "+str(failure.details)
+        self.assertFalse(test_response.failures)
+        self.assertTrue(test_response.passed)
+
+    @unittest.skip("Needs work to figure out what is up here.")
+    def test_get_validators_fail(self):
+        """ Test validators that should fail """
+        test = Test()
+        test.url = self.prefix + '/api/person/'
+        test.validators = list()
+        cfg_exists = {'jsonpath_mini': "objects.500", 'test':'exists'}
+        test_response = resttest.run_test(test)
+        self.assertFalse(test_response.passed)
+        self.assertTrue(test_response.failures)
 
     def test_detailed_get(self):
         test = Test()

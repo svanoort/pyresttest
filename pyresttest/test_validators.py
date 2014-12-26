@@ -6,6 +6,22 @@ from binding import Context
 class ValidatorsTest(unittest.TestCase):
     """ Testing for validators and extract functions """
 
+    def test_validatortest_exists(self):
+        func = validators.VALIDATOR_TESTS['exists']
+        self.assertTrue(func('blah'))
+        self.assertTrue(func(0))
+        self.assertTrue(func('False'))
+        self.assertTrue(func(False))
+        self.assertFalse(func(None))
+
+    def test_validatortest_not_exists(self):
+        func = validators.VALIDATOR_TESTS['not_exists']
+        self.assertFalse(func('blah'))
+        self.assertFalse(func(0))
+        self.assertFalse(func('False'))
+        self.assertTrue(func(None))
+
+
     def test_dict_query(self):
         """ Test actual query logic """
         mydict = {'key': {'val': 3}}
@@ -44,6 +60,12 @@ class ValidatorsTest(unittest.TestCase):
         mydict = {'key': {'val': array}}
         val = validators.MiniJsonExtractor.query_dictionary(query, mydict)
         self.assertEqual(None, val)
+
+        # Mix array array and dictionary
+        mydict = [{'key': 'val'}]
+        query = '0.key'
+        val = validators.MiniJsonExtractor.query_dictionary(query, mydict)
+        self.assertEqual('val', val)
 
     def test_parse_extractor_minijson(self):
         config = 'key.val'
