@@ -73,13 +73,13 @@ class RestTestCase(unittest.TestCase):
         self.assertFalse(test_response.failures)
         self.assertTrue(test_response.passed)
 
-    @unittest.skip("Needs work to figure out what is up here.")
     def test_get_validators_fail(self):
         """ Test validators that should fail """
         test = Test()
         test.url = self.prefix + '/api/person/'
         test.validators = list()
         cfg_exists = {'jsonpath_mini': "objects.500", 'test':'exists'}
+        test.validators.append(validators.parse_validator('extract_test', cfg_exists))
         test_response = resttest.run_test(test)
         self.assertFalse(test_response.passed)
         self.assertTrue(test_response.failures)
