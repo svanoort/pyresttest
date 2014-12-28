@@ -80,9 +80,14 @@ class RestTestCase(unittest.TestCase):
         test.validators = list()
         cfg_exists = {'jsonpath_mini': "objects.500", 'test':'exists'}
         test.validators.append(validators.parse_validator('extract_test', cfg_exists))
+        cfg_not_exists = {'jsonpath_mini': "objects.1", 'test':'not_exists'}
+        test.validators.append(validators.parse_validator('extract_test', cfg_not_exists))
+        cfg_compare = {'jsonpath_mini': "objects.1.last_name", 'expected':'NotJenkins'}
+        test.validators.append(validators.parse_validator('compare', cfg_compare))
         test_response = resttest.run_test(test)
         self.assertFalse(test_response.passed)
         self.assertTrue(test_response.failures)
+        self.assertEqual(3, len(test_response.failures))
 
     def test_detailed_get(self):
         test = Test()

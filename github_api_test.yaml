@@ -17,7 +17,7 @@
      - extract_test: {jsonpath_mini: "does_not_exist",  test: "not_exists"}
 - test:
   - name: "Test with validations that will fail"
-  - url: "/search/users?q=someonethatdoesnotexist"
+  - url: "/search/users?q=svanoort"
   - group: "Failure"
   - validators:
      - compare: {jsonpath_mini: "total_count", comparator: "eq", expected: 0}
