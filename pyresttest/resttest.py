@@ -10,6 +10,11 @@ import csv
 import logging
 from optparse import OptionParser
 
+try:
+    from cStringIO import StringIO
+except:
+    from StringIO import StringIO
+
 # Pyresttest internals
 from binding import Context
 import generators
@@ -103,9 +108,11 @@ class TestResponse:
     """ Encapsulates everything about a test response """
     test = None #Test run
     response_code = None
-    body = bytearray() #Response body, if tracked
+    
+    body = None #Response body, if tracked
+    
     passed = False
-    response_headers = bytearray()
+    response_headers = None
     failures = None
 
     def __init__(self):
@@ -114,16 +121,9 @@ class TestResponse:
     def __str__(self):
         return json.dumps(self, default=safe_to_json)
 
-    def body_callback(self, buf):
-        """ Write response body by pyCurl callback """
-        self.body.extend(buf)
-
     def unicode_body(self):
         return unicode(self.body.decode('UTF-8'))
 
-    def header_callback(self,buf):
-        """ Write headers by pyCurl callback """
-        self.response_headers.extend(buf) #Optional TODO use chunk or byte-array storage
 
 def read_test_file(path):
     """ Read test file at 'path' in YAML """
@@ -237,9 +237,11 @@ def run_test(mytest, test_config = TestConfig(), context = None):
     result.test = templated_test
 
     # reset the body, it holds values from previous runs otherwise
-    result.body = bytearray()
-    curl.setopt(pycurl.WRITEFUNCTION, result.body_callback)
-    curl.setopt(pycurl.HEADERFUNCTION, result.header_callback) #Gets headers
+    headers = StringIO()
+    body = StringIO()
+    curl.setopt(pycurl.WRITEDATA, body)
+    curl.setopt(pycurl.HEADERFUNCTION, headers.write)
+
     result.passed = None
 
     if test_config.interactive:
@@ -262,8 +264,11 @@ def run_test(mytest, test_config = TestConfig(), context = None):
         curl.close()
         return result
 
-
-    result.body = str(result.body)
+    # Retrieve values
+    result.body = body.getvalue()
+    body.close()
+    result.response_headers = headers.getvalue()
+    headers.close()
 
     response_code = curl.getinfo(pycurl.RESPONSE_CODE)
     result.response_code = response_code

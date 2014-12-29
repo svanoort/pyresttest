@@ -2,11 +2,16 @@ import string
 import os
 import copy
 import json
-import StringIO
 import pycurl
 from contenthandling import ContentHandler
 import validators
 from parsing import *
+
+# Find the best implementation available on this platform
+try:
+    from cStringIO import StringIO
+except:
+    from StringIO import StringIO
 
 """
 Pull out the Test objects and logic associated with them
@@ -253,7 +258,7 @@ class Test(object):
 
         # Set read function for post/put bodies
         if self.method == u'POST' or self.method == u'PUT':
-            curl.setopt(curl.READFUNCTION, StringIO.StringIO(bod).read)
+            curl.setopt(curl.READFUNCTION, StringIO(bod).read)
 
         if self.method == u'POST':
             curl.setopt(HTTP_METHODS[u'POST'], 1)
