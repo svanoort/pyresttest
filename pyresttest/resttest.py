@@ -9,6 +9,7 @@ import json
 import csv
 import logging
 from optparse import OptionParser
+from mimetools import Message  # For headers handling
 
 try:
     from cStringIO import StringIO
@@ -130,6 +131,13 @@ def read_test_file(path):
     #TODO allow use of safe_load_all to handle multiple test sets in a given doc
     teststruct = yaml.safe_load(os.path.expandvars(read_file(path)))
     return teststruct
+
+def parse_headers(header_string):
+    """ Parse a header-string into individual headers """
+    # First line is request line, strip it out
+    just_headers = header_string.split('\r\n', 1)[1]
+    header_msg = Message(StringIO(just_headers))
+    return dict(header_msg.items())
 
 def parse_testsets(base_url, test_structure, test_files = set(), working_directory = None):
     """ Convert a Python datastructure read from validated YAML to a set of structured testsets
