@@ -361,6 +361,13 @@ There are 5 top level test syntax elements:
 - *config* or *configuration*: overall test configuration
 - *import*: import another test set file so you Don't Repeat Yourself
 
+## Import example
+```yaml
+---
+# Will load the test sets from miniapp-test.yaml and run them
+- import: miniapp-test.yaml
+```
+
 
 ## Syntax Limitations
 Whenever possible, I've tried to make reading configuration Be Smart And Do The Right Thing.  That means type conversions are handled wherever possible,
