@@ -368,6 +368,16 @@ There are 5 top level test syntax elements:
 - import: miniapp-test.yaml
 ```
 
+## Url Test
+A simple URL test is equivalent to a basic GET test with that URL
+```yaml
+---
+- config:
+    - testset: "Basic tests"
+- url: "/api/person/"  # This is a simple test
+- test: 
+    - url: "/api/person/"  # This does the same thing
+```
 
 ## Syntax Limitations
 Whenever possible, I've tried to make reading configuration Be Smart And Do The Right Thing.  That means type conversions are handled wherever possible,
