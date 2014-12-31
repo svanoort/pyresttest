@@ -89,6 +89,30 @@ class ValidatorsTest(unittest.TestCase):
         extract = validators.MiniJsonExtractor.parse(config)
         self.assertEqual(3, extract.extract(myjson, context=context))
 
+    def test_header_extractor(self):
+        query = 'content-type'
+        extractor = validators.HeaderExtractor.parse(query)
+        headers = {'content-type': 'application/json'}
+        extracted = extractor.extract(body='blahblah', headers=headers)
+        self.assertEqual(headers[query], extracted)
+
+        # Test case-insensitivity
+        query = 'content-Type'
+        extractor = validators.HeaderExtractor.parse(query)
+        extracted = extractor.extract(body='blahblah', headers=headers)
+        self.assertEqual(headers[query.lower()], extracted)
+
+        headers = {'foo': 'bar'}
+        extracted = extractor.extract(body='blahblah', headers=headers)
+        self.assertEqual(None, extracted)
+
+    def test_parse_header_extractor(self):
+        query = 'content-type'
+        extractor = validators.parse_extractor('header', query)
+        self.assertTrue(isinstance(extractor, validators.HeaderExtractor))
+        self.assertTrue(extractor.is_header_extractor)
+        self.assertFalse(extractor.is_body_extractor)
+
     def test_abstract_extractor_parse(self):
         """ Test parsing a basic abstract extractor """
         ext = validators.AbstractExtractor()

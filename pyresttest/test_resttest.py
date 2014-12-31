@@ -68,5 +68,17 @@ class TestRestTest(unittest.TestCase):
         self.assertEqual('private, max-age=0', header_dict['cache-control'])
         self.assertEqual(8, len(header_dict))
 
+        # Error cases
+        # No headers
+        result = resttest.parse_headers("")  # Shouldn't throw exception
+        self.assertTrue(isinstance(result, dict))
+        self.assertEqual(0, len(result))
+
+        # Just the HTTP prefix
+        result = resttest.parse_headers('HTTP/1.1 200 OK\r\n\r\n')  # Shouldn't throw exception
+        self.assertTrue(isinstance(result, dict))
+        self.assertEqual(0, len(result))
+
+
 if __name__ == '__main__':
     unittest.main()

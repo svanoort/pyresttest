@@ -109,9 +109,9 @@ class TestResponse:
     """ Encapsulates everything about a test response """
     test = None #Test run
     response_code = None
-    
+
     body = None #Response body, if tracked
-    
+
     passed = False
     response_headers = None
     failures = None
@@ -133,11 +133,18 @@ def read_test_file(path):
     return teststruct
 
 def parse_headers(header_string):
-    """ Parse a header-string into individual headers """
+    """ Parse a header-string into individual headers
+        Implementation based on: http://stackoverflow.com/a/5955949/95122
+    """
     # First line is request line, strip it out
-    just_headers = header_string.split('\r\n', 1)[1]
-    header_msg = Message(StringIO(just_headers))
-    return dict(header_msg.items())
+    if not header_string:
+        return dict()
+    request, headers = header_string.split('\r\n', 1)
+    if not headers:
+        return dict()
+    else:
+        header_msg = Message(StringIO(headers))
+        return dict(header_msg.items())
 
 def parse_testsets(base_url, test_structure, test_files = set(), working_directory = None):
     """ Convert a Python datastructure read from validated YAML to a set of structured testsets
@@ -291,7 +298,18 @@ def run_test(mytest, test_config = TestConfig(), context = None):
         failure_message = "Invalid HTTP response code: response code {0} not in expected codes [{1}]".format(response_code, mytest.expected_status)
         result.failures.append(Failure(message=failure_message, details=None, failure_type=validators.FAILURE_INVALID_RESPONSE))
 
+    # Parse HTTP headers
+    try:
+        result.response_headers = parse_headers(result.response_headers)
+    except Exception, e:
+        result.failures.append(Failure(message="Header parsing exception: {0}".format(e), details=trace, failure_type=validators.TEST_EXCEPTION))
+        result.passed = False
+        curl.close()
+        return result
+
     #print str(test_config.print_bodies) + ',' + str(not result.passed) + ' , ' + str(test_config.print_bodies or not result.passed)
+
+    head = result.response_headers
 
     # execute validator on body
     if result.passed is True:
@@ -300,8 +318,7 @@ def run_test(mytest, test_config = TestConfig(), context = None):
             logger.debug("executing this many validators: " + str(len(mytest.validators)))
             failures = result.failures
             for validator in mytest.validators:
-                # TODO add header parsing
-                validate_result = validator.validate(body=body, context=my_context)
+                validate_result = validator.validate(body=body, headers=head, context=my_context)
                 if not validate_result:
                     result.passed = False
 				# Proxy for checking if it is a Failure object, because of import issues with isinstance there

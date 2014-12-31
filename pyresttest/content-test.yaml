@@ -12,6 +12,11 @@
     - testset: "Test content/url/header templating & file read"
     - variable_binds: {'headername': 'Content-Type', 'headervalue': 'application/json'}
 - test:
+    - name: "Get person, validate that header validator works right"
+    - url: "/api/person/1/"
+    - validators:
+        - assertTrue: {header: content-type, test: exists}
+- test:
     - name: "Create/update person 7, no template"
     - url: "/api/person/7/"
     - method: "PUT"

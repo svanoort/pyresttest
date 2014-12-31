@@ -202,7 +202,7 @@ class HeaderExtractor(AbstractExtractor):
 
     def extract_internal(self, query=None, args=None, body=None, headers=None):
         try:
-            return headers[query]
+            return headers[query.lower()]
         except Exception:
             return None
 
@@ -463,6 +463,7 @@ def register_comparator(comparator_name, comparator_function):
 
 # --- REGISTRY OF EXTRACTORS AND VALIDATORS ---
 register_extractor('jsonpath_mini', MiniJsonExtractor.parse)
+register_extractor('header', HeaderExtractor.parse)
 # ENHANCEME: add JsonPath-rw support for full JsonPath syntax
 # ENHANCEME: add elementree support for xpath extract on XML, very simple no?
 #  See: https://docs.python.org/2/library/xml.etree.elementtree.html, findall syntax
