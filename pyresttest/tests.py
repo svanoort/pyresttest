@@ -60,8 +60,9 @@ class Test(object):
     validators = None  # Validators for response body, IE regexes, etc
     stop_on_failure = False
     failures = None
-    _basic_auth_username = None
-    _basic_auth_password = None
+    auth_username = None
+    auth_password = None
+    auth_type = pycurl.HTTPAUTH_BASIC
 
     templates = None  # Dictionary of template to compiled template
 
@@ -136,26 +137,6 @@ class Test(object):
             val = self._url
         return val
     url = property(get_url, set_url, None, 'URL fragment for request')
-
-    NAME_BASIC_AUTH_USERNAME = 'basic_auth_username'
-    def set_basic_auth_username(self, value):
-        """ Set basic auth username """
-        self._basic_auth_username = value
-
-    def get_basic_auth_username(self):
-        """ Get basic auth username """
-        return self._basic_auth_username
-    basic_auth_username = property(get_basic_auth_username, set_basic_auth_username, None, 'Basic auth username for request')
-
-    NAME_BASIC_AUTH_PASSWORD = 'basic_auth_password'
-    def set_basic_auth_password(self, value):
-        """ Set basic auth password """
-        self._basic_auth_password = value
-
-    def get_basic_auth_password(self):
-        """ Get basic auth password """
-        return self._basic_auth_password
-    basic_auth_password = property(get_basic_auth_password, set_basic_auth_password, None, 'Basic auth password for request')
 
     NAME_HEADERS = 'headers'
     # Totally different from others
@@ -277,8 +258,10 @@ class Test(object):
         if self.method == u'POST' or self.method == u'PUT':
             curl.setopt(curl.READFUNCTION, StringIO.StringIO(bod).read)
 
-        if self.basic_auth_username and self.basic_auth_password:
-            curl.setopt(pycurl.USERPWD, '%s:%s' % (self.basic_auth_username, self.basic_auth_password))
+        if self.auth_username and self.auth_password:
+            curl.setopt(pycurl.USERPWD, '%s:%s' % (self.auth_username, self.auth_password))
+            if self.auth_type:
+                curl.setopt(pycurl.HTTPAUTH, self.auth_type)
 
         if self.method == u'POST':
             curl.setopt(HTTP_METHODS[u'POST'], 1)
@@ -335,12 +318,12 @@ class Test(object):
                 else:
                     assert isinstance(configvalue,str) or isinstance(configvalue,unicode) or isinstance(configvalue,int)
                     mytest.url = base_url + unicode(configvalue,'UTF-8').encode('ascii','ignore')
-            elif configelement == u'basic_auth_username':
+            elif configelement == u'auth_username':
                 assert isinstance(configvalue,str) or isinstance(configvalue,unicode)
-                mytest.basic_auth_username = unicode(configvalue,'UTF-8').encode('ascii','ignore')
-            elif configelement == u'basic_auth_password':
+                mytest.auth_username = unicode(configvalue,'UTF-8').encode('ascii','ignore')
+            elif configelement == u'auth_password':
                 assert isinstance(configvalue,str) or isinstance(configvalue,unicode)
-                mytest.basic_auth_password = unicode(configvalue,'UTF-8').encode('ascii','ignore')
+                mytest.auth_password = unicode(configvalue,'UTF-8').encode('ascii','ignore')
             elif configelement == u'method': #Http method, converted to uppercase string
                 var = unicode(configvalue,'UTF-8').upper()
                 assert var in HTTP_METHODS
