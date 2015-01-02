@@ -28,6 +28,13 @@ class TestsTest(unittest.TestCase):
         self.assertTrue(test.method == input['meThod'])
         self.assertTrue(test.expected_status == [200,201,204])
 
+        # Authentication
+        input = {"url": "/ping", "method": "GET", "auth_username" : "foo", "auth_password": "bar"}
+        test = Test.parse_test('',input)
+        self.assertTrue(test.auth_username == input['auth_username'])
+        self.assertTrue(test.auth_password == input['auth_password'])
+        self.assertTrue(test.expected_status == [200])
+
         #Test that headers propagate
         input = {"url": "/ping", "method": "GET", "headers" : [{"Accept":"application/json"},{"Accept-Encoding":"gzip"}] }
         test = Test.parse_test('',input)
