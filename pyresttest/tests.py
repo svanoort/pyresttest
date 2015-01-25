@@ -65,6 +65,9 @@ class Test(object):
     validators = None  # Validators for response body, IE regexes, etc
     stop_on_failure = False
     failures = None
+    auth_username = None
+    auth_password = None
+    auth_type = pycurl.HTTPAUTH_BASIC
 
     templates = None  # Dictionary of template to compiled template
 
@@ -260,6 +263,11 @@ class Test(object):
         if self.method == u'POST' or self.method == u'PUT':
             curl.setopt(curl.READFUNCTION, StringIO(bod).read)
 
+        if self.auth_username and self.auth_password:
+            curl.setopt(pycurl.USERPWD, '%s:%s' % (self.auth_username, self.auth_password))
+            if self.auth_type:
+                curl.setopt(pycurl.HTTPAUTH, self.auth_type)
+
         if self.method == u'POST':
             curl.setopt(HTTP_METHODS[u'POST'], 1)
             if bod is not None:
@@ -315,6 +323,12 @@ class Test(object):
                 else:
                     assert isinstance(configvalue,str) or isinstance(configvalue,unicode) or isinstance(configvalue,int)
                     mytest.url = base_url + unicode(configvalue,'UTF-8').encode('ascii','ignore')
+            elif configelement == u'auth_username':
+                assert isinstance(configvalue,str) or isinstance(configvalue,unicode)
+                mytest.auth_username = unicode(configvalue,'UTF-8').encode('ascii','ignore')
+            elif configelement == u'auth_password':
+                assert isinstance(configvalue,str) or isinstance(configvalue,unicode)
+                mytest.auth_password = unicode(configvalue,'UTF-8').encode('ascii','ignore')
             elif configelement == u'method': #Http method, converted to uppercase string
                 var = unicode(configvalue,'UTF-8').upper()
                 assert var in HTTP_METHODS
