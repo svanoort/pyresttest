@@ -349,8 +349,8 @@ Basic authentication is supported:
 - test:
     - name: "Authentication using basic auth"
     - url: "/api/person/"
-    - basic_auth_username: "foobar"
-    - basic_auth_password: "secret"
+    - auth_username: "foobar"
+    - auth_password: "secret"
     - expected_status: [200]
 ```
 
