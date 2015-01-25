@@ -183,6 +183,21 @@ jsonpath_mini: {template: $keyname.age}
 - If the context variable 'keyname' is set to 'person', this will return 17.
 - If it is set to 'thing', then it will return nothing (because the 'thing' object lacks an 'age' key)
 
+## Extractor: header
+This extracts the value of an HTTP header from the response. 
+This value can be tested with comparisons or extract tests.
+Note that **headers are case-insensitive**, 'content-type' and 'Content-Type' will be the same. 
+
+Example:
+```yaml
+header: 'content-type'
+```
+
+Example 2:
+```yaml
+compare: {header: 'content-type', expected: 'application/json'}
+```
+
 
 # Validation Basics
 Validators test response bodies for correctness.  They perform a test on the response body, with context supplied, and return a value that will evaluate to boolean True or False. 
@@ -209,7 +224,7 @@ Optionally, validators can return a Failure which evaluates to False, but suppli
 
 
 ### Extract And Compare:
-- **Name:** 'comparator' or 'compare'
+- **Name:** 'comparator' or 'compare' or 'assertEqual'
 - **Description:** run an extractor and compare results to expected value
 - **Arguments:**
     + (extractor): an extractor definition, see above, named by extractor type

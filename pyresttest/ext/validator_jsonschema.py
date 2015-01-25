@@ -20,7 +20,7 @@ class JsonSchemaValidator(validators.AbstractValidator):
     """ Json schema validator using the jsonschema library """
     schema = None
 
-    def validate(self, body=None, context=None):
+    def validate(self, body=None, headers=None, context=None):
         schema_text = self.schema.get_content(context=context)
         schema = yaml.safe_load(schema_text)
         # TODO add caching of parsed schema

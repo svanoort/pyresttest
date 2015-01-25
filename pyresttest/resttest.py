@@ -9,6 +9,12 @@ import json
 import csv
 import logging
 from optparse import OptionParser
+from mimetools import Message  # For headers handling
+
+try:
+    from cStringIO import StringIO
+except:
+    from StringIO import StringIO
 
 # Pyresttest internals
 from binding import Context
@@ -103,9 +109,11 @@ class TestResponse:
     """ Encapsulates everything about a test response """
     test = None #Test run
     response_code = None
-    body = bytearray() #Response body, if tracked
+
+    body = None #Response body, if tracked
+
     passed = False
-    response_headers = bytearray()
+    response_headers = None
     failures = None
 
     def __init__(self):
@@ -114,22 +122,29 @@ class TestResponse:
     def __str__(self):
         return json.dumps(self, default=safe_to_json)
 
-    def body_callback(self, buf):
-        """ Write response body by pyCurl callback """
-        self.body.extend(buf)
-
     def unicode_body(self):
         return unicode(self.body.decode('UTF-8'))
 
-    def header_callback(self,buf):
-        """ Write headers by pyCurl callback """
-        self.response_headers.extend(buf) #Optional TODO use chunk or byte-array storage
 
 def read_test_file(path):
     """ Read test file at 'path' in YAML """
     #TODO allow use of safe_load_all to handle multiple test sets in a given doc
     teststruct = yaml.safe_load(os.path.expandvars(read_file(path)))
     return teststruct
+
+def parse_headers(header_string):
+    """ Parse a header-string into individual headers
+        Implementation based on: http://stackoverflow.com/a/5955949/95122
+    """
+    # First line is request line, strip it out
+    if not header_string:
+        return dict()
+    request, headers = header_string.split('\r\n', 1)
+    if not headers:
+        return dict()
+    else:
+        header_msg = Message(StringIO(headers))
+        return dict(header_msg.items())
 
 def parse_testsets(base_url, test_structure, test_files = set(), working_directory = None):
     """ Convert a Python datastructure read from validated YAML to a set of structured testsets
@@ -237,9 +252,11 @@ def run_test(mytest, test_config = TestConfig(), context = None):
     result.test = templated_test
 
     # reset the body, it holds values from previous runs otherwise
-    result.body = bytearray()
-    curl.setopt(pycurl.WRITEFUNCTION, result.body_callback)
-    curl.setopt(pycurl.HEADERFUNCTION, result.header_callback) #Gets headers
+    headers = StringIO()
+    body = StringIO()
+    curl.setopt(pycurl.WRITEDATA, body)
+    curl.setopt(pycurl.HEADERFUNCTION, headers.write)
+
     result.passed = None
 
     if test_config.interactive:
@@ -262,8 +279,11 @@ def run_test(mytest, test_config = TestConfig(), context = None):
         curl.close()
         return result
 
-
-    result.body = str(result.body)
+    # Retrieve values
+    result.body = body.getvalue()
+    body.close()
+    result.response_headers = headers.getvalue()
+    headers.close()
 
     response_code = curl.getinfo(pycurl.RESPONSE_CODE)
     result.response_code = response_code
@@ -278,7 +298,18 @@ def run_test(mytest, test_config = TestConfig(), context = None):
         failure_message = "Invalid HTTP response code: response code {0} not in expected codes [{1}]".format(response_code, mytest.expected_status)
         result.failures.append(Failure(message=failure_message, details=None, failure_type=validators.FAILURE_INVALID_RESPONSE))
 
+    # Parse HTTP headers
+    try:
+        result.response_headers = parse_headers(result.response_headers)
+    except Exception, e:
+        result.failures.append(Failure(message="Header parsing exception: {0}".format(e), details=trace, failure_type=validators.TEST_EXCEPTION))
+        result.passed = False
+        curl.close()
+        return result
+
     #print str(test_config.print_bodies) + ',' + str(not result.passed) + ' , ' + str(test_config.print_bodies or not result.passed)
+
+    head = result.response_headers
 
     # execute validator on body
     if result.passed is True:
@@ -287,8 +318,7 @@ def run_test(mytest, test_config = TestConfig(), context = None):
             logger.debug("executing this many validators: " + str(len(mytest.validators)))
             failures = result.failures
             for validator in mytest.validators:
-                # TODO add header parsing
-                validate_result = validator.validate(body=body, context=my_context)
+                validate_result = validator.validate(body=body, headers=head, context=my_context)
                 if not validate_result:
                     result.passed = False
 				# Proxy for checking if it is a Failure object, because of import issues with isinstance there

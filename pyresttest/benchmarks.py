@@ -4,7 +4,10 @@ import pycurl
 from tests import Test
 import tests
 from parsing import *
-import StringIO
+try:
+    from cStringIO import StringIO
+except:
+    from StringIO import StringIO
 
 """
 Encapsulates logic related to benchmarking

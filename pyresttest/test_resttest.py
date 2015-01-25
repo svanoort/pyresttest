@@ -58,5 +58,27 @@ class TestRestTest(unittest.TestCase):
             self.assertEqual(array3[x-1], my_tuple[2])
 
 
+    def test_parse_headers(self):
+        """ Basic header parsing tests """
+        headerstring = 'HTTP/1.1 200 OK\r\nDate: Mon, 29 Dec 2014 02:42:33 GMT\r\nExpires: -1\r\nCache-Control: private, max-age=0\r\nContent-Type: text/html; charset=ISO-8859-1\r\nX-XSS-Protection: 1; mode=block\r\nX-Frame-Options: SAMEORIGIN\r\nAlternate-Protocol: 80:quic,p=0.02\r\nTransfer-Encoding: chunked\r\n\r\n'
+        header_dict = resttest.parse_headers(headerstring)
+
+        self.assertTrue(isinstance(header_dict, dict))
+        self.assertEqual('-1', header_dict['expires'])
+        self.assertEqual('private, max-age=0', header_dict['cache-control'])
+        self.assertEqual(8, len(header_dict))
+
+        # Error cases
+        # No headers
+        result = resttest.parse_headers("")  # Shouldn't throw exception
+        self.assertTrue(isinstance(result, dict))
+        self.assertEqual(0, len(result))
+
+        # Just the HTTP prefix
+        result = resttest.parse_headers('HTTP/1.1 200 OK\r\n\r\n')  # Shouldn't throw exception
+        self.assertTrue(isinstance(result, dict))
+        self.assertEqual(0, len(result))
+
+
 if __name__ == '__main__':
     unittest.main()
