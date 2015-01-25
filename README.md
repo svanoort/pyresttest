@@ -339,6 +339,21 @@ Then let's add a test the person is really there after:
 
 **And now we have a full lifecycle test of creating, fetching, and deleting a user via the API.**
 
+Basic authentication is supported:
+
+```yaml
+---
+- config:
+    - testset: "Quickstart authentication test"
+
+- test:
+    - name: "Authentication using basic auth"
+    - url: "/api/person/"
+    - basic_auth_username: "foobar"
+    - basic_auth_password: "secret"
+    - expected_status: [200]
+```
+
 **This is just a starting point,** see the [advanced guide](advanced_guide.md) for the advanced features (templating, generators, content extraction, complex validation).
 
 # Other Goodies
