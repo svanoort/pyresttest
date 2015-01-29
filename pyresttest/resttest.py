@@ -8,6 +8,7 @@ import pycurl
 import json
 import csv
 import logging
+import time
 from optparse import OptionParser
 from mimetools import Message  # For headers handling
 
@@ -269,15 +270,27 @@ def run_test(mytest, test_config = TestConfig(), context = None):
             print "\n%s" % mytest.body
         raw_input("Press ENTER when ready: ")
 
-    try:
-        curl.perform() #Run the actual call
-    except Exception, e:
-        # Curl exception occurred (network error), do not pass go, do not collect $200
-        trace = traceback.format_exc()
-        result.failures.append(Failure(message="Curl Exception: {0}".format(e), details=trace, failure_type=validators.FAILURE_CURL_EXCEPTION))
-        result.passed = False
-        curl.close()
-        return result
+    retries = test_config.retries
+    retry_sleep = 1.0
+    while True:
+        try:
+            curl.perform() #Run the actual call
+        except Exception, e:
+            # Curl exception occurred (network error), do not pass go, do not collect $200
+            trace = traceback.format_exc()
+            result.failures.append(Failure(message="Curl Exception: {0}".format(e), details=trace, failure_type=validators.FAILURE_CURL_EXCEPTION))
+            result.passed = False
+            curl.close()
+            return result
+
+        response_code = curl.getinfo(pycurl.RESPONSE_CODE)
+        if (response_code == 503 and retries > 0):
+            logger.debug("Retry sleeping " + str(retry_sleep) + " seconds after HTTP 503")
+            time.sleep(retry_sleep)
+            retry_sleep = retry_sleep * 2.0
+            retries = retries - 1
+        else:
+            break
 
     # Retrieve values
     result.body = body.getvalue()
@@ -285,7 +298,6 @@ def run_test(mytest, test_config = TestConfig(), context = None):
     result.response_headers = headers.getvalue()
     headers.close()
 
-    response_code = curl.getinfo(pycurl.RESPONSE_CODE)
     result.response_code = response_code
 
     logger.debug("Initial Test Result, based on expected response code: "+str(response_code in mytest.expected_status))
@@ -680,6 +692,10 @@ def main(args):
         if 'interactive' in args and args['interactive'] is not None:
             t.config.interactive = safe_to_bool(args['interactive'])
 
+        if 'retries' in args and args['retries'] is not None:
+            t.config.retries = args['retries']
+            logger.debug("Enable retries " + str(t.config.retries))
+
     # Execute all testsets
     failures = run_testsets(tests)
 
@@ -694,6 +710,7 @@ def command_line_run(args_in):
     parser.add_option(u"--url", help="Base URL to run tests against", action="store", type="string")
     parser.add_option(u"--test", help="Test file to use", action="store", type="string")
     parser.add_option(u'--import_extensions', help='Extensions to import, separated by semicolons', action="store", type="string")
+    parser.add_option(u'--retries', help='Retry request NUM times if transient problems occur', action="store", type="int")
 
     (args, unparsed_args) = parser.parse_args(args_in)
     args = vars(args)
