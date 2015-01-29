@@ -270,6 +270,10 @@ def run_test(mytest, test_config = TestConfig(), context = None):
             print "\n%s" % mytest.body
         raw_input("Press ENTER when ready: ")
 
+    if (mytest.delay > 0.0):
+        logger.debug("Delay sleeping " + str(mytest.delay) + " before HTTP request")
+        time.sleep(mytest.delay)
+
     retries = test_config.retries
     retry_sleep = 1.0
     while True:

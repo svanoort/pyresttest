@@ -62,6 +62,7 @@ class Test(object):
     method = u'GET'
     group = u'Default'
     name = u'Unnamed'
+    delay = 0.0        # By default no delay before doing the request
     validators = None  # Validators for response body, IE regexes, etc
     stop_on_failure = False
     failures = None
@@ -339,6 +340,8 @@ class Test(object):
             elif configelement == u'name': #Test name
                 assert isinstance(configvalue,str) or isinstance(configvalue,unicode) or isinstance(configvalue,int)
                 mytest.name = unicode(configvalue,'UTF-8')
+            elif configelement == u'delay': #Test delay
+                mytest.delay = float(configvalue)
             elif configelement == u'extract_binds':
                 # Add a list of extractors, of format:
                 # {variable_name: {extractor_type: extractor_config}, ... }
