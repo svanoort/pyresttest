@@ -45,6 +45,7 @@ COMPARATORS = {
     'gt': operator.gt,
     'greater_than': operator.gt,
     'contains': lambda x,y: x and y and operator.contains(x,y), # is y in x
+    'not_contains': lambda x,y: x and y and not operator.contains(x,y), # not (is y in x)
     'contained_by': lambda x,y: x and y and operator.contains(y,x), # is x in y
 }
 
