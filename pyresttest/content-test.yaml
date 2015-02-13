@@ -30,6 +30,13 @@
     - url: "/api/person/7/"
     - method: 'DELETE'
 
+# Test a PUT with an empty body
+- test:
+    - name: "Get single person"
+    - url: "/api/person/9999/"
+    - method: 'PUT'
+    - expected_status: [400, 404, 500]
+
 - test: # Inline body, template URL and body
     - name: "Create/update person 8 with templating"
     - variable_binds: {id: 8, login: traitor}

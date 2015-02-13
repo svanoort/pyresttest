@@ -261,7 +261,10 @@ class Test(object):
 
         # Set read function for post/put bodies
         if self.method == u'POST' or self.method == u'PUT':
-            curl.setopt(curl.READFUNCTION, StringIO(bod).read)
+            if bod and len(bod) > 0:
+                curl.setopt(curl.READFUNCTION, StringIO(bod).read)
+            #else:
+            #    curl.setopt(curl.READFUNCTION, lambda x: None)
 
         if self.auth_username and self.auth_password:
             curl.setopt(pycurl.USERPWD, '%s:%s' % (self.auth_username, self.auth_password))
@@ -270,12 +273,18 @@ class Test(object):
 
         if self.method == u'POST':
             curl.setopt(HTTP_METHODS[u'POST'], 1)
+            # Required for some servers
             if bod is not None:
-                curl.setopt(pycurl.POSTFIELDSIZE, len(bod))  # Required for some servers
+                curl.setopt(pycurl.POSTFIELDSIZE, len(bod))
+            else:
+                curl.setopt(pycurl.POSTFIELDSIZE, 0)
         elif self.method == u'PUT':
             curl.setopt(HTTP_METHODS[u'PUT'], 1)
+            # Required for some servers
             if bod is not None:
-                curl.setopt(pycurl.INFILESIZE, len(bod))  # Required for some servers
+                curl.setopt(pycurl.INFILESIZE, len(bod))
+            else:
+                curl.setopt(pycurl.INFILESIZE, 0)
         elif self.method == u'DELETE':
             curl.setopt(curl.CUSTOMREQUEST,'DELETE')
 
