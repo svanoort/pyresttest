@@ -6,6 +6,9 @@ Specifically **generators**, **variable binding,** **data extraction,** and **co
 
 For how to write custom Python extensions, see the [extensions guide](extensions.md).
 
+# How does it all fit together?
+![Test execution and context flow diagram](site/test-contexts.svg)
+
 # Templating and Context Basics
 - Tests and benchmarks may use variables to template out configuration dynamically.
 - Templating is performed using basic [Python string templating](https://docs.python.org/2/library/string.html#template-strings).  
