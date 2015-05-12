@@ -7,7 +7,7 @@ Specifically **generators**, **variable binding,** **data extraction,** and **co
 For how to write custom Python extensions, see the [extensions guide](extensions.md).
 
 # How does it all fit together?
-![Test execution and context flow diagram](https://raw.githubusercontent.com/svanoort/pyresttest/master/site/test-contexts.svg)
+![Test execution and context flow diagram](site/contexts-test-flow.png)
 
 # Templating and Context Basics
 - Tests and benchmarks may use variables to template out configuration dynamically.
