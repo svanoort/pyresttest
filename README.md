@@ -88,11 +88,38 @@ Same as the other test but running in interactive mode.
 ```python
 resttest.py https://api.github.com github_api_test.yaml --interactive true --print-bodies true
 ```
+## Adding delay to tests
+If the service your test requires some delay between requests you can add to the test definition a delay-parameter line which specifies the delay in seconds before running the HTTP-request.
+```yaml
+---
+- config:
+    - testset: "Test with delay"
+
+- test:
+    - name: "Ping a service with http"
+    - delay: 1.0
+    - url: /pingurl
+
+- test:
+    - name: "Ping a service with http"
+    - delay: 10.0
+    - url: /pingurl
+```
 
 ## Verbose Output
 
 ```shell
 resttest.py https://api.github.com github_api_test.yaml --log debug
+```
+
+## Retries
+
+If you test a service which may return HTTP/1.1 503 error codes indicating that the client should retry the request after some time you can add configuration option retries with the number of retries the test should try the request.
+
+The tester will use exponential (by 2) delays between tries.
+
+```shell
+resttest.py https://mytestservice.domain mytest.yaml --retries 5
 ```
 
 # Getting Started: Quickstart Requirements

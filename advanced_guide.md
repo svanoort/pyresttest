@@ -263,6 +263,7 @@ Optionally, validators can return a Failure which evaluates to False, but suppli
 | 'ge', 'greater_than_or_equal'                | Greater Than Or Equal To                  | A >= B                                                                 |
 | 'gt', 'greater_than'                         | Greater Than                              | A > B                                                                  |
 | 'contains'                                   | Contains                                  | B in A                                                                 |
+| 'not_contains'                               | Does not Contains                         | not B in A                                                             |
 | 'contained_by'                               | Contained By                              | A in B                                                                 |
 
 
