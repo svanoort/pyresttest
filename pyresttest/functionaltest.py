@@ -50,7 +50,7 @@ class RestTestCase(unittest.TestCase):
         """ Test that validators work correctly """
         test = Test()
         test.url = self.prefix + '/api/person/'
-        
+
         # Validators need library calls to configure them
         test.validators = list()
         cfg_exists = {'jsonpath_mini': "objects.0", 'test':'exists'}

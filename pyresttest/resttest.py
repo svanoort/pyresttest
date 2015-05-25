@@ -146,7 +146,7 @@ def parse_headers(header_string):
         header_msg = Message(StringIO(headers))
         return dict(header_msg.items())
 
-def parse_testsets(base_url, test_structure, test_files = set(), working_directory = None):
+def parse_testsets(base_url, test_structure, test_files = set(), working_directory = None, vars=None):
     """ Convert a Python datastructure read from validated YAML to a set of structured testsets
     The data stucture is assumed to be a list of dictionaries, each of which describes:
         - a tests (test structure)
@@ -167,6 +167,9 @@ def parse_testsets(base_url, test_structure, test_files = set(), working_directo
 
     if working_directory is None:
         working_directory = os.path.abspath(os.getcwd())
+
+    if vars and isinstance(vars,dict):
+        test_config.variable_binds = vars
 
     #returns a testconfig and collection of tests
     for node in test_structure: #Iterate through lists of test and configuration elements
@@ -197,7 +200,7 @@ def parse_testsets(base_url, test_structure, test_files = set(), working_directo
                     benchmark = parse_benchmark(base_url, node[key])
                     benchmarks.append(benchmark)
                 elif key == u'config' or key == u'configuration':
-                    test_config = parse_configuration(node[key])
+                    test_config = parse_configuration(node[key], base_config=test_config)
     testset = TestSet()
     testset.tests = tests_out
     testset.config = test_config
@@ -205,9 +208,11 @@ def parse_testsets(base_url, test_structure, test_files = set(), working_directo
     testsets.append(testset)
     return testsets
 
-def parse_configuration(node):
+def parse_configuration(node, base_config=None):
     """ Parse input config to configuration information """
-    test_config = TestConfig()
+    test_config = base_config
+    if not test_config:
+        test_config = TestConfig()
 
     node = lowercase_keys(flatten_dictionaries(node))  # Make it usable
 
@@ -219,7 +224,9 @@ def parse_configuration(node):
         elif key == u'retries':
             test_config.retries = int(value)
         elif key == u'variable_binds':
-            test_config.variable_binds = flatten_dictionaries(value)
+            if not test_config.variable_binds:
+                test_config.variable_binds = dict()
+            test_config.variable_binds.update(flatten_dictionaries(value))
         elif key == u'generators':
             flat = flatten_dictionaries(value)
             gen_map = dict()
@@ -670,7 +677,14 @@ def main(args):
 
     test_file = args['test']
     test_structure = read_test_file(test_file)
-    tests = parse_testsets(args['url'], test_structure, working_directory=os.path.dirname(test_file))
+
+    my_vars = None
+    if 'vars' in args and args['vars'] is not None:
+        my_vars = yaml.safe_load(args['vars'])
+    if my_vars and not isinstance(my_vars, dict):
+        raise Exception("Variables must be a dictionary!")
+
+    tests = parse_testsets(args['url'], test_structure, working_directory=os.path.dirname(test_file), vars=my_vars)
 
     # Override configs from command line if config set
     for t in tests:
@@ -694,6 +708,7 @@ def command_line_run(args_in):
     parser.add_option(u"--url", help="Base URL to run tests against", action="store", type="string")
     parser.add_option(u"--test", help="Test file to use", action="store", type="string")
     parser.add_option(u'--import_extensions', help='Extensions to import, separated by semicolons', action="store", type="string")
+    parser.add_option(u'--vars', help='Variables to set, as a YAML dictionary', action="store", type="string")
 
     (args, unparsed_args) = parser.parse_args(args_in)
     args = vars(args)
