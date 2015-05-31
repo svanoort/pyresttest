@@ -271,9 +271,11 @@ def run_test(mytest, test_config = TestConfig(), context = None):
         print "%s" % mytest.name
         print "-----------------------------------"
         print "REQUEST:"
-        print "%s %s" % (mytest.method, mytest.url)
+        print "%s %s" % (templated_test.method, templated_test.url)
+        print "HEADERS:"
+        print "%s" % (templated_test.headers)
         if mytest.body is not None:
-            print "\n%s" % mytest.body
+            print "\n%s" % templated_test.body
         raw_input("Press ENTER when ready: ")
 
     try:
