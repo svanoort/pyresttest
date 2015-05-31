@@ -183,7 +183,7 @@ def parse_testsets(base_url, test_structure, test_files = set(), working_directo
                         test_files.add(importfile)
                         import_test_structure = read_test_file(importfile)
                         with cd(os.path.dirname(os.path.realpath(importfile))):
-                            import_testsets = parse_testsets(base_url, import_test_structure, test_files)
+                            import_testsets = parse_testsets(base_url, import_test_structure, test_files, vars=vars)
                             testsets.extend(import_testsets)
                 elif key == u'url': #Simple test, just a GET to a URL
                     mytest = Test()
