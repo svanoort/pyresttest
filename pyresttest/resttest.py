@@ -720,8 +720,8 @@ def command_line_run(args_in):
     parser.add_option(u"--test", help="Test file to use", action="store", type="string")
     parser.add_option(u'--import_extensions', help='Extensions to import, separated by semicolons', action="store", type="string")
     parser.add_option(u'--vars', help='Variables to set, as a YAML dictionary', action="store", type="string")
-    parser.add_option(u'--curl-verbose', help='Put cURL into verbose mode for extra debugging power', action='store_true', default=False, dest="curl_verbose")
-    parser.add_option(u'--curl-insecure-ssl', help='Disable cURL host and peer cert verification', action='store_true', default=False, dest="curl_insecure_ssl")
+    parser.add_option(u'--verbose', help='Put cURL into verbose mode for extra debugging power', action='store_true', default=False, dest="curl_verbose")
+    parser.add_option(u'--ssl-insecure', help='Disable cURL host and peer cert verification', action='store_true', default=False, dest="curl_insecure_ssl")
 
     (args, unparsed_args) = parser.parse_args(args_in)
     args = vars(args)
