@@ -265,7 +265,7 @@ def run_test(mytest, test_config = TestConfig(), context = None):
     curl.setopt(pycurl.HEADERFUNCTION, headers.write)
     if test_config.verbose:
         curl.setopt(pycurl.VERBOSE,True)
-    if test_config.ssl_insecure
+    if test_config.ssl_insecure:
         curl.setopt(pycurl.SSL_VERIFYPEER,0)
         curl.setopt(pycurl.SSL_VERIFYHOST,0)
 
