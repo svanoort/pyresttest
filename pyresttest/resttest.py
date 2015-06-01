@@ -10,6 +10,7 @@ import csv
 import logging
 from optparse import OptionParser
 from mimetools import Message  # For headers handling
+import time
 
 try:
     from cStringIO import StringIO
@@ -276,7 +277,11 @@ def run_test(mytest, test_config = TestConfig(), context = None):
         print "%s" % (templated_test.headers)
         if mytest.body is not None:
             print "\n%s" % templated_test.body
-        raw_input("Press ENTER when ready: ")
+        raw_input("Press ENTER when ready (%d): " % (mytest.delay))
+
+    if mytest.delay > 0:
+        print "Delaying for %ds" % mytest.delay
+        time.sleep(mytest.delay)
 
     try:
         curl.perform() #Run the actual call
@@ -287,6 +292,7 @@ def run_test(mytest, test_config = TestConfig(), context = None):
         result.passed = False
         curl.close()
         return result
+
 
     # Retrieve values
     result.body = body.getvalue()
@@ -330,7 +336,7 @@ def run_test(mytest, test_config = TestConfig(), context = None):
                 validate_result = validator.validate(body=body, headers=head, context=my_context)
                 if not validate_result:
                     result.passed = False
-				# Proxy for checking if it is a Failure object, because of import issues with isinstance there
+                               # Proxy for checking if it is a Failure object, because of import issues with isinstance there
                 if hasattr(validate_result, 'details'):
                     failures.append(validate_result)
                 # TODO add printing of validation for interactive mode
