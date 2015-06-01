@@ -700,7 +700,7 @@ def main(args):
             t.config.interactive = safe_to_bool(args['interactive'])
 
         if 'verbose' in args and args['verbose'] is not None:
-            t.config.curl_verbose = safe_to_bool(args['curl_verbose'])
+            t.config.verbose = safe_to_bool(args['verbose'])
 
         if 'ssl_insecure' in args and args['ssl_insecure'] is not None:
             t.config.ssl_insecure = safe_to_bool(args['ssl_insecure'])
