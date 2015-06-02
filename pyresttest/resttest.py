@@ -67,6 +67,8 @@ class TestConfig:
     retries = 0  # Retries on failures
     test_parallel = False  # Allow parallel execution of tests in a test set, for speed?
     interactive = False
+    verbose = False
+    ssl_insecure = False
 
     # Binding and creation of genenerators
     variable_binds = None
