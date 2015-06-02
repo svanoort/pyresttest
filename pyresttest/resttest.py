@@ -263,6 +263,11 @@ def run_test(mytest, test_config = TestConfig(), context = None):
     body = StringIO()
     curl.setopt(pycurl.WRITEDATA, body)
     curl.setopt(pycurl.HEADERFUNCTION, headers.write)
+    if test_config.verbose:
+        curl.setopt(pycurl.VERBOSE,True)
+    if test_config.ssl_insecure:
+        curl.setopt(pycurl.SSL_VERIFYPEER,0)
+        curl.setopt(pycurl.SSL_VERIFYHOST,0)
 
     result.passed = None
 
@@ -696,6 +701,12 @@ def main(args):
         if 'interactive' in args and args['interactive'] is not None:
             t.config.interactive = safe_to_bool(args['interactive'])
 
+        if 'verbose' in args and args['verbose'] is not None:
+            t.config.verbose = safe_to_bool(args['verbose'])
+
+        if 'ssl_insecure' in args and args['ssl_insecure'] is not None:
+            t.config.ssl_insecure = safe_to_bool(args['ssl_insecure'])
+
     # Execute all testsets
     failures = run_testsets(tests)
 
@@ -711,6 +722,8 @@ def command_line_run(args_in):
     parser.add_option(u"--test", help="Test file to use", action="store", type="string")
     parser.add_option(u'--import_extensions', help='Extensions to import, separated by semicolons', action="store", type="string")
     parser.add_option(u'--vars', help='Variables to set, as a YAML dictionary', action="store", type="string")
+    parser.add_option(u'--verbose', help='Put cURL into verbose mode for extra debugging power', action='store_true', default=False, dest="verbose")
+    parser.add_option(u'--ssl-insecure', help='Disable cURL host and peer cert verification', action='store_true', default=False, dest="ssl_insecure")
 
     (args, unparsed_args) = parser.parse_args(args_in)
     args = vars(args)
