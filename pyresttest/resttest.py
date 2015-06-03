@@ -621,7 +621,7 @@ def run_testsets(testsets):
             print u'Test Group '+group+u' FAILED: '+ str((test_count-failures))+'/'+str(test_count) + u' Tests Passed!'
         else:
             print u'Test Group '+group+u' SUCCEEDED: '+ str((test_count-failures))+'/'+str(test_count) + u' Tests Passed!'
-            
+
         if myconfig.junit:
             outputxml = open("test-"+group.lower().replace(" ","-")+".xml","w")
             xml = """<?xml version="1.0" encoding="UTF-8"?>
@@ -636,11 +636,11 @@ def run_testsets(testsets):
                     xml += """<testcase classname="%s" name="%s">""" % (r.test.group,r.test.name)
                     for failure in r.failures:
                         xml += """<failure type="%s">%s</failure>""" % (failure.failure_type,failure.message)
-                    xml += "</testcase>\n"                        
-            xml += """<system-out>  </system-out>
+                    xml += "</testcase>\n"
+                    xml += """<system-out>  </system-out>
 <system-err>  </system-err>
 </testsuite>
-""" 
+"""
             outputxml.write(xml)
             outputxml.close()
 
