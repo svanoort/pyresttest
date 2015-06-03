@@ -10,6 +10,8 @@ import csv
 import logging
 from optparse import OptionParser
 from mimetools import Message  # For headers handling
+import time
+import datetime
 
 try:
     from cStringIO import StringIO
@@ -610,6 +612,7 @@ def run_testsets(testsets):
         print "==================================="
 
     #Print summary results
+    testenddate = datetime.datetime.now().isoformat()
     for group in sorted(group_results.keys()):
         test_count = len(group_results[group])
         failures = group_failure_counts[group]
@@ -618,6 +621,29 @@ def run_testsets(testsets):
             print u'Test Group '+group+u' FAILED: '+ str((test_count-failures))+'/'+str(test_count) + u' Tests Passed!'
         else:
             print u'Test Group '+group+u' SUCCEEDED: '+ str((test_count-failures))+'/'+str(test_count) + u' Tests Passed!'
+            
+        if myconfig.junit:
+            outputxml = open("test-"+group.lower().replace(" ","-")+".xml","w")
+            xml = """<?xml version="1.0" encoding="UTF-8"?>
+<testsuite errors="0" failures="%d" skipped="0" name="%s" tests="%d" timestamp="%s" hostname="%s">
+<properties>  </properties>
+""" % (failures,group,test_count,testenddate,os.uname()[1])
+            for r in group_results[group]:
+                if r.passed:
+                    xml += """<testcase classname="%s" name="%s"></testcase>""" % (r.test.group,r.test.name)
+                    xml += "\n"
+                else:
+                    xml += """<testcase classname="%s" name="%s">""" % (r.test.group,r.test.name)
+                    for failure in r.failures:
+                        xml += """<failure type="%s">%s</failure>""" % (failure.failure_type,failure.message)
+                    xml += "</testcase>\n"                        
+            xml += """<system-out>  </system-out>
+<system-err>  </system-err>
+</testsuite>
+""" 
+            outputxml.write(xml)
+            outputxml.close()
+
 
     return total_failures
 
@@ -709,6 +735,10 @@ def main(args):
         if 'ssl_insecure' in args and args['ssl_insecure'] is not None:
             t.config.ssl_insecure = safe_to_bool(args['ssl_insecure'])
 
+        if 'junit' in args and args['junit'] is not None:
+            t.config.junit = safe_to_bool(args['junit'])
+
+
     # Execute all testsets
     failures = run_testsets(tests)
 
@@ -726,6 +756,7 @@ def command_line_run(args_in):
     parser.add_option(u'--vars', help='Variables to set, as a YAML dictionary', action="store", type="string")
     parser.add_option(u'--verbose', help='Put cURL into verbose mode for extra debugging power', action='store_true', default=False, dest="verbose")
     parser.add_option(u'--ssl-insecure', help='Disable cURL host and peer cert verification', action='store_true', default=False, dest="ssl_insecure")
+    parser.add_option(u'--junit', help='Output JUnit XML for each test group', action='store_true', default=False, dest="junit")
 
     (args, unparsed_args) = parser.parse_args(args_in)
     args = vars(args)
