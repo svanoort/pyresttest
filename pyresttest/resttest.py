@@ -665,11 +665,12 @@ def main(args):
     Execute a test against the given base url.
 
     Keys allowed for args:
-        url          - REQUIRED - Base URL
-        test         - REQUIRED - Test file (yaml)
-        print_bodies - OPTIONAL - print response body
-        log          - OPTIONAL - set logging level {debug,info,warning,error,critical} (default=warning)
-        interactive  - OPTIONAL - mode that prints info before and after test exectuion and pauses for user input for each test
+        url           - REQUIRED - Base URL
+        test          - REQUIRED - Test file (yaml)
+        print_bodies  - OPTIONAL - print response body
+        log           - OPTIONAL - set logging level {debug,info,warning,error,critical} (default=warning)
+        interactive   - OPTIONAL - mode that prints info before and after test exectuion and pauses for user input for each test
+        absolute_urls - OPTIONAL - mode that treats URLs in tests as absolute/full URLs instead of relative URLs
     """
 
     if 'log' in args and args['log'] is not None:
@@ -693,7 +694,13 @@ def main(args):
     if my_vars and not isinstance(my_vars, dict):
         raise Exception("Variables must be a dictionary!")
 
-    tests = parse_testsets(args['url'], test_structure, working_directory=os.path.dirname(test_file), vars=my_vars)
+    # Set up base URL
+    base_url = args['url']
+    
+    if 'absolute_urls' in args and args['absolute_urls']:
+        base_url = ''
+
+    tests = parse_testsets(base_url, test_structure, working_directory=os.path.dirname(test_file), vars=my_vars)
 
     # Override configs from command line if config set
     for t in tests:
@@ -726,6 +733,7 @@ def command_line_run(args_in):
     parser.add_option(u'--vars', help='Variables to set, as a YAML dictionary', action="store", type="string")
     parser.add_option(u'--verbose', help='Put cURL into verbose mode for extra debugging power', action='store_true', default=False, dest="verbose")
     parser.add_option(u'--ssl-insecure', help='Disable cURL host and peer cert verification', action='store_true', default=False, dest="ssl_insecure")
+    parser.add_option(u'--absolute-urls', help='Enable absolute URLs in tests instead of relative paths', action="store_true", dest="absolute_urls")
 
     (args, unparsed_args) = parser.parse_args(args_in)
     args = vars(args)
