@@ -37,10 +37,10 @@ Module responsibilities:
 """
 
 LOGGING_LEVELS = {'debug': logging.DEBUG,
-    'info': logging.INFO,
-    'warning': logging.WARNING,
-    'error': logging.ERROR,
-    'critical': logging.CRITICAL}
+                  'info': logging.INFO,
+                  'warning': logging.WARNING,
+                  'error': logging.ERROR,
+                  'critical': logging.CRITICAL}
 
 logging.basicConfig(format='%(levelname)s:%(message)s')
 logger = logging.getLogger('pyresttest')
@@ -68,8 +68,10 @@ class TestConfig:
     retries = 0  # Retries on failures
     test_parallel = False  # Allow parallel execution of tests in a test set, for speed?
     interactive = False
+    verbose = False
+    ssl_insecure = False
 
-    # Binding and creation of genenerators
+    # Binding and creation of generators
     variable_binds = None
     generators = None  # Map of generator name to generator function
 
@@ -108,10 +110,10 @@ class BenchmarkResult:
 
 class TestResponse:
     """ Encapsulates everything about a test response """
-    test = None #Test run
+    test = None  # Test run
     response_code = None
 
-    body = None #Response body, if tracked
+    body = None  # Response body, if tracked
 
     passed = False
     response_headers = None
@@ -129,7 +131,7 @@ class TestResponse:
 
 def read_test_file(path):
     """ Read test file at 'path' in YAML """
-    #TODO allow use of safe_load_all to handle multiple test sets in a given doc
+    # TODO allow use of safe_load_all to handle multiple test sets in a given doc
     teststruct = yaml.safe_load(os.path.expandvars(read_file(path)))
     return teststruct
 
@@ -148,8 +150,8 @@ def parse_headers(header_string):
         return dict(header_msg.items())
 
 def parse_testsets(base_url, test_structure, test_files = set(), working_directory = None, vars=None):
-    """ Convert a Python datastructure read from validated YAML to a set of structured testsets
-    The data stucture is assumed to be a list of dictionaries, each of which describes:
+    """ Convert a Python data structure read from validated YAML to a set of structured testsets
+    The data structure is assumed to be a list of dictionaries, each of which describes:
         - a tests (test structure)
         - a simple test (just a URL, and a minimal test is created)
         - or overall test configuration for this testset
@@ -172,13 +174,13 @@ def parse_testsets(base_url, test_structure, test_files = set(), working_directo
     if vars and isinstance(vars,dict):
         test_config.variable_binds = vars
 
-    #returns a testconfig and collection of tests
-    for node in test_structure: #Iterate through lists of test and configuration elements
-        if isinstance(node,dict): #Each config element is a miniature key-value dictionary
+    # returns a testconfig and collection of tests
+    for node in test_structure:  # Iterate through lists of test and configuration elements
+        if isinstance(node,dict):  # Each config element is a miniature key-value dictionary
             node = lowercase_keys(node)
             for key in node:
                 if key == u'import':
-                    importfile = node[key] #import another file
+                    importfile = node[key]  # import another file
                     if importfile not in test_files:
                         logger.debug("Importing test sets: " + importfile)
                         test_files.add(importfile)
@@ -186,13 +188,13 @@ def parse_testsets(base_url, test_structure, test_files = set(), working_directo
                         with cd(os.path.dirname(os.path.realpath(importfile))):
                             import_testsets = parse_testsets(base_url, import_test_structure, test_files, vars=vars)
                             testsets.extend(import_testsets)
-                elif key == u'url': #Simple test, just a GET to a URL
+                elif key == u'url':  # Simple test, just a GET to a URL
                     mytest = Test()
                     val = node[key]
                     assert isinstance(val,str) or isinstance(val,unicode)
                     mytest.url = base_url + val
                     tests_out.append(mytest)
-                elif key == u'test': #Complex test with additional parameters
+                elif key == u'test':  # Complex test with additional parameters
                     with cd(working_directory):
                         child = node[key]
                         mytest = Test.parse_test(base_url, child)
@@ -264,6 +266,11 @@ def run_test(mytest, test_config = TestConfig(), context = None):
     body = StringIO()
     curl.setopt(pycurl.WRITEDATA, body)
     curl.setopt(pycurl.HEADERFUNCTION, headers.write)
+    if test_config.verbose:
+        curl.setopt(pycurl.VERBOSE,True)
+    if test_config.ssl_insecure:
+        curl.setopt(pycurl.SSL_VERIFYPEER,0)
+        curl.setopt(pycurl.SSL_VERIFYHOST,0)
 
     result.passed = None
 
@@ -284,7 +291,7 @@ def run_test(mytest, test_config = TestConfig(), context = None):
         time.sleep(mytest.delay)
 
     try:
-        curl.perform() #Run the actual call
+        curl.perform()  # Run the actual call
     except Exception, e:
         # Curl exception occurred (network error), do not pass go, do not collect $200
         trace = traceback.format_exc()
@@ -292,7 +299,6 @@ def run_test(mytest, test_config = TestConfig(), context = None):
         result.passed = False
         curl.close()
         return result
-
 
     # Retrieve values
     result.body = body.getvalue()
@@ -322,7 +328,7 @@ def run_test(mytest, test_config = TestConfig(), context = None):
         curl.close()
         return result
 
-    #print str(test_config.print_bodies) + ',' + str(not result.passed) + ' , ' + str(test_config.print_bodies or not result.passed)
+    # print str(test_config.print_bodies) + ',' + str(not result.passed) + ' , ' + str(test_config.print_bodies or not result.passed)
 
     head = result.response_headers
 
@@ -336,7 +342,7 @@ def run_test(mytest, test_config = TestConfig(), context = None):
                 validate_result = validator.validate(body=body, headers=head, context=my_context)
                 if not validate_result:
                     result.passed = False
-                               # Proxy for checking if it is a Failure object, because of import issues with isinstance there
+                # Proxy for checking if it is a Failure object, because of import issues with isinstance there
                 if hasattr(validate_result, 'details'):
                     failures.append(validate_result)
                 # TODO add printing of validation for interactive mode
@@ -346,7 +352,7 @@ def run_test(mytest, test_config = TestConfig(), context = None):
         # Only do context updates if test was successful
         mytest.update_context_after(result.body, my_context)
 
-    #Print response body if override is set to print all *OR* if test failed (to capture maybe a stack trace)
+    # Print response body if override is set to print all *OR* if test failed (to capture maybe a stack trace)
     if test_config.print_bodies or not result.passed:
         if test_config.interactive:
             print "RESPONSE:"
@@ -370,7 +376,7 @@ def run_benchmark(benchmark, test_config = TestConfig(), context = None):
 
     warmup_runs = benchmark.warmup_runs
     benchmark_runs = benchmark.benchmark_runs
-    message = ''  #Message is name of benchmark... print it?
+    message = ''  # Message is name of benchmark... print it?
 
     if (benchmark_runs <= 0):
         raise Exception("Invalid number of benchmark runs, must be > 0 :" + benchmark_runs)
@@ -385,7 +391,7 @@ def run_benchmark(benchmark, test_config = TestConfig(), context = None):
     #  For performance reasons, we don't want to re-run templating/extraction if
     #   we do not need to, and do not want to save request bodies.
 
-    #Initialize variables to store output
+    # Initialize variables to store output
     output = BenchmarkResult()
     output.name = benchmark.name
     output.group = benchmark.group
@@ -394,13 +400,13 @@ def run_benchmark(benchmark, test_config = TestConfig(), context = None):
     results = [list() for x in xrange(0, len(metricnames))]  # Initialize arrays to store results for each metric
     curl = pycurl.Curl()
 
-    #Benchmark warm-up to allow for caching, JIT compiling, on client
+    # Benchmark warm-up to allow for caching, JIT compiling, on client
     logger.info('Warmup: ' + message + ' started')
     for x in xrange(0, warmup_runs):
         benchmark.update_context_before(my_context)
         templated = benchmark.realize(my_context)
         curl = templated.configure_curl(timeout=test_config.timeout, context=my_context, curl_handle=curl)
-        curl.setopt(pycurl.WRITEFUNCTION, lambda x: None) #Do not store actual response body at all.
+        curl.setopt(pycurl.WRITEFUNCTION, lambda x: None)  # Do not store actual response body at all.
         curl.perform()
 
     logger.info('Warmup: ' + message + ' finished')
@@ -412,7 +418,7 @@ def run_benchmark(benchmark, test_config = TestConfig(), context = None):
         benchmark.update_context_before(my_context)
         templated = benchmark.realize(my_context)
         curl = templated.configure_curl(timeout=test_config.timeout, context=my_context, curl_handle=curl)
-        curl.setopt(pycurl.WRITEFUNCTION, lambda x: None) #Do not store actual response body at all.
+        curl.setopt(pycurl.WRITEFUNCTION, lambda x: None)  # Do not store actual response body at all.
 
         try:  # Run the curl call, if it errors, then add to failure counts for benchmark
             curl.perform()
@@ -425,7 +431,6 @@ def run_benchmark(benchmark, test_config = TestConfig(), context = None):
         # Get all metrics values for this run, and store to metric lists
         for i in xrange(0, len(metricnames)):
             results[i].append( curl.getinfo(metricvalues[i]) )
-
 
     curl.close()
     logger.info('Benchmark: ' + message + ' ending')
@@ -526,7 +531,7 @@ def log_failure(failure, context=None, test_config=TestConfig()):
 
 def run_testsets(testsets):
     """ Execute a set of tests, using given TestSet list input """
-    group_results = dict() #results, by group
+    group_results = dict()  # results, by group
     group_failure_counts = dict()
     total_failures = 0
     myinteractive = False
@@ -544,16 +549,16 @@ def run_testsets(testsets):
             for key, value in myconfig.generators.items():
                 context.add_generator(key, value)
 
-        #Make sure we actually have tests to execute
+        # Make sure we actually have tests to execute
         if not mytests and not mybenchmarks:
             # no tests in this test set, probably just imports.. skip to next test set
             break
 
         myinteractive = True if myinteractive or myconfig.interactive else False
 
-        #Run tests, collecting statistics as needed
+        # Run tests, collecting statistics as needed
         for test in mytests:
-            #Initialize the dictionaries to store test fail counts and results
+            # Initialize the dictionaries to store test fail counts and results
             if test.group not in group_results:
                 group_results[test.group] = list()
                 group_failure_counts[test.group] = 0
@@ -561,7 +566,7 @@ def run_testsets(testsets):
             result = run_test(test, test_config = myconfig, context=context)
             result.body = None  # Remove the body, save some memory!
 
-            if not result.passed: #Print failure, increase failure counts for that test group
+            if not result.passed: # Print failure, increase failure counts for that test group
                 # Use result test URL to allow for templating
                 logger.error('Test Failed: '+test.name+" URL="+result.test.url+" Group="+test.group+" HTTP Status Code: "+str(result.response_code))
 
@@ -570,15 +575,15 @@ def run_testsets(testsets):
                     for failure in result.failures:
                         log_failure(failure, context=context, test_config=myconfig)
 
-                #Increment test failure counts for that group (adding an entry if not present)
+                # Increment test failure counts for that group (adding an entry if not present)
                 failures = group_failure_counts[test.group]
                 failures = failures + 1
                 group_failure_counts[test.group] = failures
 
-            else: #Test passed, print results
+            else: # Test passed, print results
                 logger.info('Test Succeeded: '+test.name+" URL="+test.url+" Group="+test.group)
 
-            #Add results for this test group to the resultset
+            # Add results for this test group to the resultset
             group_results[test.group].append(result)
 
             # handle stop_on_failure flag
@@ -608,7 +613,7 @@ def run_testsets(testsets):
         # a break for when interactive bits are complete, before summary data
         print "==================================="
 
-    #Print summary results
+    # Print summary results
     for group in sorted(group_results.keys()):
         test_count = len(group_results[group])
         failures = group_failure_counts[group]
@@ -664,11 +669,12 @@ def main(args):
     Execute a test against the given base url.
 
     Keys allowed for args:
-        url          - REQUIRED - Base URL
-        test         - REQUIRED - Test file (yaml)
-        print_bodies - OPTIONAL - print response body
-        log          - OPTIONAL - set logging level {debug,info,warning,error,critical} (default=warning)
-        interactive  - OPTIONAL - mode that prints info before and after test exectuion and pauses for user input for each test
+        url           - REQUIRED - Base URL
+        test          - REQUIRED - Test file (yaml)
+        print_bodies  - OPTIONAL - print response body
+        log           - OPTIONAL - set logging level {debug,info,warning,error,critical} (default=warning)
+        interactive   - OPTIONAL - mode that prints info before and after test exectuion and pauses for user input for each test
+        absolute_urls - OPTIONAL - mode that treats URLs in tests as absolute/full URLs instead of relative URLs
     """
 
     if 'log' in args and args['log'] is not None:
@@ -692,7 +698,13 @@ def main(args):
     if my_vars and not isinstance(my_vars, dict):
         raise Exception("Variables must be a dictionary!")
 
-    tests = parse_testsets(args['url'], test_structure, working_directory=os.path.dirname(test_file), vars=my_vars)
+    # Set up base URL
+    base_url = args['url']
+    
+    if 'absolute_urls' in args and args['absolute_urls']:
+        base_url = ''
+
+    tests = parse_testsets(base_url, test_structure, working_directory=os.path.dirname(test_file), vars=my_vars)
 
     # Override configs from command line if config set
     for t in tests:
@@ -701,6 +713,12 @@ def main(args):
 
         if 'interactive' in args and args['interactive'] is not None:
             t.config.interactive = safe_to_bool(args['interactive'])
+
+        if 'verbose' in args and args['verbose'] is not None:
+            t.config.verbose = safe_to_bool(args['verbose'])
+
+        if 'ssl_insecure' in args and args['ssl_insecure'] is not None:
+            t.config.ssl_insecure = safe_to_bool(args['ssl_insecure'])
 
     # Execute all testsets
     failures = run_testsets(tests)
@@ -717,6 +735,9 @@ def command_line_run(args_in):
     parser.add_option(u"--test", help="Test file to use", action="store", type="string")
     parser.add_option(u'--import_extensions', help='Extensions to import, separated by semicolons', action="store", type="string")
     parser.add_option(u'--vars', help='Variables to set, as a YAML dictionary', action="store", type="string")
+    parser.add_option(u'--verbose', help='Put cURL into verbose mode for extra debugging power', action='store_true', default=False, dest="verbose")
+    parser.add_option(u'--ssl-insecure', help='Disable cURL host and peer cert verification', action='store_true', default=False, dest="ssl_insecure")
+    parser.add_option(u'--absolute-urls', help='Enable absolute URLs in tests instead of relative paths', action="store_true", dest="absolute_urls")
 
     (args, unparsed_args) = parser.parse_args(args_in)
     args = vars(args)
@@ -737,6 +758,6 @@ def command_line_run(args_in):
     args['cwd'] = os.path.realpath(os.path.abspath(os.getcwd()))  # So modules can be loaded from current folder
     main(args)
 
-#Allow import into another module without executing the main method
+# Allow import into another module without executing the main method
 if(__name__ == '__main__'):
     command_line_run(sys.argv[1:])

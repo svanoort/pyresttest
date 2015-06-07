@@ -224,8 +224,8 @@ class ValidatorsTest(unittest.TestCase):
         self.assertEqual('eq', validator.comparator_name)
         self.assertEqual(validators.COMPARATORS['eq'], validator.comparator)
 
-    def test_validator_compare_basic(self):
-        """ Basic tests of the comparison validators, and templating"""
+    def test_validator_compare_eq(self):
+        """ Basic test of the equality validator"""
         config = {
             'jsonpath_mini': 'key.val',
             'comparator': 'eq',
@@ -234,6 +234,34 @@ class ValidatorsTest(unittest.TestCase):
         comp_validator = validators.ComparatorValidator.parse(config)
         myjson_pass = '{"id": 3, "key": {"val": 3}}'
         myjson_fail = '{"id": 3, "key": {"val": 4}}'
+
+        self.assertTrue(comp_validator.validate(body=myjson_pass))
+        self.assertFalse(comp_validator.validate(body=myjson_fail))
+        
+    def test_validator_compare_ne(self):
+        """ Basic test of the inequality validator"""
+        config = {
+            'jsonpath_mini': 'key.val',
+            'comparator': 'ne',
+            'expected': 3
+        }
+        comp_validator = validators.ComparatorValidator.parse(config)
+        myjson_pass = '{"id": 3, "key": {"val": 4}}'
+        myjson_fail = '{"id": 3, "key": {"val": 3}}'
+
+        self.assertTrue(comp_validator.validate(body=myjson_pass))
+        self.assertFalse(comp_validator.validate(body=myjson_fail))
+
+    def test_validator_compare_not_equals(self):
+        """ Basic test of the inequality validator alias"""
+        config = {
+            'jsonpath_mini': 'key.val',
+            'comparator': 'not_equals',
+            'expected': 3
+        }
+        comp_validator = validators.ComparatorValidator.parse(config)
+        myjson_pass = '{"id": 3, "key": {"val": 4}}'
+        myjson_fail = '{"id": 3, "key": {"val": 3}}'
 
         self.assertTrue(comp_validator.validate(body=myjson_pass))
         self.assertFalse(comp_validator.validate(body=myjson_fail))
