@@ -64,6 +64,7 @@ class TestConfig:
     """ Configuration for a test run """
     timeout = DEFAULT_TIMEOUT  # timeout of tests, in seconds
     print_bodies = False  # Print response bodies in all cases
+    print_headers = False  # Print response bodies in all cases
     retries = 0  # Retries on failures
     test_parallel = False  # Allow parallel execution of tests in a test set, for speed?
     interactive = False
