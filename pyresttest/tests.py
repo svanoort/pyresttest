@@ -68,6 +68,7 @@ class Test(object):
     auth_username = None
     auth_password = None
     auth_type = pycurl.HTTPAUTH_BASIC
+    delay = 0
 
     templates = None  # Dictionary of template to compiled template
 
@@ -419,6 +420,8 @@ class Test(object):
                 mytest.generator_binds = output2
             elif configelement == 'stop_on_failure':
                 mytest.stop_on_failure = safe_to_bool(configvalue)
+            elif configelement == 'delay':
+                mytest.delay = int(configvalue)
 
         #Next, we adjust defaults to be reasonable, if the user does not specify them
 
