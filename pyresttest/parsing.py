@@ -2,6 +2,17 @@
 Parsing utilities, pulled out so they can be used in multiple modules
 """
 
+def resolve_variable(variable_name, scopes, default=None):
+    """ Look for the first case in which variable is set in a list of scopes """
+    if not scopes:
+        return default
+    for s in scopes:
+        val = s.get(variable_name)
+        if val is not None:
+            return val
+    return default
+
+
 def safe_to_json(in_obj):
     """ Safely get dict from object if present for json dumping """
     if isinstance(in_obj, bytearray):

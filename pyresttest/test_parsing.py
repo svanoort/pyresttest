@@ -1,8 +1,33 @@
 import unittest
-from parsing import flatten_dictionaries, lowercase_keys, safe_to_bool
+from parsing import flatten_dictionaries, lowercase_keys, safe_to_bool, resolve_variable
 
 class TestParsing(unittest.TestCase):
     """ Tests for parsing utility functions """
+
+    def test_resolve_variable(self):
+        variable = 'cheese'
+
+        # Illegal scopes
+        self.assertTrue(resolve_variable(variable, 0) is None)
+        self.assertTrue(resolve_variable(variable, None) is None)
+        self.assertTrue(resolve_variable(variable, dict()) is None)
+
+        # Simple scope test
+        scopes = [{variable:'cheddar'}]
+        self.assertEqual('cheddar', resolve_variable(variable, scopes))
+
+        # Complex scope test
+        scopes = [{'nope': 'morenope'},{variable:'cheddar'}]
+        self.assertEqual('cheddar', resolve_variable(variable, scopes))
+
+        # Overridden scopes
+        scopes = [{variable: 'wensleydale'},{variable:'cheddar'}]
+        self.assertEqual('wensleydale', resolve_variable(variable, scopes))
+
+        # Defaulting
+        scopes = [{variable: 'wensleydale'},{variable:'cheddar'}]
+        self.assertEqual('chicken', resolve_variable('meat', scopes ,'chicken'))
+
 
     def test_flatten(self):
         """ Test flattening of lists of dictionaries to single dictionaries """
