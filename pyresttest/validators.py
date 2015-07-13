@@ -5,6 +5,7 @@ import traceback
 import string
 import parsing
 import os
+import re
 
 """
 Validator/Extractor logic for utility use
@@ -46,6 +47,7 @@ COMPARATORS = {
     'greater_than': operator.gt,
     'contains': lambda x,y: x and y and operator.contains(x,y), # is y in x
     'contained_by': lambda x,y: x and y and operator.contains(y,x), # is x in y
+    'regex': lambda x,y: regex_compare(str(x), str(y)),
 }
 
 # Unury comparison tests
@@ -66,6 +68,9 @@ def safe_length(var):
     except:
         pass
     return output
+
+def regex_compare(input,regex):
+    return bool(re.search(regex, input))
 
 # Validator Failure Reasons
 FAILURE_INVALID_RESPONSE = 'Invalid HTTP Response Code'

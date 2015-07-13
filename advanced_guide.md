@@ -264,6 +264,7 @@ Optionally, validators can return a Failure which evaluates to False, but suppli
 | 'gt', 'greater_than'                         | Greater Than                              | A > B                                                                  |
 | 'contains'                                   | Contains                                  | B in A                                                                 |
 | 'contained_by'                               | Contained By                              | A in B                                                                 |
+| 'regex'                                      | Regex Equals                              | A matches regex B                                                      |
 
 
 
