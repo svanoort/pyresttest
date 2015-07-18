@@ -29,7 +29,7 @@ class JsonSchemaValidator(validators.AbstractValidator):
             # TODO try draft3/draft4 iter_errors - https://python-jsonschema.readthedocs.org/en/latest/validate/#jsonschema.IValidator.iter_errors
             jsonschema.validate(json.loads(body), schema)
             return True
-        except jsonschema.exceptions.ValidationError, ve:
+        except jsonschema.exceptions.ValidationError as ve:
             trace = traceback.format_exc()
             return validators.Failure(message="JSON Schema Validation Failed", details=trace, validator=self, failure_type=validators.FAILURE_VALIDATOR_EXCEPTION)
 

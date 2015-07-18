@@ -275,24 +275,24 @@ def run_test(mytest, test_config = TestConfig(), context = None):
     result.passed = None
 
     if test_config.interactive:
-        print "==================================="
-        print "%s" % mytest.name
-        print "-----------------------------------"
-        print "REQUEST:"
-        print "%s %s" % (templated_test.method, templated_test.url)
-        print "HEADERS:"
-        print "%s" % (templated_test.headers)
+        print("===================================")
+        print("%s" % mytest.name)
+        print("-----------------------------------")
+        print("REQUEST:")
+        print("%s %s" % (templated_test.method, templated_test.url))
+        print("HEADERS:")
+        print("%s" % (templated_test.headers))
         if mytest.body is not None:
-            print "\n%s" % templated_test.body
+            print("\n%s" % templated_test.body)
         raw_input("Press ENTER when ready (%d): " % (mytest.delay))
 
     if mytest.delay > 0:
-        print "Delaying for %ds" % mytest.delay
+        print("Delaying for %ds" % mytest.delay)
         time.sleep(mytest.delay)
 
     try:
         curl.perform()  # Run the actual call
-    except Exception, e:
+    except Exception as e:
         # Curl exception occurred (network error), do not pass go, do not collect $200
         trace = traceback.format_exc()
         result.failures.append(Failure(message="Curl Exception: {0}".format(e), details=trace, failure_type=validators.FAILURE_CURL_EXCEPTION))
@@ -322,7 +322,7 @@ def run_test(mytest, test_config = TestConfig(), context = None):
     # Parse HTTP headers
     try:
         result.response_headers = parse_headers(result.response_headers)
-    except Exception, e:
+    except Exception as e:
         result.failures.append(Failure(message="Header parsing exception: {0}".format(e), details=trace, failure_type=validators.TEST_EXCEPTION))
         result.passed = False
         curl.close()
@@ -355,8 +355,8 @@ def run_test(mytest, test_config = TestConfig(), context = None):
     # Print response body if override is set to print all *OR* if test failed (to capture maybe a stack trace)
     if test_config.print_bodies or not result.passed:
         if test_config.interactive:
-            print "RESPONSE:"
-        print result.body.decode("string-escape")
+            print("RESPONSE:")
+        print(result.body.decode("string-escape"))
 
     # TODO add string escape on body output
     logger.debug(result)
@@ -588,7 +588,7 @@ def run_testsets(testsets):
 
             # handle stop_on_failure flag
             if not result.passed and test.stop_on_failure is not None and test.stop_on_failure:
-                print 'STOP ON FAILURE! stopping test set execution, continuing with other test sets'
+                print('STOP ON FAILURE! stopping test set execution, continuing with other test sets')
                 break
 
         for benchmark in mybenchmarks:  # Run benchmarks, analyze, write
@@ -598,7 +598,7 @@ def run_testsets(testsets):
 
             logger.info("Benchmark Starting: "+benchmark.name+" Group: "+benchmark.group)
             benchmark_result = run_benchmark(benchmark, myconfig, context=context)
-            print benchmark_result
+            print(benchmark_result)
             logger.info("Benchmark Done: "+benchmark.name+" Group: "+benchmark.group)
 
             if benchmark.output_file:  # Write file
@@ -611,7 +611,7 @@ def run_testsets(testsets):
 
     if myinteractive:
         # a break for when interactive bits are complete, before summary data
-        print "==================================="
+        print("===================================")
 
     # Print summary results
     for group in sorted(group_results.keys()):
@@ -619,9 +619,9 @@ def run_testsets(testsets):
         failures = group_failure_counts[group]
         total_failures = total_failures + failures
         if (failures > 0):
-            print u'Test Group '+group+u' FAILED: '+ str((test_count-failures))+'/'+str(test_count) + u' Tests Passed!'
+            print(u'Test Group '+group+u' FAILED: '+ str((test_count-failures))+'/'+str(test_count) + u' Tests Passed!')
         else:
-            print u'Test Group '+group+u' SUCCEEDED: '+ str((test_count-failures))+'/'+str(test_count) + u' Tests Passed!'
+            print(u'Test Group '+group+u' SUCCEEDED: '+ str((test_count-failures))+'/'+str(test_count) + u' Tests Passed!')
 
     return total_failures
 
@@ -661,7 +661,7 @@ def register_extensions(modules):
 try:
     import jsonschema
     register_extensions('ext.validator_jsonschema')
-except ImportError, ie:
+except ImportError as ie:
     logging.warn("Failed to load jsonschema validator, make sure the jsonschema module is installed if you wish to use schema validators.")
 
 def main(args):
