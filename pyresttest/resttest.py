@@ -15,7 +15,10 @@ import time
 try:
     from cStringIO import StringIO
 except:
-    from StringIO import StringIO
+    try:
+        from StringIO import StringIO
+    except ImportError:
+        from io import StringIO
 
 # Pyresttest internals
 from binding import Context
