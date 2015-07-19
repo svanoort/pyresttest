@@ -149,7 +149,7 @@ def parse_headers(header_string):
     if not headers:
         return dict()
     else:
-        header_msg = message_from_string(StringIO(headers))
+        header_msg = message_from_string(headers)
         return dict(header_msg.items())
 
 def parse_testsets(base_url, test_structure, test_files = set(), working_directory = None, vars=None):
@@ -326,7 +326,8 @@ def run_test(mytest, test_config = TestConfig(), context = None):
     try:
         result.response_headers = parse_headers(result.response_headers)
     except Exception as e:
-        result.failures.append(Failure(message="Header parsing exception: {0}".format(e), details=trace, failure_type=validators.TEST_EXCEPTION))
+        trace = traceback.format_exc()
+        result.failures.append(Failure(message="Header parsing exception: {0}".format(e), details=trace, failure_type=validators.FAILURE_TEST_EXCEPTION))
         result.passed = False
         curl.close()
         return result
