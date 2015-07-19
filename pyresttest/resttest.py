@@ -9,7 +9,7 @@ import json
 import csv
 import logging
 from optparse import OptionParser
-from mimetools import Message  # For headers handling
+from email import message_from_string  # For headers handling
 import time
 
 try:
@@ -149,7 +149,7 @@ def parse_headers(header_string):
     if not headers:
         return dict()
     else:
-        header_msg = Message(StringIO(headers))
+        header_msg = message_from_string(StringIO(headers))
         return dict(header_msg.items())
 
 def parse_testsets(base_url, test_structure, test_files = set(), working_directory = None, vars=None):
