@@ -65,6 +65,7 @@ class TestConfig:
     """ Configuration for a test run """
     timeout = DEFAULT_TIMEOUT  # timeout of tests, in seconds
     print_bodies = False  # Print response bodies in all cases
+    print_headers = False  # Print response bodies in all cases
     retries = 0  # Retries on failures
     test_parallel = False  # Allow parallel execution of tests in a test set, for speed?
     interactive = False
@@ -357,6 +358,11 @@ def run_test(mytest, test_config = TestConfig(), context = None):
         if test_config.interactive:
             print "RESPONSE:"
         print result.body.decode("string-escape")
+
+    if test_config.print_headers or not result.passed:
+        if test_config.interactive:
+            print "RESPONSE HEADERS:"
+        print result.response_headers
 
     # TODO add string escape on body output
     logger.debug(result)
@@ -672,6 +678,7 @@ def main(args):
         url           - REQUIRED - Base URL
         test          - REQUIRED - Test file (yaml)
         print_bodies  - OPTIONAL - print response body
+        print_headers  - OPTIONAL - print response headers
         log           - OPTIONAL - set logging level {debug,info,warning,error,critical} (default=warning)
         interactive   - OPTIONAL - mode that prints info before and after test exectuion and pauses for user input for each test
         absolute_urls - OPTIONAL - mode that treats URLs in tests as absolute/full URLs instead of relative URLs
@@ -711,6 +718,9 @@ def main(args):
         if 'print_bodies' in args and args['print_bodies'] is not None and bool(args['print_bodies']):
             t.config.print_bodies = safe_to_bool(args['print_bodies'])
 
+        if 'print_headers' in args and args['print_headers'] is not None and bool(args['print_headers']):
+            t.config.print_headers = safe_to_bool(args['print_headers'])
+
         if 'interactive' in args and args['interactive'] is not None:
             t.config.interactive = safe_to_bool(args['interactive'])
 
@@ -729,6 +739,7 @@ def command_line_run(args_in):
     """ Runs everything needed to execute from the command line, so main method is callable without arg parsing """
     parser = OptionParser(usage="usage: %prog base_url test_filename.yaml [options] ")
     parser.add_option(u"--print-bodies", help="Print all response bodies", action="store", type="string", dest="print_bodies")
+    parser.add_option(u"--print-headers", help="Print all response headers", action="store", type="string", dest="print_headers")
     parser.add_option(u"--log", help="Logging level", action="store", type="string")
     parser.add_option(u"--interactive", help="Interactive mode", action="store", type="string")
     parser.add_option(u"--url", help="Base URL to run tests against", action="store", type="string")
