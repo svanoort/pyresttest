@@ -46,13 +46,13 @@ To demonstrate static variable binding, this does binding for both first and las
         - 'id': {type: 'number_sequence', start: 10}
 
 - benchmark: # create new entities
-    - generator_binds: {id: id}
+    - generator_binds: {user_id: id}
     - name: "Create person"
-    - url: {template: "/api/person/$id/"}
+    - url: {template: "/api/person/$user_id/"}
     - warmup_runs: 0
     - method: 'PUT'
     - headers: {'Content-Type': 'application/json'}
-    - body: {template: '{"first_name": "$firstname","id": "$id","last_name": "$lastname","login": "test-login-$id"}'}
+    - body: {template: '{"first_name": "$firstname","id": "$user_id","last_name": "$lastname","login": "test-login-$id"}'}
     - 'benchmark_runs': '1000'
     - output_format: csv
     - metrics:
