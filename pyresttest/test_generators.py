@@ -59,7 +59,7 @@ class GeneratorTest(unittest.TestCase):
     def test_random_ids(self):
         """ Test random in ids generator """
         gen = generators.generator_random_int32()
-        print gen.next()
+        print(gen.next())
         self.generator_repeat_test(gen)
 
     def test_system_variables(self):
@@ -172,8 +172,8 @@ class GeneratorTest(unittest.TestCase):
                 for x in xrange(0, 50):
                     val = gen.next()
                     self.assertTrue(set(val).issubset(set(myset)))
-            except Exception, e:
-                print 'Exception occurred with charset: '+charset
+            except Exception as e:
+                print('Exception occurred with charset: '+charset)
                 raise e
 
         my_min = 1
