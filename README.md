@@ -107,7 +107,7 @@ Now, let's get started!
 **This is what testing is for.**
 
 ## System Requirements:
-- A semi-modern linux distro (or maybe Mac OS X)
+- Linux or Mac OS X with python 2.6+ installed and pycurl
 - Do not use a virtualenv (or have it custom configured to find libcurl)
 
 # Quickstart Part 0: Setting Up a Sample REST Service
@@ -421,7 +421,7 @@ There are a few custom configuration options specific to benchmarks:
 There are two ways to collect performance metrics: raw data, and aggregated stats.
 Each metric may yield raw data, plus one or more aggregate values.
 - *Raw Data*: returns an array of values, one for each benchmark run
-- *Aggregates*: runs a reduction function to return a single value over the entire benchmark run
+- *Aggregates*: runs a reduction function to return a single value over the entire benchmark run (median, average, etc)
 
 To return raw data, in the 'metrics' configuration element, simply input the metric name in a list of values.
 The example below will return raw data for total time and size of download (101 values each).
