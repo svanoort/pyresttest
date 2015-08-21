@@ -672,7 +672,7 @@ try:
     import jsonschema
     register_extensions('ext.validator_jsonschema')
 except ImportError as ie:
-    logging.warn("Failed to load jsonschema validator, make sure the jsonschema module is installed if you wish to use schema validators.")
+    logging.debug("Failed to load jsonschema validator, make sure the jsonschema module is installed if you wish to use schema validators.")
 
 def main(args):
     """
@@ -711,7 +711,7 @@ def main(args):
 
     # Set up base URL
     base_url = args['url']
-    
+
     if 'absolute_urls' in args and args['absolute_urls']:
         base_url = ''
 
