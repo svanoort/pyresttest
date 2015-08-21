@@ -66,10 +66,10 @@ class RestTestCase(unittest.TestCase):
 
         test_response = resttest.run_test(test)
         for failure in test_response.failures:
-            print "REAL FAILURE"
-            print "Test Failure, failure type: {0}, Reason: {1}".format(failure.failure_type, failure.message)
+            print("REAL FAILURE")
+            print("Test Failure, failure type: {0}, Reason: {1}".format(failure.failure_type, failure.message))
             if failure.details:
-                print "Validator/Error details: "+str(failure.details)
+                print("Validator/Error details: "+str(failure.details))
         self.assertFalse(test_response.failures)
         self.assertTrue(test_response.passed)
 
@@ -153,7 +153,7 @@ class RestTestCase(unittest.TestCase):
         test_response2 = resttest.run_test(test2)
         self.assertTrue(test_response2.passed)
         obj = json.loads(str(test_response2.body))
-        print json.dumps(obj)
+        print(json.dumps(obj))
 
     def test_delete(self):
         """ Try removing an item """
@@ -184,7 +184,7 @@ class RestTestCase(unittest.TestCase):
 
         # Get absolute path to test file, in the same folder as this test
         path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'content-test.yaml')
-        print path
+        print(path)
         tests = resttest.parse_testsets('http://localhost:8000', resttest.read_test_file(path), working_directory = os.path.dirname(os.path.realpath(__file__)))
         failures = resttest.run_testsets(tests)
         self.assertTrue(failures == 0, 'Simple tests failed where success expected')
@@ -195,7 +195,7 @@ class RestTestCase(unittest.TestCase):
         benchmark_config.url = self.prefix + '/api/person/'
         benchmark_config.add_metric('total_time').add_metric('total_time','median')
         benchmark_result = resttest.run_benchmark(benchmark_config)
-        print "Benchmark - median request time: " + str(benchmark_result.aggregates[0])
+        print("Benchmark - median request time: " + str(benchmark_result.aggregates[0]))
         self.assertTrue(benchmark_config.benchmark_runs, len(benchmark_result.results['total_time']))
 
 if __name__ == "__main__":

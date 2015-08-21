@@ -181,7 +181,7 @@ class Test(object):
         if self.extract_binds:
             for key, value in self.extract_binds.items():
                 result = value.extract(body=response_body, context=context)
-                print 'Result: {0}'.format(result)
+                print('Result: {0}'.format(result))
                 context.bind_variable(key, result)
 
 
