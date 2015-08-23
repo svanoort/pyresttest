@@ -207,7 +207,7 @@ class HeaderExtractor(AbstractExtractor):
 
     def extract_internal(self, query=None, args=None, body=None, headers=None):
         try:
-            return headers[query.lower()]
+            return headers[query.lower()]  # Lowercase because headers are case-insensitive per RFC 2616
         except Exception:
             return None
 

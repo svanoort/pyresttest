@@ -151,7 +151,8 @@ def parse_headers(header_string):
         return dict()
     else:
         header_msg = message_from_string(headers)
-        return dict(header_msg.items())
+        # Note: HTTP headers are *case-insensitive* per RFC 2616
+        return dict((k.lower(), v) for k,v in header_msg.items())
 
 def parse_testsets(base_url, test_structure, test_files = set(), working_directory = None, vars=None):
     """ Convert a Python data structure read from validated YAML to a set of structured testsets
