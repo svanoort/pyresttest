@@ -89,6 +89,12 @@ class ValidatorsTest(unittest.TestCase):
         extract = validators.MiniJsonExtractor.parse(config)
         self.assertEqual(3, extract.extract(myjson, context=context))
 
+        # Return the same object
+        config = ''
+        extractor = validators.MiniJsonExtractor.parse(config)
+        extracted = extractor.extract(body=myjson)
+        self.assertEqual({'key': {'val': 3}}, extracted)
+
     def test_header_extractor(self):
         query = 'content-type'
         extractor = validators.HeaderExtractor.parse(query)
