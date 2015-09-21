@@ -1,14 +1,13 @@
 #!/usr/bin/env python
 import sys
 import os
-import inspect
 import traceback
 import yaml
 import pycurl
 import json
 import csv
 import logging
-from optparse import OptionParser
+from argparse import ArgumentParser
 from email import message_from_string  # For headers handling
 import time
 
@@ -701,75 +700,66 @@ def main(args):
             sys.path.insert(0, working_folder)
         register_extensions(extensions)
 
-    test_file = args['test']
-    test_structure = read_test_file(test_file)
+    test_files = args['test']
+    failures = 0
+    for test_file in test_files:
+        test_structure = read_test_file(test_file)
 
-    my_vars = None
-    if 'vars' in args and args['vars'] is not None:
-        my_vars = yaml.safe_load(args['vars'])
-    if my_vars and not isinstance(my_vars, dict):
-        raise Exception("Variables must be a dictionary!")
+        my_vars = None
+        if 'vars' in args and args['vars'] is not None:
+            my_vars = yaml.safe_load(args['vars'])
+        if my_vars and not isinstance(my_vars, dict):
+            raise Exception("Variables must be a dictionary!")
 
-    # Set up base URL
-    base_url = args['url']
+        # Set up base URL
+        base_url = args['url']
 
-    if 'absolute_urls' in args and args['absolute_urls']:
-        base_url = ''
+        if 'absolute_urls' in args and args['absolute_urls']:
+            base_url = ''
 
-    tests = parse_testsets(base_url, test_structure, working_directory=os.path.dirname(test_file), vars=my_vars)
+        tests = parse_testsets(base_url, test_structure, working_directory=os.path.dirname(test_file), vars=my_vars)
 
-    # Override configs from command line if config set
-    for t in tests:
-        if 'print_bodies' in args and args['print_bodies'] is not None and bool(args['print_bodies']):
-            t.config.print_bodies = safe_to_bool(args['print_bodies'])
+        # Override configs from command line if config set
+        for t in tests:
+            if 'print_bodies' in args and args['print_bodies'] is not None and bool(args['print_bodies']):
+                t.config.print_bodies = safe_to_bool(args['print_bodies'])
 
-        if 'print_headers' in args and args['print_headers'] is not None and bool(args['print_headers']):
-            t.config.print_headers = safe_to_bool(args['print_headers'])
+            if 'print_headers' in args and args['print_headers'] is not None and bool(args['print_headers']):
+                t.config.print_headers = safe_to_bool(args['print_headers'])
 
-        if 'interactive' in args and args['interactive'] is not None:
-            t.config.interactive = safe_to_bool(args['interactive'])
+            if 'interactive' in args and args['interactive'] is not None:
+                t.config.interactive = safe_to_bool(args['interactive'])
 
-        if 'verbose' in args and args['verbose'] is not None:
-            t.config.verbose = safe_to_bool(args['verbose'])
+            if 'verbose' in args and args['verbose'] is not None:
+                t.config.verbose = safe_to_bool(args['verbose'])
 
-        if 'ssl_insecure' in args and args['ssl_insecure'] is not None:
-            t.config.ssl_insecure = safe_to_bool(args['ssl_insecure'])
+            if 'ssl_insecure' in args and args['ssl_insecure'] is not None:
+                t.config.ssl_insecure = safe_to_bool(args['ssl_insecure'])
 
-    # Execute all testsets
-    failures = run_testsets(tests)
+        # Execute all testsets
+        failures = failures or run_testsets(tests)
 
     sys.exit(failures)
 
 def command_line_run(args_in):
     """ Runs everything needed to execute from the command line, so main method is callable without arg parsing """
-    parser = OptionParser(usage="usage: %prog base_url test_filename.yaml [options] ")
-    parser.add_option(u"--print-bodies", help="Print all response bodies", action="store", type="string", dest="print_bodies")
-    parser.add_option(u"--print-headers", help="Print all response headers", action="store", type="string", dest="print_headers")
-    parser.add_option(u"--log", help="Logging level", action="store", type="string")
-    parser.add_option(u"--interactive", help="Interactive mode", action="store", type="string")
-    parser.add_option(u"--url", help="Base URL to run tests against", action="store", type="string")
-    parser.add_option(u"--test", help="Test file to use", action="store", type="string")
-    parser.add_option(u'--import_extensions', help='Extensions to import, separated by semicolons', action="store", type="string")
-    parser.add_option(u'--vars', help='Variables to set, as a YAML dictionary', action="store", type="string")
-    parser.add_option(u'--verbose', help='Put cURL into verbose mode for extra debugging power', action='store_true', default=False, dest="verbose")
-    parser.add_option(u'--ssl-insecure', help='Disable cURL host and peer cert verification', action='store_true', default=False, dest="ssl_insecure")
-    parser.add_option(u'--absolute-urls', help='Enable absolute URLs in tests instead of relative paths', action="store_true", dest="absolute_urls")
+    parser = ArgumentParser(usage="usage: %(prog)s base_url test_filename.yaml [options] ")
+    parser.add_argument(u"url", help="Base URL to run tests against")
+    parser.add_argument(u"--url", help="Base URL to run tests against")
+    parser.add_argument(u"test", help="Test file to use", action="store", nargs="*")
+    parser.add_argument(u"--test", help="Test file to use", action="store", nargs="+")
+    parser.add_argument(u"--print-bodies", help="Print all response bodies", action="store", dest="print_bodies")
+    parser.add_argument(u"--print-headers", help="Print all response headers", action="store", dest="print_headers")
+    parser.add_argument(u"--log", help="Logging level", action="store")
+    parser.add_argument(u"--interactive", help="Interactive mode", action="store")
+    parser.add_argument(u'--import_extensions', help='Extensions to import, separated by semicolons', action="store")
+    parser.add_argument(u'--vars', help='Variables to set, as a YAML dictionary', action="store")
+    parser.add_argument(u'--verbose', help='Put cURL into verbose mode for extra debugging power', action='store_true', default=False, dest="verbose")
+    parser.add_argument(u'--ssl-insecure', help='Disable cURL host and peer cert verification', action='store_true', default=False, dest="ssl_insecure")
+    parser.add_argument(u'--absolute-urls', help='Enable absolute URLs in tests instead of relative paths', action="store_true", dest="absolute_urls")
 
-    (args, unparsed_args) = parser.parse_args(args_in)
+    args = parser.parse_args(args_in)
     args = vars(args)
-
-    # Handle url/test as named, or, failing that, positional arguments
-    if not args['url'] or not args['test']:
-        if len(unparsed_args) == 2:
-            args[u'url'] = unparsed_args[0]
-            args[u'test'] = unparsed_args[1]
-        elif len(unparsed_args) == 1 and args['url']:
-            args['test'] = unparsed_args[0]
-        elif len(unparsed_args) == 1 and args['test']:
-            args['url'] = unparsed_args[0]
-        else:
-            parser.print_help()
-            parser.error("wrong number of arguments, need both url and test filename, either as 1st and 2nd parameters or via --url and --test")
 
     args['cwd'] = os.path.realpath(os.path.abspath(os.getcwd()))  # So modules can be loaded from current folder
     main(args)
