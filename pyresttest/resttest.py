@@ -21,7 +21,7 @@ except:
 from binding import Context
 import generators
 from generators import parse_generator
-from parsing import flatten_dictionaries, lowercase_keys, safe_to_bool, safe_to_json
+from parsing import flatten_dictionaries, lowercase_keys, safe_to_bool, safe_to_json, resolve_variable
 import validators
 from validators import Failure
 from tests import Test, DEFAULT_TIMEOUT
@@ -247,7 +247,7 @@ def read_file(path):
         f.close()
     return string
 
-def run_test(mytest, test_config = TestConfig(), context = None):
+def run_test(config_scope=None, execution_scope=None, context=None):
     """ Put together test pieces: configure & run actual test, return results """
 
     # Initialize a context if not supplied
@@ -257,6 +257,8 @@ def run_test(mytest, test_config = TestConfig(), context = None):
 
     mytest.update_context_before(my_context)
     templated_test = mytest.realize(my_context)
+
+    #FIXME need to do config/scope resolution
     curl = templated_test.configure_curl(timeout=test_config.timeout, context=my_context)
     result = TestResponse()
     result.test = templated_test
@@ -266,15 +268,15 @@ def run_test(mytest, test_config = TestConfig(), context = None):
     body = StringIO()
     curl.setopt(pycurl.WRITEDATA, body)
     curl.setopt(pycurl.HEADERFUNCTION, headers.write)
-    if test_config.verbose:
+    if resolve_scope('verbose', config_scope):
         curl.setopt(pycurl.VERBOSE,True)
-    if test_config.ssl_insecure:
+    if resolve_scope('ssl_insecure', config_scope):
         curl.setopt(pycurl.SSL_VERIFYPEER,0)
         curl.setopt(pycurl.SSL_VERIFYHOST,0)
 
     result.passed = None
 
-    if test_config.interactive:
+    if resolve_scope('interactive', config_scope):
         print "==================================="
         print "%s" % mytest.name
         print "-----------------------------------"
@@ -282,11 +284,11 @@ def run_test(mytest, test_config = TestConfig(), context = None):
         print "%s %s" % (templated_test.method, templated_test.url)
         print "HEADERS:"
         print "%s" % (templated_test.headers)
-        if mytest.body is not None:
+        if resolve_scope('body', config_scope) is not None:
             print "\n%s" % templated_test.body
         raw_input("Press ENTER when ready (%d): " % (mytest.delay))
 
-    if mytest.delay > 0:
+    if resolve_scope('delay', config_scope) > 0:
         print "Delaying for %ds" % mytest.delay
         time.sleep(mytest.delay)
 
@@ -311,7 +313,7 @@ def run_test(mytest, test_config = TestConfig(), context = None):
 
     logger.debug("Initial Test Result, based on expected response code: "+str(response_code in mytest.expected_status))
 
-    if response_code in mytest.expected_status:
+    if response_code in resolve_scope('expected_status', config_scope):
         result.passed = True
     else:
         # Invalid response code
@@ -335,10 +337,11 @@ def run_test(mytest, test_config = TestConfig(), context = None):
     # execute validator on body
     if result.passed is True:
         body = result.body
-        if mytest.validators is not None and isinstance(mytest.validators, list):
+        validators = resolve_scope('validators', config_scope)
+        if validators is not None and isinstance(validators, list):
             logger.debug("executing this many validators: " + str(len(mytest.validators)))
             failures = result.failures
-            for validator in mytest.validators:
+            for validator in validators:
                 validate_result = validator.validate(body=body, headers=head, context=my_context)
                 if not validate_result:
                     result.passed = False

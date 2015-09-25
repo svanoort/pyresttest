@@ -6,8 +6,8 @@ python -m unittest pyresttest.test_parsing pyresttest.test_binding pyresttest.te
 python -m unittest pyresttest.test_resttest pyresttest.test_tests pyresttest.test_benchmarks
 
 # Command-line call tests (use github API)
-python pyresttest/functionaltest.py
+#python pyresttest/functionaltest.py
 
 # Extensions test
-sh test_use_extension.sh
+#sh test_use_extension.sh
 
