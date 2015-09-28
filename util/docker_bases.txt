@@ -1,0 +1,4 @@
+# Docker labels for testing
+centos:6.6 -- python 2.6.6
+centos:centos7 -- python 2.7.5   -- can get python3
+ubuntu:14.04 -- no python natively, can install/run 2.7.6, includes python3 3.4.0
