@@ -127,6 +127,18 @@ class ValidatorsTest(unittest.TestCase):
         self.assertTrue(extractor.is_header_extractor)
         self.assertFalse(extractor.is_body_extractor)
 
+    def test_raw_body_extractor(self):
+        query = ''
+        extractor = validators.parse_extractor('raw_body', None)
+        extractor = validators.parse_extractor('raw_body', query)
+        self.assertTrue(isinstance(extractor, validators.RawBodyExtractor))
+        self.assertTrue(extractor.is_body_extractor)
+        self.assertFalse(extractor.is_header_extractor)
+
+        bod = 'j1j21io312j3'
+        val = extractor.extract(body=bod, headers='')
+        self.assertEqual(bod, val)
+
     def test_abstract_extractor_parse(self):
         """ Test parsing a basic abstract extractor """
         ext = validators.AbstractExtractor()

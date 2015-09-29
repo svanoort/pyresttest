@@ -220,6 +220,20 @@ class HeaderExtractor(AbstractExtractor):
         base = HeaderExtractor()
         return cls.configure_base(config, base)
 
+class RawBodyExtractor(AbstractExtractor):
+    """ Extractor that returns the full request body """
+    extractor_type = 'raw_body'
+    is_header_extractor = False
+    is_body_extractor = True
+
+    def extract_internal(self, query=None, args=None, body=None, headers=None):
+        return body
+
+    @classmethod
+    def parse(cls, config, extractor_base=None):
+        ## Doesn't take any real configuration
+        base = RawBodyExtractor()
+        return base
 
 def _get_extractor(config_dict):
     """ Utility function, get an extract function for a single valid extractor name in config
@@ -473,6 +487,7 @@ def register_comparator(comparator_name, comparator_function):
 # --- REGISTRY OF EXTRACTORS AND VALIDATORS ---
 register_extractor('jsonpath_mini', MiniJsonExtractor.parse)
 register_extractor('header', HeaderExtractor.parse)
+register_extractor('raw_body', RawBodyExtractor.parse)
 # ENHANCEME: add JsonPath-rw support for full JsonPath syntax
 # ENHANCEME: add elementree support for xpath extract on XML, very simple no?
 #  See: https://docs.python.org/2/library/xml.etree.elementtree.html, findall syntax

@@ -189,7 +189,7 @@ jsonpath_mini: {template: $keyname.age}
 ## Extractor: header
 This extracts the value of an HTTP header from the response. 
 This value can be tested with comparisons or extract tests.
-Note that **headers are case-insensitive**, 'content-type' and 'Content-Type' will be the same. 
+Note that **headers are case-insensitive**, 'content-type' and 'Content-Type' will be the same. If multiple values are defined for the header, a list of values will be returned (example: cookies).
 
 Example:
 ```yaml
@@ -201,6 +201,10 @@ Example 2:
 compare: {header: 'content-type', expected: 'application/json'}
 ```
 
+## Extractor: raw_body
+This extracts the raw HTTP response body. 
+This value can be tested with comparisons or extract tests.
+This does not take any configuration values. 
 
 # Validation Basics
 Validators test response bodies for correctness.  They perform a test on the response body, with context supplied, and return a value that will evaluate to boolean True or False. 
