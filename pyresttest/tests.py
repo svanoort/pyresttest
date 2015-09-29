@@ -176,11 +176,11 @@ class Test(object):
             for key, value in self.generator_binds.items():
                 context.bind_generator_next(key, value)
 
-    def update_context_after(self, response_body, context):
+    def update_context_after(self, response_body, headers, context):
         """ Run the extraction routines to update variables based on HTTP response body """
         if self.extract_binds:
             for key, value in self.extract_binds.items():
-                result = value.extract(body=response_body, context=context)
+                result = value.extract(body=response_body, headers=headers, context=context)
                 print('Result: {0}'.format(result))
                 context.bind_variable(key, result)
 

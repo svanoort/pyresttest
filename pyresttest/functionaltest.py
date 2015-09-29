@@ -10,6 +10,7 @@ from multiprocessing import Process
 from django.core.management import call_command
 
 from tests import Test
+from binding import Context
 import resttest
 import validators
 
@@ -95,6 +96,42 @@ class RestTestCase(unittest.TestCase):
         test_response = resttest.run_test(test)
         self.assertEqual(True, test_response.passed)
         self.assertEqual(200, test_response.response_code)
+
+    def test_header_extraction(self):
+        test = Test()
+        test.url = self.prefix + '/api/person/1/'
+        key1 = 'server-header'
+        key2 = 'server-header-mixedcase'
+
+        test.extract_binds = {
+            key1: validators.HeaderExtractor.parse('server'),
+            # Verify case-insensitive behavior
+            key2: validators.HeaderExtractor.parse('sErVer')
+        }
+        my_context = Context()
+        test_response = resttest.run_test(test, context=my_context)
+        val1 = my_context.get_value(key1)
+        val2 = my_context.get_value(key2)
+        self.assertEqual(val1, val2)
+        self.assertTrue('wsgi' in val1.lower())
+        self.assertTrue('wsgi' in val2.lower())
+
+    def test_header_validators(self):
+        test = Test()
+        test.url = self.prefix + '/api/person/1/'
+        config = {
+            'header': 'server',
+            'comparator': 'contains',
+            'expected': 'WSGI'
+        }
+        test.validators = list()
+        test.validators.append(validators.parse_validator('comparator', config))
+        result = resttest.run_test(test)
+
+        if result.failures:
+            for fail in result.failures:
+                print fail
+        self.assertTrue(result.passed)
 
     def test_failed_get(self):
         """ Test GET that should fail """

@@ -356,7 +356,7 @@ def run_test(mytest, test_config = TestConfig(), context = None):
             logger.debug("no validators found")
 
         # Only do context updates if test was successful
-        mytest.update_context_after(result.body, my_context)
+        mytest.update_context_after(result.body, head, my_context)
 
     # Print response body if override is set to print all *OR* if test failed (to capture maybe a stack trace)
     if test_config.print_bodies or not result.passed:
