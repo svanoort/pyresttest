@@ -209,7 +209,7 @@ class HeaderExtractor(AbstractExtractor):
         try:
             return headers[query.lower()]  # Lowercase because headers are case-insensitive per RFC 2616
         except KeyError:
-            return None
+            raise ValueError("Invalid header name {0}".format(query))
 
     @classmethod
     def parse(cls, config, extractor_base=None):

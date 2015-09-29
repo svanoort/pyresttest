@@ -102,9 +102,13 @@ class ValidatorsTest(unittest.TestCase):
         extracted = extractor.extract(body='blahblah', headers=headers)
         self.assertEqual(headers[query.lower()], extracted)
 
+        # Throws exception if invalid header
         headers = {'foo': 'bar'}
-        extracted = extractor.extract(body='blahblah', headers=headers)
-        self.assertEqual(None, extracted)
+        try:
+            extracted = extractor.extract(body='blahblah', headers=headers)
+            self.fail("Extractor should throw exception on invalid key")
+        except ValueError:
+            pass
 
     def test_parse_header_extractor(self):
         query = 'content-type'
@@ -237,7 +241,7 @@ class ValidatorsTest(unittest.TestCase):
 
         self.assertTrue(comp_validator.validate(body=myjson_pass))
         self.assertFalse(comp_validator.validate(body=myjson_fail))
-        
+
     def test_validator_compare_ne(self):
         """ Basic test of the inequality validator"""
         config = {
