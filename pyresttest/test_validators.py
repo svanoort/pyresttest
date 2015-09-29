@@ -92,23 +92,33 @@ class ValidatorsTest(unittest.TestCase):
     def test_header_extractor(self):
         query = 'content-type'
         extractor = validators.HeaderExtractor.parse(query)
-        headers = {'content-type': 'application/json'}
+        headers = [('content-type', 'application/json')]
         extracted = extractor.extract(body='blahblah', headers=headers)
-        self.assertEqual(headers[query], extracted)
+        self.assertEqual(headers[0][1], extracted)
 
         # Test case-insensitivity
         query = 'content-Type'
         extractor = validators.HeaderExtractor.parse(query)
         extracted = extractor.extract(body='blahblah', headers=headers)
-        self.assertEqual(headers[query.lower()], extracted)
+        self.assertEqual(headers[0][1], extracted)
 
         # Throws exception if invalid header
-        headers = {'foo': 'bar'}
+        headers = [('foo', 'bar')]
         try:
             extracted = extractor.extract(body='blahblah', headers=headers)
             self.fail("Extractor should throw exception on invalid key")
         except ValueError:
             pass
+
+    def test_header_extractor_duplicatekeys(self):
+        # Test for handling of multiple headders
+        query = 'content-Type'
+        headers = [('content-type', 'application/json'), ('content-type', 'x-json-special')]
+        extractor = validators.HeaderExtractor.parse(query)
+        extracted = extractor.extract(body='blahblah', headers=headers)
+        self.assertTrue(isinstance(extracted, list))
+        self.assertEqual(headers[0][1], extracted[0])
+        self.assertEqual(headers[1][1], extracted[1])
 
     def test_parse_header_extractor(self):
         query = 'content-type'

@@ -201,15 +201,19 @@ class MiniJsonExtractor(AbstractExtractor):
 
 
 class HeaderExtractor(AbstractExtractor):
-    """ Extractor that pulls out a named header """
+    """ Extractor that pulls out a named header value... or list of values if multiple values defined """
     extractor_type = 'header'
     is_header_extractor = True
 
     def extract_internal(self, query=None, args=None, body=None, headers=None):
-        try:
-            return headers[query.lower()]  # Lowercase because headers are case-insensitive per RFC 2616
-        except KeyError:
+        low = query.lower()
+        extracted = [y[1] for y in filter(lambda x: x[0] == low, headers)]  # Value for all matching key names
+        if len(extracted) == 0:
             raise ValueError("Invalid header name {0}".format(query))
+        elif len(extracted) == 1:
+            return extracted[0]
+        else:
+            return extracted
 
     @classmethod
     def parse(cls, config, extractor_base=None):

@@ -142,17 +142,18 @@ def read_test_file(path):
 def parse_headers(header_string):
     """ Parse a header-string into individual headers
         Implementation based on: http://stackoverflow.com/a/5955949/95122
+	Note that headers are a list of (key, value) since duplicate headers are allowed
     """
     # First line is request line, strip it out
     if not header_string:
-        return dict()
+        return list()
     request, headers = header_string.split('\r\n', 1)
     if not headers:
-        return dict()
+        return list()
     else:
         header_msg = message_from_string(headers)
         # Note: HTTP headers are *case-insensitive* per RFC 2616
-        return dict((k.lower(), v) for k,v in header_msg.items())
+        return [(k.lower(), v) for k,v in header_msg.items()]
 
 def parse_testsets(base_url, test_structure, test_files = set(), working_directory = None, vars=None):
     """ Convert a Python data structure read from validated YAML to a set of structured testsets
