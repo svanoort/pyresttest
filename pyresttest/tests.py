@@ -69,6 +69,7 @@ class Test(object):
     auth_password = None
     auth_type = pycurl.HTTPAUTH_BASIC
     delay = 0
+    curl_options = None
 
     templates = None  # Dictionary of template to compiled template
 
@@ -260,6 +261,7 @@ class Test(object):
         bod = self.body
 
         # Set read function for post/put bodies
+        # TODO allow setting method for all request types
         if self.method == u'POST' or self.method == u'PUT':
             if bod and len(bod) > 0:
                 curl.setopt(curl.READFUNCTION, StringIO(bod).read)
@@ -287,6 +289,8 @@ class Test(object):
                 curl.setopt(pycurl.INFILESIZE, 0)
         elif self.method == u'DELETE':
             curl.setopt(curl.CUSTOMREQUEST,'DELETE')
+        else:  # Support PATCH/HEAD/ETC
+            curl.setopt(curl.CUSTOMREQUEST, self.method.upper())
 
         head = self.get_headers(context=context)
         if head: #Convert headers dictionary to list of header entries, tested and working
@@ -296,6 +300,12 @@ class Test(object):
         headers.append("Expect:")  # Fix for expecting 100-continue from server, which not all servers will send!
         headers.append("Connection: close")
         curl.setopt(curl.HTTPHEADER, headers)
+
+        # Set custom curl options, which are KEY:VALUE pairs matching the pycurl option names
+        # And the key/value pairs are set
+        if self.curl_options:
+            for (key, value) in filter(lambda x: x[0] is not None and x[1] is not None, curl_options.items()):
+                curl.setopt(getattr(curl, key), value)  # getattr to look up constant for variable name
         return curl
 
     @classmethod
@@ -421,8 +431,19 @@ class Test(object):
                 mytest.stop_on_failure = safe_to_bool(configvalue)
             elif configelement == 'delay':
                 mytest.delay = int(configvalue)
+            elif configelement.startswith('curl_option'):
+                curlopt = configelement.lstrip('curl_option').upper()
+                tempcurl = pycurl.Curl()
+                if hasattr(tempurl, curlopt):
+                    if not mytest.curl_options:
+                        mytest.curl_options = dict()
+                    mytest.curl_options[curlopt] = configvalue
+                else:
+                    raise ValueError("Illegal curl option: {0}".format(curlopt))
+                del tempcurl
 
-        #Next, we adjust defaults to be reasonable, if the user does not specify them
+
+        #tempcurl, we adjust defaults to be reasonable, if the user does not specify them
 
         #For non-GET requests, accept additional response codes indicating success
         # (but only if not expected statuses are not explicitly specified)
