@@ -167,7 +167,7 @@ class ExtractTestValidator(AbstractValidator):
             failure = Failure(details=self.config, validator=self)
             failure.message = "Extract and test validator failed on test: {0}({1})".format(self.test_name, extracted)
             return failure
-    ```
+```
 
 
 # Registry
