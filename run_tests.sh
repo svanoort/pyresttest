@@ -1,13 +1,22 @@
 #!/usr/bin/bash
 # Core pieces
-python -m unittest pyresttest.test_parsing pyresttest.test_binding pyresttest.test_generators pyresttest.test_contenthandling pyresttest.test_validators
+python -m unittest discover -s pyresttest -p 'test_*.py'
 
-# Integrated components
-python -m unittest pyresttest.test_resttest pyresttest.test_tests pyresttest.test_benchmarks
+if [ $? -ne 0 ]; then
+    exit 1
+fi
 
 # Command-line call tests (use github API)
 python pyresttest/functionaltest.py
 
+if [ $? -ne 0 ]; then
+    exit 1
+fi
+
 # Extensions test
 sh test_use_extension.sh
+
+if [ $? -ne 0 ]; then
+    exit 1
+fi
 
