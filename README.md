@@ -2,13 +2,25 @@ pyresttest
 ==========
 
 # What Is It?
-- A simple but powerful REST testing and benchmarking framework
-- Minimal dependencies, designed to slot into automated configuration management/orchestration tools
+- A simple but powerful REST testing and microbenchmarking framework
+- Minimal dependencies (pycurl, pyyaml), designed to slot into automated configuration management/orchestration tools
 - Tests are defined in basic YAML or JSON config files, no code needed
 - Logic is written and [extensible](extensions.md) in Python
 
 # License
 Apache License, Version 2.0
+
+# Changelog, (Back)Compatibility, and Releases
+* [The changelog is here](CHANGELOG.md).  
+* Python 2.6 and 2.7 compatible, working on Python 3 support
+    - Tested on Ubuntu 14.x currently, working on CentOS/SuSe tests
+* Releases occur every few months to [PyPi](https://pypi.python.org/pypi/pyresttest/) once a few features are ready to go
+* PyRestTest uses [Semantic Versioning 2.0](http://semver.org/)
+* **Back-compatibility is important! PyRestTest makes a strong effort to maintain command-line and YAML format back-compatibility since 1.0.**
+  - [Extension method signatures](extensions.md) are maintained as much as possible. 
+  - However, internal python implementations are subject to change.
+  - Major version releases (1.x to 2.x, etc) may introduce breaking API changes, but only *with a really darned good reason, and only there's not another way.*
+
 
 # Sample Test
 **This will check that APIs accept operations, and will smoketest an application**
@@ -580,7 +592,7 @@ Top priority, before enhancements:
 We welcome any feedback you have, including pull requests, reported issues, etc
 
 For pull requests to get easily merged, please:
-- Include unit tests
+- Include unit tests, and verify that run_tests.sh passes
 - Include documentation as appropriate
 - Attempt to adhere to PEP8 style guidelines and project style
 

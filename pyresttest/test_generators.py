@@ -215,14 +215,17 @@ class GeneratorTest(unittest.TestCase):
         self.generator_basic_test(gen, value_test_function = lambda x: isinstance(x,int))
         self.generator_repeat_test(gen)
 
+        # Sample variable
+        os.environ['SAMPLEVAR'] = 'goober'
+
         config['type'] = 'env_variable'
-        config['variable_name'] = 'USER'
+        config['variable_name'] = 'SAMPLEVAR'
         gen = generators.parse_generator(config)
         self.generator_basic_test(gen)
         del config['variable_name']
 
         config['type'] = 'env_string'
-        config['string'] = '$USER'
+        config['string'] = '$SAMPLEVAR'
         gen = generators.parse_generator(config)
         self.generator_basic_test(gen)
         del config['string']
