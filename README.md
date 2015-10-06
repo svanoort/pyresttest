@@ -2,25 +2,14 @@ pyresttest
 ==========
 
 # What Is It?
-- A simple but powerful REST testing and microbenchmarking framework
-- Minimal dependencies (pycurl, pyyaml), designed to slot into automated configuration management/orchestration tools
+- A simple but powerful REST testing and API microbenchmarking framework
+- Minimal dependencies (pycurl, pyyaml), making it easy to deploy on-server for self-checks
+- Returns exit codes on failure, to slot into automated configuration management/orchestration tools
 - Tests are defined in basic YAML or JSON config files, no code needed
 - Logic is written and [extensible](extensions.md) in Python
 
 # License
 Apache License, Version 2.0
-
-# Changelog, (Back)Compatibility, and Releases
-* [The changelog is here](CHANGELOG.md).  
-* Python 2.6 and 2.7 compatible, working on Python 3 support
-    - Tested on Ubuntu 14.x currently, working on CentOS/SuSe tests
-* Releases occur every few months to [PyPi](https://pypi.python.org/pypi/pyresttest/) once a few features are ready to go
-* PyRestTest uses [Semantic Versioning 2.0](http://semver.org/)
-* **Back-compatibility is important! PyRestTest makes a strong effort to maintain command-line and YAML format back-compatibility since 1.0.**
-  - [Extension method signatures](extensions.md) are maintained as much as possible. 
-  - However, internal python implementations are subject to change.
-  - Major version releases (1.x to 2.x, etc) may introduce breaking API changes, but only *with a really darned good reason, and only there's not another way.*
-
 
 # Sample Test
 **This will check that APIs accept operations, and will smoketest an application**
@@ -559,37 +548,38 @@ You'll need to install rpm-build, and then it should work.
 sudo yum install rpm-build
 ```
 
+# Changelog, (Back)Compatibility, and Releases
+* [The changelog is here](CHANGELOG.md).  
+* Python 2.6 and 2.7 compatible, working on Python 3 support
+    - Tested on Ubuntu 14.x currently, working on CentOS/SuSe tests
+* Releases occur every few months to [PyPi](https://pypi.python.org/pypi/pyresttest/) once a few features are ready to go
+* PyRestTest uses [Semantic Versioning 2.0](http://semver.org/)
+* **Back-compatibility is important! PyRestTest makes a strong effort to maintain command-line and YAML format back-compatibility since 1.0.**
+  - [Extension method signatures](extensions.md) are maintained as much as possible. 
+  - However, internal python implementations are subject to change.
+  - Major version releases (1.x to 2.x, etc) may introduce breaking API changes, but only *with a really darned good reason, and only there's not another way.*
+
 # FAQ
 
 ## Why not pure-python tests?
 - This is written for an environment where Python is not the sole or primary langauge
 - **You totally can do pure-Python tests if you want!**  
+    - [Extensions](extensions.md) provide a stable API for adding more complex functionality in python
+    - All modules can be imported and used as libraries
     - Gotcha: the project is still young, so internal implementation may change often, much more than YAML features
-    - Extensions are intended specifically for adding functionality, they will be the most stable part
-    - Read before you assume: template handling is more complex than you think.
-    - Framework run/execute methods in pyresttest/resttest.py do *quite* a bit of heavy lifting
 
 ## Why YAML and not XML/JSON?
 - XML is extremely verbose and has many gotchas for parsing
 - You **CAN use JSON for tests**, it's a subset of YAML. See [miniapp-test.json](miniapp-test.json) for an example. 
 - YAML tends to be the most concise, natural, and easy to write of these three options
 
-# Future Plans (rough priority order)
-Top priority, before enhancements: 
-- bugfixes
-- high-value minor usability enhancements (defaults, better error case handling)
-
-0. Refactor complex runner/executor methods into extensible, composable structures for a testing lifecycle
-1. Support for cert-based authentication (simply add test config elements and parsing)
-2. Smarter reporting, better reporting/logging of test execution and failures
-3. Depends on 0: support parallel execution of a test set where extract/generators not used
-4. Repeat tests (for fuzzing) and setUp/tearDown
-5. Hooks for reporting on test results
-6. Improve Python APIs and document how to do pure-python testing with this
-7. Tentative: add a one-pass optimizer for benchmark/test execution (remove redundant templating)
+## Does it do load tests?
+- No, this is a separate niche and there are already many excellent tools to fill it
+- Adding load testing features would greatly increase complexity
+- But some form might come eventually!
 
 ## Feedback
-We welcome any feedback you have, including pull requests, reported issues, etc
+We welcome any feedback you have, including pull requests, reported issues, etc!
 
 For pull requests to get easily merged, please:
 - Include unit tests, and verify that run_tests.sh passes
