@@ -14,18 +14,20 @@ def doTest(imageName, unitTestCommand, functionalTestCommand, additionalTestScri
 }
 
 // Define the environments and specific test syntax for each
-env_runs['ubuntu-python27'] = node {
+def envRuns = [:]
+envRuns['ubuntu-python27'] = {node {
   doTest(testEnv, "python -m unittest discover -s pyresttest -p 'test_*.py'",  'python pyresttest/functionaltest.py', 'bash test_use_extension.sh')
-}
+}}
 
-env_runs['centos6-python26'] = node {
+envRuns['centos6-python26'] = {node {
   doTest(testEnv26, "python -m discover -s pyresttest -p 'test_*.py'",  'python pyresttest/functionaltest.py', 'bash test_use_extension.sh')
-}
-
-parallel env_runs
+}}
 
 // Test Python 3 support, which *currently does not work*
-//node {
+//envRuns['ubuntu-python3'] = {node {
 //  doTest(testEnv, "python3 -m discover -s pyresttest -p 'test_*.py'",  'python3 pyresttest/functionaltest.py',
-//     "python pyresttest/resttest.py https://api.github.com extension_use_test.yaml --import_extensions 'sample_extension'")
-//}
+//     "python3 pyresttest/resttest.py https://api.github.com extension_use_test.yaml --import_extensions 'sample_extension'")
+//}}
+
+parallel envRuns
+
