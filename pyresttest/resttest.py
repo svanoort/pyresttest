@@ -270,7 +270,7 @@ def run_test(mytest, test_config = TestConfig(), context = None):
     # reset the body, it holds values from previous runs otherwise
     headers = StringIO()
     body = StringIO()
-    curl.setopt(pycurl.WRITEDATA, body)
+    curl.setopt(pycurl.WRITEFUNCTION, body.write)
     curl.setopt(pycurl.HEADERFUNCTION, headers.write)
     if test_config.verbose:
         curl.setopt(pycurl.VERBOSE,True)
