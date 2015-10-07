@@ -3,6 +3,11 @@ import generators
 import string
 import os
 import types
+import sys
+
+# Python 3 compatibility
+if sys.version_info[0] == 3:
+    from builtins import range as xrange
 
 class GeneratorTest(unittest.TestCase):
     """ Tests for generators """
@@ -13,18 +18,18 @@ class GeneratorTest(unittest.TestCase):
         self.assertTrue(isinstance(generator, types.GeneratorType))
 
         for x in xrange(0,100):
-            val = generator.next()
+            val = next(generator)
             self.assertTrue(val is not None)
             if value_test_function:
                 self.assertTrue(value_test_function(val), 'Test failed with value {0}'.format(val))
 
     def generator_repeat_test(self, generator_input):
         """ Basic test of a configured generator """
-        val = generator_input.next()
+        val = next(generator_input)
 
         # Check for not repeating easily
         for x in xrange(0, 5):
-            val2 = generator_input.next()
+            val2 = next(generator_input)
             self.assertTrue(val)
             self.assertTrue(val != val2)
             val = val2
@@ -34,9 +39,9 @@ class GeneratorTest(unittest.TestCase):
         f2 = generators.factory_generate_ids(101)()
         f3 = generators.factory_generate_ids(1)()
 
-        vals = [f.next(), f.next()]
-        vals2 = [f2.next(), f2.next()]
-        vals3 = [f3.next(), f3.next()]
+        vals = [next(f), next(f)]
+        vals2 = [next(f2), next(f2)]
+        vals3 = [next(f3), next(f3)]
 
         self.assertEqual(1, vals[0])
         self.assertEqual(2, vals[1])
@@ -54,12 +59,12 @@ class GeneratorTest(unittest.TestCase):
         ids2 = generators.generator_basic_ids()
         self.generator_repeat_test(ids1)
         self.generator_repeat_test(ids2)
-        self.assertEqual(ids1.next(), ids2.next())
+        self.assertEqual(next(ids1), next(ids2))
 
     def test_random_ids(self):
         """ Test random in ids generator """
         gen = generators.generator_random_int32()
-        print(gen.next())
+        print(next(gen))
         self.generator_repeat_test(gen)
 
     def test_system_variables(self):
@@ -69,11 +74,11 @@ class GeneratorTest(unittest.TestCase):
         old_val = os.environ.get(variable)
 
         generator = generators.factory_env_variable(variable)()
-        self.assertTrue(generator.next() is None)
+        self.assertTrue(next(generator) is None)
 
         os.environ[variable] = value
-        self.assertEqual(value, generator.next())
-        self.assertEqual(generator.next(), os.path.expandvars('$'+variable))
+        self.assertEqual(value, next(generator))
+        self.assertEqual(next(generator), os.path.expandvars('$'+variable))
 
         # Restore environment
         if old_val is not None:
@@ -84,14 +89,14 @@ class GeneratorTest(unittest.TestCase):
 
     def test_factory_text(self):
         """ Test the basic generator """
-        charsets = [string.letters, string.digits, string.uppercase, string.hexdigits]
+        charsets = [string.ascii_letters, string.digits, string.ascii_uppercase, string.hexdigits]
         # Test multiple charsets and string lengths
         for charset in charsets:
             # Test different lengths for charset
             for my_length in xrange(1,17):
                 gen = generators.factory_generate_text(legal_characters = charset, min_length=my_length, max_length=my_length)()
                 for x in xrange(0,10):
-                    val = gen.next()
+                    val = next(gen)
                     self.assertEqual(my_length, len(val))
 
     def test_factory_sequence(self):
@@ -141,8 +146,8 @@ class GeneratorTest(unittest.TestCase):
         """ Test that the random text generator can handle multiple lengths """
         gen = generators.factory_generate_text(legal_characters='abcdefghij', min_length=1,max_length=100)()
         lengths = set()
-        for x in xrange(0,100):
-            lengths.add(len(gen.next()))
+        for x in range(0,100):
+            lengths.add(len(next(gen)))
         self.assertTrue(len(lengths) > 1, "Variable length string generator did not generate multiple string lengths")
 
     def test_character_sets(self):
@@ -170,7 +175,7 @@ class GeneratorTest(unittest.TestCase):
                 gen = generators.parse_generator(config)
                 myset = set(generators.CHARACTER_SETS[charset])
                 for x in xrange(0, 50):
-                    val = gen.next()
+                    val = next(gen)
                     self.assertTrue(set(val).issubset(set(myset)))
             except Exception as e:
                 print('Exception occurred with charset: '+charset)
@@ -234,8 +239,8 @@ class GeneratorTest(unittest.TestCase):
         config['start'] = '1'
         config['increment'] = '10'
         gen = generators.parse_generator(config)
-        self.assertEqual(1, gen.next())
-        self.assertEqual(11, gen.next())
+        self.assertEqual(1, next(gen))
+        self.assertEqual(11, next(gen))
         self.generator_basic_test(gen)
         del config['type']
 

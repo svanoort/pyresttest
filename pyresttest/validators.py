@@ -6,6 +6,12 @@ import string
 import parsing
 import os
 import re
+import sys
+
+# Python 3 compatibility
+if sys.version_info[0] == 3:
+    from past.builtins import basestring
+    from past.builtins import long
 
 """
 Validator/Extractor logic for utility use
@@ -91,6 +97,10 @@ class Failure(object):
     validator = None
 
     def __nonzero__(self):
+        """ Failure objects test as False, simplifies coding with them """
+        return False
+
+    def __bool__(self):
         """ Failure objects test as False, simplifies coding with them """
         return False
 

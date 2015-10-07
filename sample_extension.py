@@ -1,8 +1,11 @@
 # Sample python extension
 import pyresttest.validators as validators
 from pyresttest.binding import Context
+import sys
 
-
+# Python 3 compatibility
+if sys.version_info[0] == 3:
+    from past.builtins import basestring
 
 class ContainsValidator(validators.AbstractValidator):
     # Sample validator that verifies a string is contained in the request body

@@ -2,9 +2,15 @@ import random
 import string
 import os
 import logging
+import sys
 
 from parsing import flatten_dictionaries, lowercase_keys, safe_to_bool
 import parsing
+
+# Python 3 compatibility
+if sys.version_info[0] == 3:
+    from past.builtins import basestring
+    from builtins import range as xrange
 
 """ Collection of generators to be used in templating for test data
 
@@ -25,12 +31,12 @@ CHARACTER_SETS = {
     'hexdigits': string.hexdigits,
     'hex_lower':  string.digits+'abcdef',
     'hex_upper':  string.digits+'ABCDEF',
-    'letters': string.letters,
-    'lowercase': string.lowercase,
+    'letters': string.ascii_letters,
+    'lowercase': string.ascii_lowercase,
     'octdigits': string.octdigits,
     'punctuation': string.punctuation,
     'printable': string.printable,
-    'uppercase': string.uppercase,
+    'uppercase': string.ascii_uppercase,
     'whitespace': string.whitespace,
     'url.slug': string.ascii_lowercase+string.digits+'-',
     'url.safe': string.ascii_letters+string.digits+'-~_.',

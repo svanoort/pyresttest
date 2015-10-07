@@ -47,8 +47,8 @@ class BindingTest(unittest.TestCase):
         context.bind_generator_next('foo', 'gen')
         self.assertEqual(1, context.mod_count)
         self.assertEqual(1, context.get_value('foo'))
-        self.assertTrue(2, context.get_generator('gen').next())
-        self.assertTrue(3, my_gen.next())
+        self.assertTrue(2, next(context.get_generator('gen')))
+        self.assertTrue(3, next(my_gen))
 
     def test_mixing_binds(self):
         """ Ensure that variables are set correctly when mixing explicit declaration and variables """
