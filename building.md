@@ -23,7 +23,8 @@ There are two options for how to work with code
 2. Docker: see the docker folder, we have preconfigured images for a *stable, clean verified* dev/test environment 
   1. (sudo) 'build.sh' will build docker images and verify the environment
     - pyresttest-build-centos6 acts as the python 2.6 / RPM-based distro environment
-    - pyresttest-build-ubuntu-14 acts as the python 2.7 / python3 and apt-based distro environment
+    - pyresttest-build-ubuntu-14 acts as the python 2.7 and apt-based distro environment
+    - pyresttest-build-python3 acts as a clean testbed for work on python3 compatibility
   2. After building you can use them as dev environments in volumes:
     - (sudo) docker run -v `PWD`:/tmp/pyresttest -it --rm pyresttest-build-centos6 /bin/bash
     - (sudo) docker run -v `PWD`:/tmp/pyresttest -it --rm pyresttest-build-ubuntu-14 /bin/bash
