@@ -47,6 +47,28 @@ class RestTestCase(unittest.TestCase):
         self.assertTrue(test_response.passed)
         self.assertEqual(200, test_response.response_code)
 
+    def test_patch(self):
+        """ Basic local get test """
+        test = Test()
+        test.url = self.prefix + '/api/person/2/'
+        test.method = 'PATCH'
+        test.body = '{"login":"special"}'
+        test.headers = {u'Content-Type':u'application/json',
+            u'X-HTTP-Method-Override':u'PATCH'}
+        test.expected_status = [202, 400] # Django issues give a 400, sigh
+        test_response = resttest.run_test(test)
+        self.assertTrue(test_response.passed)
+        #self.assertEqual(202, test_response.response_code)
+
+    def test_get_redirect(self):
+        """ Basic local get test """
+        test = Test()
+        test.curl_options = {'FOLLOWLOCATION': True}
+        test.url = self.prefix + '/api/person'
+        test_response = resttest.run_test(test)
+        self.assertTrue(test_response.passed)
+        self.assertEqual(200, test_response.response_code)
+
     def test_get_validators(self):
         """ Test that validators work correctly """
         test = Test()

@@ -286,7 +286,7 @@ class Test(object):
                 curl.setopt(pycurl.INFILESIZE, 0)
         elif self.method == u'DELETE':
             curl.setopt(curl.CUSTOMREQUEST,'DELETE')
-        else:  # Support PATCH/HEAD/ETC
+        elif self.method and self.method.upper() != 'GET':  # Support PATCH/HEAD/ETC
             curl.setopt(curl.CUSTOMREQUEST, self.method.upper())
 
         head = self.get_headers(context=context)

@@ -16,7 +16,7 @@ class PersonResource(ModelResource):
         resource_name = 'person'
         authorization = Authorization()
         list_allowed_methods = ['get', 'post']  # List or create single item
-        detail_allowed_methods = ['get', 'post', 'put', 'delete']
+        detail_allowed_methods = ['get', 'post', 'put', 'delete', 'patch']
         filtering = { #Search by fields
             'id': ALL,
             'login': ALL,
