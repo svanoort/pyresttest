@@ -12,6 +12,9 @@ pyresttest
 # License
 Apache License, Version 2.0
 
+# Build Status
+![Status Badge](http://52.4.228.82:8080/jenkins/buildStatus/icon?job=set-main-build-status)
+
 # Sample Test
 **This will check that APIs accept operations, and will smoketest an application**
 ```yaml
