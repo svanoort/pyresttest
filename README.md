@@ -396,6 +396,21 @@ A simple URL test is equivalent to a basic GET test with that URL
     - url: "/api/person/"  # This does the same thing
 ```
 
+## Custom HTTP Options (special curl settings)
+For advanced cases, sometimes you will want to use custom Curl settings that don't have a corresponding option in PyRestTest.  
+
+This is easy to do: for each test, you can specify custom Curl arguments with 'curl_option_optionname.'  For this, 'optionname' is case-insensitive and the optionname is a [Curl Easy Option](http://curl.haxx.se/libcurl/c/curl_easy_setopt.html) with 'CURLOPT_' removed. 
+
+For example, to follow redirects up to 5 times (CURLOPT_FOLLOWLOCATION and CURLOPT_MAXREDIRS):
+```yaml
+---
+- test: 
+    - url: "/api/person/1"
+    - curl_option_followlocation: True
+    - curl_option_maxredirs: 5  
+```
+Note that while option names are validated, *no validation* is done on their values.
+
 ## Syntax Limitations
 Whenever possible, I've tried to make reading configuration Be Smart And Do The Right Thing.  That means type conversions are handled wherever possible,
 and fail early if configuration is nonsensical.

@@ -21,6 +21,7 @@ This module implements the internal responsibilities of a test object:
 - Parsing of test configuration from results of YAML read
 """
 
+BASECURL = pycurl.Curl()  # Used for some validation/parsing
 
 DEFAULT_TIMEOUT = 10  # Seconds
 
@@ -300,7 +301,7 @@ class Test(object):
         # Set custom curl options, which are KEY:VALUE pairs matching the pycurl option names
         # And the key/value pairs are set
         if self.curl_options:
-            for (key, value) in filter(lambda x: x[0] is not None and x[1] is not None, curl_options.items()):
+            for (key, value) in filter(lambda x: x[0] is not None and x[1] is not None, self.curl_options.items()):
                 curl.setopt(getattr(curl, key), value)  # getattr to look up constant for variable name
         return curl
 
@@ -427,16 +428,14 @@ class Test(object):
                 mytest.stop_on_failure = safe_to_bool(configvalue)
             elif configelement == 'delay':
                 mytest.delay = int(configvalue)
-            elif configelement.startswith('curl_option'):
-                curlopt = configelement.lstrip('curl_option').upper()
-                tempcurl = pycurl.Curl()
-                if hasattr(tempurl, curlopt):
+            elif configelement.startswith('curl_option_'):
+                curlopt = configelement.lstrip('curl_option_').upper()
+                if hasattr(BASECURL, curlopt):
                     if not mytest.curl_options:
                         mytest.curl_options = dict()
                     mytest.curl_options[curlopt] = configvalue
                 else:
                     raise ValueError("Illegal curl option: {0}".format(curlopt))
-                del tempcurl
 
 
         #tempcurl, we adjust defaults to be reasonable, if the user does not specify them
