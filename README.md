@@ -582,6 +582,8 @@ sudo yum install rpm-build
 ## Feedback
 We welcome any feedback you have, including pull requests, reported issues, etc!
 
+For instructions on building, see [building.md](building.md).
+
 For pull requests to get easily merged, please:
 - Include unit tests, and verify that run_tests.sh passes
 - Include documentation as appropriate
