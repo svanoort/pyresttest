@@ -56,6 +56,25 @@ class TestsTest(unittest.TestCase):
         self.assertTrue(test.expected_status == [200,204,202])
         self.assertFalse(test.is_context_modifier())
 
+    def test_parse_nonstandard_http_method(self):
+        myinput = {"url": "/ping", "method": "PATCH", "NAME":"foo", "group":"bar", "body":"<xml>input</xml>","headers":{"Accept":"Application/json"}}
+        test = Test.parse_test('', myinput)
+        self.assertEqual("PATCH", test.method)
+
+        try:
+            myinput['method'] = 1
+            test.parse_test('', myinput)
+            fail("Should fail to pass a nonstring HTTP method")
+        except TypeError:
+            pass
+
+        try:
+            myinput['method'] = ''
+            test.parse_test('', myinput)
+            fail("Should fail to pass a nonstring HTTP method")
+        except AssertionError:
+            pass
+
     def test_parse_test_templated_headers(self):
         """ Test parsing with templated headers """
 

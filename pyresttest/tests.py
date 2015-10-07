@@ -261,12 +261,8 @@ class Test(object):
         bod = self.body
 
         # Set read function for post/put bodies
-        # TODO allow setting method for all request types
-        if self.method == u'POST' or self.method == u'PUT':
-            if bod and len(bod) > 0:
-                curl.setopt(curl.READFUNCTION, StringIO(bod).read)
-            #else:
-            #    curl.setopt(curl.READFUNCTION, lambda x: None)
+        if bod and len(bod) > 0:
+            curl.setopt(curl.READFUNCTION, StringIO(bod).read)
 
         if self.auth_username and self.auth_password:
             curl.setopt(pycurl.USERPWD, '%s:%s' % (self.auth_username, self.auth_password))
@@ -350,7 +346,7 @@ class Test(object):
                 mytest.auth_password = unicode(configvalue,'UTF-8').encode('ascii','ignore')
             elif configelement == u'method': #Http method, converted to uppercase string
                 var = unicode(configvalue,'UTF-8').upper()
-                assert var in HTTP_METHODS
+                assert isinstance(var, basestring) and len(var) > 0
                 mytest.method = var
             elif configelement == u'group': #Test group
                 assert isinstance(configvalue,str) or isinstance(configvalue,unicode) or isinstance(configvalue,int)
@@ -455,4 +451,5 @@ class Test(object):
                 mytest.expected_status = [200,201,204]
             elif mytest.method == 'DELETE':
                 mytest.expected_status = [200,202,204]
+            # Fallthrough default is simply [200]
         return mytest

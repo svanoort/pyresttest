@@ -8,6 +8,11 @@
 * Extractors did not raise an exception on failure: https://github.com/svanoort/pyresttest/issues/64
 
 **Features:**
+* BETA: support HTTP method types besides GET/PUT/POST/DELETE 
+  - TODO tag the PR containing this
+* BETA: support setting request body on all request types, if present
+  - Allows (for example) DELETE methods that set a request body
+  - Caveat: does not set length if 0
 * raw_body extractor that returns the full HTTP response body
   -  Requested in: https://github.com/svanoort/pyresttest/pull/71
 * run_tests.sh now exits on first failure, and returns exit code (for automation)
