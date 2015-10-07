@@ -4,9 +4,14 @@ from tests import *
 from binding import Context
 from contenthandling import ContentHandler
 import generators
+try:
+    import mock
+except:
+    import unittest.mock
+
 
 class TestsTest(unittest.TestCase):
-    """ Testing for basic rest test methods """
+    """ Testing for basic REST test methods, how meta! """
 
     def test_parse_test(self):
         """ Test basic ways of creating test objects from input object structure """
@@ -55,6 +60,61 @@ class TestsTest(unittest.TestCase):
         self.assertTrue(test.name == "cheese")
         self.assertTrue(test.expected_status == [200,204,202])
         self.assertFalse(test.is_context_modifier())
+
+    def test_parse_nonstandard_http_method(self):
+        myinput = {"url": "/ping", "method": "PATCH", "NAME":"foo", "group":"bar", "body":"<xml>input</xml>","headers":{"Accept":"Application/json"}}
+        test = Test.parse_test('', myinput)
+        self.assertEqual("PATCH", test.method)
+
+        try:
+            myinput['method'] = 1
+            test.parse_test('', myinput)
+            fail("Should fail to pass a nonstring HTTP method")
+        except TypeError:
+            pass
+
+        try:
+            myinput['method'] = ''
+            test.parse_test('', myinput)
+            fail("Should fail to pass a nonstring HTTP method")
+        except AssertionError:
+            pass
+
+    def test_parse_custom_curl(self):
+        # Basic case
+        myinput = {'url': '/ping', 'name': 'basic', 'curl_option_followLocatION': True}
+        test = Test.parse_test('', myinput)
+        options = test.curl_options
+        self.assertEqual(1, len(options))
+        self.assertEqual(True, options['FOLLOWLOCATION'])
+
+        # Test parsing with two options
+        myinput['curl_option_maxredirs'] = 99
+        test = Test.parse_test('', myinput)
+        options = test.curl_options
+        self.assertEqual(2, len(options))
+        self.assertEqual(True, options['FOLLOWLOCATION'])
+        self.assertEqual(99, options['MAXREDIRS'])
+
+        # Invalid curl option
+        myinput['curl_option_BOGUSOPTION'] = 'i_fail'
+        try:
+            test.parse_test('', myinput)
+            fail("Should throw an exception when invalid curl option used, but didn't!")
+        except ValueError:
+            pass
+
+    def test_use_custom_curl(self):
+        """ Test that test method really does configure correctly """
+        test = Test()
+        test.curl_options = {'FOLLOWLOCATION': True, 'MAXREDIRS': 5}
+        mock_handle = pycurl.Curl()
+        mock_handle.setopt = mock.MagicMock(return_value = True)
+        test.configure_curl(curl_handle=mock_handle)
+        #print mock_handle.setopt.call_args_list  # Debugging
+        mock_handle.setopt.assert_any_call(mock_handle.FOLLOWLOCATION, True)
+        mock_handle.setopt.assert_any_call(mock_handle.MAXREDIRS, 5)
+        mock_handle.close()
 
     def test_parse_test_templated_headers(self):
         """ Test parsing with templated headers """

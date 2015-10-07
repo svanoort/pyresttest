@@ -21,6 +21,7 @@ This module implements the internal responsibilities of a test object:
 - Parsing of test configuration from results of YAML read
 """
 
+BASECURL = pycurl.Curl()  # Used for some validation/parsing
 
 DEFAULT_TIMEOUT = 10  # Seconds
 
@@ -69,6 +70,7 @@ class Test(object):
     auth_password = None
     auth_type = pycurl.HTTPAUTH_BASIC
     delay = 0
+    curl_options = None
 
     templates = None  # Dictionary of template to compiled template
 
@@ -260,11 +262,8 @@ class Test(object):
         bod = self.body
 
         # Set read function for post/put bodies
-        if self.method == u'POST' or self.method == u'PUT':
-            if bod and len(bod) > 0:
-                curl.setopt(curl.READFUNCTION, StringIO(bod).read)
-            #else:
-            #    curl.setopt(curl.READFUNCTION, lambda x: None)
+        if bod and len(bod) > 0:
+            curl.setopt(curl.READFUNCTION, StringIO(bod).read)
 
         if self.auth_username and self.auth_password:
             curl.setopt(pycurl.USERPWD, '%s:%s' % (self.auth_username, self.auth_password))
@@ -287,6 +286,8 @@ class Test(object):
                 curl.setopt(pycurl.INFILESIZE, 0)
         elif self.method == u'DELETE':
             curl.setopt(curl.CUSTOMREQUEST,'DELETE')
+        elif self.method and self.method.upper() != 'GET':  # Support PATCH/HEAD/ETC
+            curl.setopt(curl.CUSTOMREQUEST, self.method.upper())
 
         head = self.get_headers(context=context)
         if head: #Convert headers dictionary to list of header entries, tested and working
@@ -296,6 +297,12 @@ class Test(object):
         headers.append("Expect:")  # Fix for expecting 100-continue from server, which not all servers will send!
         headers.append("Connection: close")
         curl.setopt(curl.HTTPHEADER, headers)
+
+        # Set custom curl options, which are KEY:VALUE pairs matching the pycurl option names
+        # And the key/value pairs are set
+        if self.curl_options:
+            for (key, value) in filter(lambda x: x[0] is not None and x[1] is not None, self.curl_options.items()):
+                curl.setopt(getattr(curl, key), value)  # getattr to look up constant for variable name
         return curl
 
     @classmethod
@@ -340,7 +347,7 @@ class Test(object):
                 mytest.auth_password = unicode(configvalue,'UTF-8').encode('ascii','ignore')
             elif configelement == u'method': #Http method, converted to uppercase string
                 var = unicode(configvalue,'UTF-8').upper()
-                assert var in HTTP_METHODS
+                assert isinstance(var, basestring) and len(var) > 0
                 mytest.method = var
             elif configelement == u'group': #Test group
                 assert isinstance(configvalue,str) or isinstance(configvalue,unicode) or isinstance(configvalue,int)
@@ -421,8 +428,17 @@ class Test(object):
                 mytest.stop_on_failure = safe_to_bool(configvalue)
             elif configelement == 'delay':
                 mytest.delay = int(configvalue)
+            elif configelement.startswith('curl_option_'):
+                curlopt = configelement.lstrip('curl_option_').upper()
+                if hasattr(BASECURL, curlopt):
+                    if not mytest.curl_options:
+                        mytest.curl_options = dict()
+                    mytest.curl_options[curlopt] = configvalue
+                else:
+                    raise ValueError("Illegal curl option: {0}".format(curlopt))
 
-        #Next, we adjust defaults to be reasonable, if the user does not specify them
+
+        #tempcurl, we adjust defaults to be reasonable, if the user does not specify them
 
         #For non-GET requests, accept additional response codes indicating success
         # (but only if not expected statuses are not explicitly specified)
@@ -434,4 +450,5 @@ class Test(object):
                 mytest.expected_status = [200,201,204]
             elif mytest.method == 'DELETE':
                 mytest.expected_status = [200,202,204]
+            # Fallthrough default is simply [200]
         return mytest

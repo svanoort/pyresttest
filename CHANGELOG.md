@@ -8,10 +8,13 @@
 * Extractors did not raise an exception on failure: https://github.com/svanoort/pyresttest/issues/64
 
 **Features:**
+* BETA: Allow setting custom Curl options with the curl_option_optionname field on tests
+* BETA: support HTTP method types besides GET/PUT/POST/DELETE 
+* BETA: support setting request body on all request types, if present
+  - Allows (for example) DELETE methods that set a request body
+  - Caveat: does not set length if 0
 * raw_body extractor that returns the full HTTP response body
   -  Requested in: https://github.com/svanoort/pyresttest/pull/71
-* run_tests.sh now exits on first failure, and returns exit code (for automation)
-  - In PR: https://github.com/svanoort/pyresttest/pull/82
 * Add test coverage script (uses 'coverage', which requires install)
 
 **Known Issues / Back-Compatibility:**
@@ -20,8 +23,10 @@
     - This can be patched into a back-compatibile approach if it breaks anyone
 
 **Misc:**
-* Automation start (Jenkins setup, initial testing Dockerfile 
-* and enhancements to script)
+* Automation start (Jenkins setup, initial testing Dockerfiles)
+* Dockerfiles to create build/test environments
+* run_tests.sh now exits on first failure, and returns exit code (for automation)
+  - In PR: https://github.com/svanoort/pyresttest/pull/82
 
 # 1.5.0 - Released Tue Aug 11 10:54:29 2015 -0400
 ## Back-compatibility breaks

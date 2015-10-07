@@ -5,6 +5,7 @@ import yaml
 import pycurl
 import os
 import django
+import mock
 
 mycurl = pycurl.Curl()
 mycurl.close()
