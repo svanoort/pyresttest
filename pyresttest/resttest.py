@@ -141,7 +141,7 @@ class TestResponse:
 def read_test_file(path):
     """ Read test file at 'path' in YAML """
     # TODO allow use of safe_load_all to handle multiple test sets in a given doc
-    teststruct = yaml.safe_load(os.path.expandvars(read_file(path)))
+    teststruct = yaml.safe_load(read_file(path))
     return teststruct
 
 def parse_headers(header_string):
