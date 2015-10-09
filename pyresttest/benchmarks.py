@@ -3,11 +3,20 @@ import json
 import pycurl
 from tests import Test
 import tests
+import sys
 from parsing import *
+
 try:
     from cStringIO import StringIO
 except:
-    from StringIO import StringIO
+    try:
+        from StringIO import StringIO
+    except ImportError:
+        from io import StringIO
+
+# Python 3 compatibility
+if sys.version_info[0] == 3:
+    from past.builtins import basestring
 
 """
 Encapsulates logic related to benchmarking

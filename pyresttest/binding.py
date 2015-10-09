@@ -42,7 +42,7 @@ class Context(object):
         """ Binds the next value for generator_name to variable_name and return value used """
         str_gen_name = str(generator_name)
         str_name = str(variable_name)
-        val = self.generators[str_gen_name].next()
+        val = next(self.generators[str_gen_name])
 
         prev = self.variables.get(str_name)
         if prev != val:

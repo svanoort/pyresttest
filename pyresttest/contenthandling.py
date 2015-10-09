@@ -1,6 +1,11 @@
 import string
 import os
+import sys
 from parsing import *
+
+# Python 3 compatibility
+if sys.version_info[0] == 3:
+    from past.builtins import basestring
 
 """
 Encapsulates contend handling logic, for pulling file content into tests

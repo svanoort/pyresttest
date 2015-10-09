@@ -5,13 +5,21 @@ import json
 import pycurl
 from contenthandling import ContentHandler
 import validators
+import sys
 from parsing import *
 
 # Find the best implementation available on this platform
 try:
     from cStringIO import StringIO
 except:
-    from StringIO import StringIO
+    try:
+        from StringIO import StringIO
+    except ImportError:
+        from io import StringIO
+
+# Python 3 compatibility
+if sys.version_info[0] == 3:
+    from past.builtins import basestring
 
 """
 Pull out the Test objects and logic associated with them

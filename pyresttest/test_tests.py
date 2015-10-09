@@ -7,7 +7,7 @@ import generators
 try:
     import mock
 except:
-    import unittest.mock
+    from unittest import mock
 
 
 class TestsTest(unittest.TestCase):

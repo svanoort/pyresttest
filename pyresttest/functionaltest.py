@@ -152,7 +152,7 @@ class RestTestCase(unittest.TestCase):
 
         if result.failures:
             for fail in result.failures:
-                print fail
+                print(fail)
         self.assertTrue(result.passed)
 
     def test_failed_get(self):

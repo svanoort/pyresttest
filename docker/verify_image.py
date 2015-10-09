@@ -5,7 +5,10 @@ import yaml
 import pycurl
 import os
 import django
-import mock
+try:
+    import mock
+except:
+    from unittest import mock
 
 mycurl = pycurl.Curl()
 mycurl.close()

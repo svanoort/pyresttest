@@ -20,6 +20,11 @@ except:
     except ImportError:
         from io import StringIO
 
+# Python 3 compatibility
+if sys.version_info[0] == 3:
+    from past.builtins import basestring
+    from builtins import range as xrange
+
 # Pyresttest internals
 from binding import Context
 import generators
@@ -136,7 +141,7 @@ class TestResponse:
 def read_test_file(path):
     """ Read test file at 'path' in YAML """
     # TODO allow use of safe_load_all to handle multiple test sets in a given doc
-    teststruct = yaml.safe_load(os.path.expandvars(read_file(path)))
+    teststruct = yaml.safe_load(read_file(path))
     return teststruct
 
 def parse_headers(header_string):
@@ -367,8 +372,8 @@ def run_test(mytest, test_config = TestConfig(), context = None):
 
     if test_config.print_headers or not result.passed:
         if test_config.interactive:
-            print "RESPONSE HEADERS:"
-        print result.response_headers
+            print("RESPONSE HEADERS:")
+        print(result.response_headers)
 
     # TODO add string escape on body output
     logger.debug(result)
