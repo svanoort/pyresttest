@@ -6,6 +6,105 @@ from binding import Context
 class ValidatorsTest(unittest.TestCase):
     """ Testing for validators and extract functions """
 
+    def test_contains_operators(self):
+        """ Tests the contains / contained_by """
+        cont_func = validators.COMPARATORS['contains']
+        cont_by_func = validators.COMPARATORS['contained_by']
+
+        self.assertTrue(cont_func('abagooberab23', 'goob'))
+        self.assertTrue(cont_by_func('goob', 'abagooberab23'))
+        myarray = ['math',1,None,u'lest']
+        self.assertTrue(cont_func(myarray, 1))
+        self.assertTrue(cont_func(myarray, None))
+        self.assertTrue(cont_by_func(None, myarray))
+        self.assertTrue(cont_func({'key': 'val'}, 'key'))
+        self.assertTrue(cont_by_func('key', {'key': 'val'}))
+
+        # Failure cases
+        self.assertFalse(cont_func(None, 'test'))
+        self.assertFalse(cont_by_func('test', None))
+        self.assertFalse(cont_func(myarray, 'notinit'))
+        self.assertFalse(cont_by_func('notinit', myarray))
+
+    def test_type_comparator(self):
+        """ Complex verification of the type test method, heh """
+
+        type_test = validators.COMPARATORS['type']
+        hasFailed = False
+        instances = {
+            'string' : 'goober',
+            'int': 1,
+            'float': 0.5,
+            'boolean': False,
+            'number': 1,
+            'array': [4, 'val'],
+            'list': ['my', 1, None],
+            'none': None,
+            'null': None,
+            'scalar': 4.0,
+            'collection': ['collection', 1, None],
+            'dict': {1: 'ring', 4: 1, 'gollum': 'smeagol'}
+        }
+        
+        # Check for basic types that they pass expected values
+        for mytype,myinstance in instances.items():
+            try:
+                self.assertTrue(type_test(myinstance, mytype))
+            except AssertionError:
+                print('Type test operator failed where should pass for type {0} and value {1}'.format(mytype,myinstance))
+                hasFailed = True
+
+        if hasFailed:
+            self.fail("Type test operator failed testing, see reasons above!")
+
+    def test_type_comparator_failures(self):
+        """ Test cases where type comparator should fail """
+        type_test = validators.COMPARATORS['type']
+        hasFailed = False
+
+        failing_instances = {
+            'string' : 1,
+            'int': {'nope': 3},
+            'float': 3,
+            'boolean': None,
+            'number': 'lolz',
+            'array': False,
+            'list': 'string here',
+            'none': 4,
+            'scalar': {'key': 'val'},
+            'collection': 'string',
+            'dict': [1,2,3]
+        }
+
+        # Check for complex types that they don't pass expected values
+        for mytype,myinstance in failing_instances.items():
+            try:
+                self.assertFalse(type_test(myinstance, mytype))
+            except AssertionError:
+                print('Type test operator passed where should fail for type {0} and value {1}'.format(mytype,myinstance))
+                hasFailed = True
+        if hasFailed:
+            self.fail("Type test operator failed testing, see reasons above!")        
+
+    def test_type_comparator_specialcases(self):
+        """ Covers things such as case handling and exception throwing """
+        type_test = validators.COMPARATORS['type']
+        self.assertTrue(type_test('string', 'scALar'))
+        self.assertTrue(type_test(None, 'scalar'))
+
+        try:
+            type_test(3, 'doesnotexist')
+            self.fail('Type test comparator throws exception if you test against an undefined type')
+        except TypeError:
+            pass
+
+    def test_safe_length(self):
+        self.assertEqual(1, validators.safe_length('s'))
+        self.assertEqual(2, validators.safe_length(['text', 2]))
+        self.assertEqual(2, validators.safe_length({'key': 'val', 1:2}))
+        self.assertEqual(-1, validators.safe_length(False))
+        self.assertEqual(-1, validators.safe_length(None))
+
     def test_validatortest_exists(self):
         func = validators.VALIDATOR_TESTS['exists']
         self.assertTrue(func('blah'))

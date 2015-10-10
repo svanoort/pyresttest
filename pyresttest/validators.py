@@ -51,10 +51,44 @@ COMPARATORS = {
     'greater_than_or_equal': operator.ge,
     'gt': operator.gt,
     'greater_than': operator.gt,
-    'contains': lambda x,y: x and y and operator.contains(x,y), # is y in x
-    'contained_by': lambda x,y: x and y and operator.contains(y,x), # is x in y
+    'contains': lambda x,y: x and operator.contains(x,y), # is y in x
+    'contained_by': lambda x,y: y and operator.contains(y,x), # is x in y
     'regex': lambda x,y: regex_compare(str(x), str(y)),
+    'type': lambda x,y: test_type(x, y)
 }
+COMPARATORS['length_eq'] = COMPARATORS['count_eq']
+
+# Allow for testing basic types in comparators
+TYPES = {
+    'null': type(None),
+    'none': type(None),
+    'number': (int, long, float),
+    'int': (int, long),
+    'float': float,
+    'boolean': bool, 
+    'string': basestring,
+    'array': list,
+    'list': list, 
+    'dict': dict,
+    'map': dict,
+    'scalar': (bool, int, long, float, basestring, type(None)),
+    'collection': (list, dict, set)
+}
+
+def test_type(val, mytype):
+    """ Check value fits one of the types, if so return true, else false """
+
+    typelist = TYPES.get(mytype.lower())
+
+    if typelist is None:
+        raise TypeError("Type {0} is not a valid type to test against!".format(mytype.lower()))
+    try: 
+       for testtype in typelist:
+           if isinstance(val, testtype):
+               return True
+       return False
+    except TypeError:
+       return isinstance(val, typelist)
 
 # Unury comparison tests
 VALIDATOR_TESTS = {
