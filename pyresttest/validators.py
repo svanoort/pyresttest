@@ -56,6 +56,7 @@ COMPARATORS = {
     'regex': lambda x,y: regex_compare(str(x), str(y)),
     'type': lambda x,y: test_type(x, y)
 }
+COMPARATORS['length_eq'] = COMPARATORS['count_eq']
 
 # Allow for testing basic types in comparators
 TYPES = {

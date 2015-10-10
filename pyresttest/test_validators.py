@@ -98,6 +98,13 @@ class ValidatorsTest(unittest.TestCase):
         except TypeError:
             pass
 
+    def test_safe_length(self):
+        self.assertEqual(1, validators.safe_length('s'))
+        self.assertEqual(2, validators.safe_length(['text', 2]))
+        self.assertEqual(2, validators.safe_length({'key': 'val', 1:2}))
+        self.assertEqual(-1, validators.safe_length(False))
+        self.assertEqual(-1, validators.safe_length(None))
+
     def test_validatortest_exists(self):
         func = validators.VALIDATOR_TESTS['exists']
         self.assertTrue(func('blah'))
