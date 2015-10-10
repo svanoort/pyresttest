@@ -40,28 +40,6 @@ HTTP_METHODS = {u'GET' : pycurl.HTTPGET,
     u'POST' : pycurl.POST,
     u'DELETE'  : 'DELETE'}
 
-class BodyReader:
-    ''' Read from a data str/byte array into reader function for pyCurl '''
-
-    def __init__(self, data):
-        self.data = data
-        self.loc = 0
-
-    def readfunction(self, size):
-        startidx = self.loc
-        endidx = startidx + size
-        data = self.data
-
-        if data is None or len(data) == 0:
-            return ''
-
-        if endidx >= len(data):
-            endidx = len(data) - 1
-
-        result = data[startidx : endidx]
-        self.loc += (endidx-startidx)
-        return result
-
 class Test(object):
     """ Describes a REST test """
     _url  = None
