@@ -12,7 +12,7 @@ pyresttest
 # License
 Apache License, Version 2.0
 
-![Status Badge](http://52.4.228.82:8080/jenkins/buildStatus/icon?job=set-main-build-status)
+![Status Badge](http://52.4.228.82:8080/jenkins/buildStatus/icon?job=set-main-build-status) [![PyPI version](https://badge.fury.io/py/pyresttest.svg)](https://badge.fury.io/py/pyresttest) and [Changelog](CHANGELOG.md)
 
 # Sample Test
 **This will check that APIs accept operations, and will smoketest an application**
@@ -606,4 +606,4 @@ For pull requests to get easily merged, please:
 - Include documentation as appropriate
 - Attempt to adhere to PEP8 style guidelines and project style
 
-Bear in mind that this is largely a one-man, outside-of-working-hours effort at the moment, so response times will vary.
+Bear in mind that this is largely a one-man, outside-of-working-hours effort at the moment, so response times will vary.  That said: every feature request gets heard, and even if it takes a while, all the reasonable features will get incorporated.  **If you fork the main repo, check back periodically... you may discover that the next release includes something to meet your needs and then some.**

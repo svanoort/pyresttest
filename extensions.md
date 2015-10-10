@@ -2,9 +2,11 @@
 PyRestTest provides hooks for extending built-in components with your own Python code.  
 
 # What Can An Extension Do?
+
+- In general: use more advanced dependencies while not making them required for installation
 - Generators: generate data for templating URL/request body/tests/etc
-- Extractors: get data from HTTP response body/headers
-- Validators: write custom tests of headers & request bodies
+- Extractors: get data from HTTP response body/headers and use it in future tests
+- Validators: write custom tests using headers & response bodies
 - Test Functions: for the ExtractTest validator, validate a single condition
 - Comparator function:s for the ComparatorValidator, compare expected and actual values
 
@@ -49,8 +51,8 @@ It shows an extension for all extensible functions.
 
 # What Doe An Extension Need To Work?
 
-1. Function to run 
-2. Registry Entries
+1. Function(s) to run 
+2. Registry Entries: these are special ALLCAPS variables binding extension names
 
 ## Functions (different for each type)
 
@@ -128,7 +130,7 @@ class HeaderExtractor(AbstractExtractor):
 
 ### Validators 
 Validators should extend AbstractValidator. 
-The parse function below will be registered in the registry. 
+The parse function below will be registered in the registry VALIDATORS. 
 
 ```python
 class ExtractTestValidator(AbstractValidator):
@@ -187,7 +189,7 @@ Each one maps to the same registry in pyresttest.validators.
 
 # Use Case Suggestions
 - **Need to generate complex, formatted data?**  
-  - Write a generator extension, multiple generators may be used together to yield pieces of a result.
+  - Write a generator extension, or multiple generators may be used together to create a complex result
 - **Want to test whether API results fit a business rule?** 
   - Write a validator extension, your logic can be as complex as you like
 - **Want to apply a business rule to the output and use the result?** 
