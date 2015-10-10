@@ -319,27 +319,27 @@ class Test(object):
                 if isinstance(configvalue, dict):
                     # Template is used for URL
                     val = lowercase_keys(configvalue)[u'template']
-                    assert isinstance(val,str) or isinstance(val,unicode) or isinstance(val,int)
+                    assert isinstance(val, basestring) or isinstance(val,int)
                     url = base_url + unicode(val,'UTF-8').encode('ascii','ignore')
                     mytest.set_url(url, isTemplate=True)
                 else:
-                    assert isinstance(configvalue,str) or isinstance(configvalue,unicode) or isinstance(configvalue,int)
+                    assert isinstance(configvalue, basestring) or isinstance(configvalue,int)
                     mytest.url = base_url + unicode(configvalue,'UTF-8').encode('ascii','ignore')
             elif configelement == u'auth_username':
-                assert isinstance(configvalue,str) or isinstance(configvalue,unicode)
+                assert isinstance(configvalue, basestring)
                 mytest.auth_username = unicode(configvalue,'UTF-8').encode('ascii','ignore')
             elif configelement == u'auth_password':
-                assert isinstance(configvalue,str) or isinstance(configvalue,unicode)
+                assert isinstance(configvalue, basestring)
                 mytest.auth_password = unicode(configvalue,'UTF-8').encode('ascii','ignore')
             elif configelement == u'method': #Http method, converted to uppercase string
                 var = unicode(configvalue,'UTF-8').upper()
                 assert isinstance(var, basestring) and len(var) > 0
                 mytest.method = var
             elif configelement == u'group': #Test group
-                assert isinstance(configvalue,str) or isinstance(configvalue,unicode) or isinstance(configvalue,int)
+                assert isinstance(configvalue, basestring) or isinstance(configvalue,int)
                 mytest.group = unicode(configvalue,'UTF-8')
             elif configelement == u'name': #Test name
-                assert isinstance(configvalue,str) or isinstance(configvalue,unicode) or isinstance(configvalue,int)
+                assert isinstance(configvalue, basestring) or isinstance(configvalue,int)
                 mytest.name = unicode(configvalue,'UTF-8')
             elif configelement == u'extract_binds':
                 # Add a list of extractors, of format:
