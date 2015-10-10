@@ -268,9 +268,30 @@ Optionally, validators can return a Failure which evaluates to False, but suppli
 | 'gt', 'greater_than'                         | Greater Than                              | A > B                                                                  |
 | 'contains'                                   | Contains                                  | B in A                                                                 |
 | 'contained_by'                               | Contained By                              | A in B                                                                 |
+| 'type'                                       | Type of variable is                       | A instanceof (at least one of) B
 | 'regex'                                      | Regex Equals                              | A matches regex B                                                      |
 
 
+##### Types for type test:
+
+Map of name to types it will match
+```python
+TYPES = {
+    'null': type(None),  # JSON null type
+    'none': type(None),  # JSON null type
+    'number': (int, long, float),  # JSON number type
+    'int': (int, long),  # JSON number type if not a float
+    'float': float, # JSON number type if a float
+    'boolean': bool,   # JSON boolean
+    'string': basestring,  # JSON string
+    'array': list,  # JSON array
+    'list': list,  # JSON array
+    'dict': dict,  # JSON Object
+    'map': dict,  # JSON Object
+    'scalar': (bool, int, long, float, basestring, None),  # JSON any type but object or array
+    'collection': (list, dict, set)  # JSON array or object
+}
+```
 
 # Lifecycles Of Different Operations
 ## TestSet Execution Lifecycle

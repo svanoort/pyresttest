@@ -2,6 +2,8 @@
 
 ## 1.6.0-SNAPSHOT (pending release as 1.6.0)
 **Features:**
+* BETA: Add a type testing comparator to assist with validating request/header bodies
+  - Issue: https://github.com/svanoort/pyresttest/issues/90
 * BETA: Allow setting custom Curl options with the curl_option_optionname field on tests
 * BETA: support HTTP method types besides GET/PUT/POST/DELETE 
 * BETA: support setting request body on all request types, if present
