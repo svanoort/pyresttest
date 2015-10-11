@@ -1,10 +1,10 @@
-FROM python:3.4.3-slim
+FROM python:3.4.3-wheezy
 MAINTAINER svanoort <samvanoort@gmail.com>
 
-RUN apt-get update && apt-get install --no-install-recommends -y git-core python3-pycurl \
+RUN apt-get update && apt-get install --no-install-recommends -y git-core \
     && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Python 2 and 3 dependencies, future is just for python 3 compat, sigh
-RUN pip3 install pyyaml django==1.6.5 django-tastypie future
+RUN pip3 install pycurl pyyaml django==1.6.5 django-tastypie future
 
 COPY verify_image.py /tmp/verify_image.py
