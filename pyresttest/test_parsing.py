@@ -83,5 +83,13 @@ class TestParsing(unittest.TestCase):
 
         self.assertEqual({'newval': 'cherries'}, safe_to_json(Special()))        
 
+    def test_run_configure(self):
+        """ Test the configure function use """
+        converter = safe_to_bool
+        pass
+
+    def test_configure(self):
+        """ Do stuff here """
+        pass
 if __name__ == '__main__':
     unittest.main()

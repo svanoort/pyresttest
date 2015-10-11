@@ -1,3 +1,9 @@
+import sys
+
+# Python 3 compatibility
+if sys.version_info[0] == 3:
+    from past.builtins import basestring
+
 """
 Parsing utilities, pulled out so they can be used in multiple modules
 """
@@ -26,10 +32,9 @@ def flatten_dictionaries(input):
     return output
 
 def lowercase_keys(input_dict):
-    """ Take input and if a dictionary, return version with keys all lowercase """
-    if not isinstance(input_dict,dict):
+    """ Take input and if a dictionary, return version with keys all lowercase and cast to str """
+    if not isinstance(input_dict, dict):
         return input_dict
-
     safe = dict()
     for key,value in input_dict.items():
         safe[str(key).lower()] = value
@@ -39,11 +44,44 @@ def safe_to_bool(input):
     """ Safely convert user input to a boolean, throwing exception if not boolean or boolean-appropriate string
       For flexibility, we allow case insensitive string matching to false/true values
       If it's not a boolean or string that matches 'false' or 'true' when ignoring case, throws an exception """
-    if isinstance(input,bool):
+    if isinstance(input, bool):
         return input
-    elif isinstance(input,unicode) or isinstance(input,str) and unicode(input,'UTF-8').lower() == u'false':
+    elif isinstance(input, basestring) and input.lower() == u'false':
         return False
-    elif isinstance(input,unicode) or isinstance(input,str) and unicode(input,'UTF-8').lower() == u'true':
+    elif isinstance(input, basestring) and input.lower() == u'true':
         return True
     else:
         raise TypeError('Input Object is not a boolean or string form of boolean!')
+
+
+class SuperConfigurator(object):
+    """ It's a bird!  It's a plane! No, it's....
+        The solution to handling horribly nasty, thorny configuration handling methods
+
+    """
+
+    def run_configure(self, key, value, configurable, validator_func=None, converter_func=None, store_func=None, *args, **kwargs):
+        """ Run a single configuration element 
+            Run a validator on the value, if supplied
+            Run a converter_funct to turn the value into something to storeable:
+                converter_func takes params (value) at least and throws exception if failed
+            If a  store_func is supplied, use that to store the option 
+              store_func needs to take params (object, key, value, args, kwargs)
+            If store_func NOT supplied we do a setattr on object
+        """
+        if validator_func and not validator(value):
+            raise TypeError("Illegal argument for {0}".format(value))
+        storeable = value    
+        if converter_func:
+            storeable = converter_func(value)
+        if store_func:
+            store_func(configurable, key, storeable)
+        else:
+            configurable.setattr(configurable, key, value)
+
+    def configure(self, configs, configurable, handler, *args, **kwargs):
+        """ Use the configs and configurable to parse"""
+        for key, value in configs.items():
+            # Read handler arguments and use them to call the configurator
+            handler[key] = config_options
+            self.run_configure(value, configurable)
