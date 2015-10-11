@@ -15,7 +15,7 @@ def run_test(dockerImg, python_name, version) {
 }
 
 node {
-  git url:'https://github.com/svanoort/pyresttest.git', branch:'feature-docker-and-ci-fixes'
+  git url:'https://github.com/svanoort/pyresttest.git', branch:'master'
 
   stage name:'build', concurrency: 1
   def ubuntu14_py27 = docker.build("pyresttest-build-ubuntu-14:test", 'docker/ubuntu14-py27')
