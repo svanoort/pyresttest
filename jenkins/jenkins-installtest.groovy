@@ -13,9 +13,9 @@ def headlesstests() {
     //    sh 'python -c "import pyresttest"'
         // Check command will run, but capture error code since help will also return error code
         sh "resttest.py 2>/dev/null | grep 'Usage' "
-        sh "pyresttest 2>/dev/null | grep 'Usage' "  //TODO check for proper text, catch error code 2
+        sh "pyresttest 2>/dev/null | grep 'Usage' "
 //    }
-    sh "resttest.py https://github.com simple_test.yaml" // FAILS: we need a better test YAML
+    sh "resttest.py https://api.github.com github_api_smoketest.yaml" // Real test
 }
 
 def servertests() {
@@ -35,7 +35,7 @@ def clean_workspace() {
 }
 
 node {
-    git url:'https://github.com/svanoort/pyresttest.git', branch:'master'
+    git url:'https://github.com/svanoort/pyresttest.git', branch:'jenkins-installtest'
 
     // Test easyinstall, etc installation of scripts
     testEnv.inside(args) {
