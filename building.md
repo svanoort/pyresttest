@@ -6,10 +6,10 @@ There are two options for how to work with code
 - Unit + functional tests: run_tests.sh
 - Coverage Test: coverage.sh (result in htmlconv/index.html)
 
-# Conventions
+## Conventions
 - All non-functional unit tests (runnable without a server) start with 'test_'
 
-# Environments
+## Environments
 1. Local (native) python (Linux or Mac)
   - You'll need to pip install the following packages:
     + pycurl
@@ -32,3 +32,9 @@ There are two options for how to work with code
     1. (sudo) docker run -it --rm pyresttest-build-ubuntu-14 /bin/bash
     2. Inside container: cd /tmp && git clone https://github.com/svanoort/pyresttest.git
     3. Do your coding and commit/push, etc
+
+## Releasing
+Release tooling requires its own special goodies.  The docker images have it all baked in, for convenience's sake.
+
+1. Tar (for packaging distributions)
+2. For CentOS 6, rpm-build

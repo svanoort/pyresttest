@@ -1,7 +1,7 @@
 FROM python:3.4.3-wheezy
 MAINTAINER svanoort <samvanoort@gmail.com>
 
-RUN apt-get update && apt-get install --no-install-recommends -y git-core \
+RUN apt-get update && apt-get install --no-install-recommends -y git-core tar \
     && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Python 2 and 3 dependencies, future is just for python 3 compat, sigh
