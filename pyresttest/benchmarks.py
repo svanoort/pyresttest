@@ -94,13 +94,13 @@ OUTPUT_FORMATS = [u'csv', u'json']
 
 def median(array):
     """ Get the median of an array """
-    sorted = [x for x in array]
-    sorted.sort()
-    middle = len(sorted) / 2  # Gets the middle element, if present
-    if len(sorted) % 2 == 0:  # Even, so need to average together the middle two values
-        return float((sorted[middle] + sorted[middle - 1])) / 2
+    mysorted = [x for x in array]
+    mysorted.sort()
+    middle = int(len(mysorted) / 2)  # Gets the middle element, if present
+    if len(mysorted) % 2 == 0:  # Even, so need to average together the middle two values
+        return float((mysorted[middle] + mysorted[middle - 1])) / 2
     else:
-        return sorted[middle]
+        return mysorted[middle]
 
 
 def std_deviation(array):
@@ -110,6 +110,10 @@ def std_deviation(array):
 
     average = AGGREGATES['mean_arithmetic'](array)
     variance = map(lambda x: (x - average)**2, array)
+    try:
+        len(variance)
+    except TypeError:  # Python 3.3 workaround until can use the statistics module from 3.4
+        variance = [variance]
     stdev = AGGREGATES['mean_arithmetic'](variance)
     return math.sqrt(stdev)
 

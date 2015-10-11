@@ -512,7 +512,7 @@ def analyze_benchmark_results(benchmark_result, benchmark):
 
     # Compute aggregates for each metric, and add tuples to aggregate results
     aggregate_results = list()
-    for metricname, aggregate_list in benchmark.aggregated_metrics.iteritems():
+    for metricname, aggregate_list in benchmark.aggregated_metrics.items():
         numbers = raw_results[metricname]
         for aggregate_name in aggregate_list:
             if numbers:  # Only compute aggregates if numbers exist
