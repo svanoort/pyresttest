@@ -22,8 +22,8 @@ def servertests() {
     // Tests that require a full test server running to execute
     //dir ('/tmp') {
         echo 'Running server test'
-        sh "python pyresttest/testapp/manage.py testserver test_data.json &"
-        sh "pyresttest pyresttest/content-test.yaml"
+        sh "python pyresttest/testapp/manage.py testserver pyresttest/testapp/test_data.json &"
+        sh "pyresttest http://localhost:8000 pyresttest/content-test.yaml"
     //}
 }
 

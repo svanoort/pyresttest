@@ -1,3 +1,5 @@
+//Supply parameter "branch" to build
+
 def run_test(dockerImg, python_name, version) {
   def id = dockerImg.id
   echo "My id is $id"
@@ -15,7 +17,7 @@ def run_test(dockerImg, python_name, version) {
 }
 
 node {
-  git url:'https://github.com/svanoort/pyresttest.git', branch:'master'
+  git url:'https://github.com/svanoort/pyresttest.git', branch:"$branch"
 
   stage name:'build', concurrency: 1
   def ubuntu14_py27 = docker.build("pyresttest-build-ubuntu-14:test", 'docker/ubuntu14-py27')
