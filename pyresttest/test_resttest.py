@@ -91,5 +91,41 @@ class TestRestTest(unittest.TestCase):
         self.assertEqual(('accept', 'text/html'), headers[1])
         self.assertEqual(('accept', 'application/json'), headers[2])
 
+    def test_cmdline_args_parsing_basic(self):
+        cmdline = [
+            'my_url', 'my_test_filename',
+            '--print-bodies', 'True'
+        ]
+        args = parse_command_line_args(cmdline)
+        self.assertEqual('my_url', args['url'])
+        self.assertEqual('my_test_filename', args['test'])
+        self.assertEqual('True', args['print_bodies'])
+
+    def test_cmdline_args_parsing_positional(self):
+        """ Tests cases where test and url are from named arguments, not positional """
+
+        cmdline = [
+            '--url', 'my_url', 
+            '--test', 'my_test_filename',
+        ]
+
+        args = parse_command_line_args(cmdline)
+        self.assertEqual('my_url', args['url'])
+        self.assertEqual('my_test_filename', args['test'])
+
+        # url from position arg, test as named arg
+        del cmdline[0]
+        args = parse_command_line_args(cmdline)
+        self.assertEqual('my_url', args['url'])
+        self.assertEqual('my_test_filename', args['test'])
+
+        cmdline = [
+            '--url', 'my_url', 
+            'my_test_filename',
+        ]
+        args = parse_command_line_args(cmdline)
+        self.assertEqual('my_url', args['url'])
+        self.assertEqual('my_test_filename', args['test'])
+
 if __name__ == '__main__':
     unittest.main()

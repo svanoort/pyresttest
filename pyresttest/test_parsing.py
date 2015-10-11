@@ -1,5 +1,5 @@
 import unittest
-from parsing import flatten_dictionaries, lowercase_keys, safe_to_bool
+from parsing import flatten_dictionaries, lowercase_keys, safe_to_bool, safe_to_json
 
 class TestParsing(unittest.TestCase):
     """ Tests for parsing utility functions """
@@ -70,8 +70,26 @@ class TestParsing(unittest.TestCase):
         except TypeError:
             pass #Good
 
+    def test_safe_to_json(self):
+        self.assertEqual(u'adj12321nv', safe_to_json(bytearray('adj12321nv', 'UTF-8')))
+        self.assertEqual(u'5.2', safe_to_json(5.2))
 
+        class Special(object):
+            bal = 5.3
+            test = 'stuffing'
 
+            def __init__(self):
+                self.newval = 'cherries'
 
+        self.assertEqual({'newval': 'cherries'}, safe_to_json(Special()))        
+
+    def test_run_configure(self):
+        """ Test the configure function use """
+        converter = safe_to_bool
+        pass
+
+    def test_configure(self):
+        """ Do stuff here """
+        pass
 if __name__ == '__main__':
     unittest.main()

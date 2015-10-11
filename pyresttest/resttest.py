@@ -746,7 +746,7 @@ def main(args):
 
     sys.exit(failures)
 
-def command_line_run(args_in):
+def parse_command_line_args(args_in):
     """ Runs everything needed to execute from the command line, so main method is callable without arg parsing """
     parser = OptionParser(usage="usage: %prog base_url test_filename.yaml [options] ")
     parser.add_option(u"--print-bodies", help="Print all response bodies", action="store", type="string", dest="print_bodies")
@@ -778,6 +778,10 @@ def command_line_run(args_in):
             parser.error("wrong number of arguments, need both url and test filename, either as 1st and 2nd parameters or via --url and --test")
 
     args['cwd'] = os.path.realpath(os.path.abspath(os.getcwd()))  # So modules can be loaded from current folder
+    return args
+
+def command_line_run(args_in):
+    args = parse_command_line_args(args_in)
     main(args)
 
 # Allow import into another module without executing the main method
