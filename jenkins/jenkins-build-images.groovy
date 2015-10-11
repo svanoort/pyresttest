@@ -25,6 +25,9 @@ node {
   stage name:'test/tag', concurrency: 1
   run_test(ubuntu14_py27, 'python', '0.1')
   run_test(centos6_py26, 'python', '0.1')
+
+  // For some inexplicable reasons, the test script here is more brittle than the others
+  // Direct docker run works, it hit issues with docker.build, so... okay?
   run_test(python3, 'python3', '0.2')
 }
 
