@@ -1,7 +1,7 @@
 FROM ubuntu:14.04
 MAINTAINER svanoort <samvanoort@gmail.com>
 
-RUN apt-get update && apt-get install --no-install-recommends -y python python-dev python-pip python-pycurl git-core \
+RUN apt-get update && apt-get install --no-install-recommends -y python python-pip python-pycurl git-core \
     && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Python 2 and 3 dependencies
