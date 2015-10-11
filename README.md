@@ -111,7 +111,7 @@ Now, let's get started!
 **This is what testing is for.**
 
 ## System Requirements:
-- Linux or Mac OS X with python 2.6+ installed and pycurl
+- Linux or Mac OS X with python 2.6+ or 2.7 installed and pycurl
 - Do not use a virtualenv (or have it custom configured to find libcurl)
 
 # Quickstart Part 0: Setting Up a Sample REST Service
