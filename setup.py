@@ -3,13 +3,12 @@ from distutils.core import setup
 setup(name='pyresttest',
     version='1.6.0-SNAPSHOT',
     description='Python RESTful API Testing & Microbenchmarking Tool',
-    long_description='Python RESTful API Testing & Microbenchmarking Tool',
+    long_description='Python RESTful API Testing & Microbenchmarking Tool \n Documentation at https://github.com/svanoort/pyresttest',
     maintainer='Sam Van Oort',
     maintainer_email='samvanoort@gmail.com',
     url='https://github.com/svanoort/pyresttest',
     keywords=['rest', 'web', 'http', 'testing'],
     classifiers = [
-        'Development Status :: 3 - Alpha',
         'Environment :: Console',
         'License :: OSI Approved :: Apache Software License',
         'Natural Language :: English',
@@ -23,7 +22,7 @@ setup(name='pyresttest',
         'pyresttest.parsing', 'pyresttest.validators', 'pyresttest.contenthandling',
         'pyresttest.benchmarks','pyresttest.tests', 'pyresttest.ext.validator_jsonschema'],
     license='Apache License, Version 2.0',
-    requires=['yaml','pycurl'],
+    requires=['pyyaml','pycurl'],
     scripts=['util/pyresttest','util/resttest.py'], #Make this executable from command line when installed
     provides=['pyresttest']
 )
