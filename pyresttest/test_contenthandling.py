@@ -4,6 +4,7 @@ import os
 from contenthandling import ContentHandler
 from binding import Context
 
+
 class ContentHandlerTest(unittest.TestCase):
     """ Testing for content handler """
 
@@ -25,7 +26,7 @@ class ContentHandlerTest(unittest.TestCase):
 
     def test_content_file_template(self):
         """ Test file read and templating of read files in this directory """
-        variables = {'id':1, 'login':'thewizard'}
+        variables = {'id': 1, 'login': 'thewizard'}
         context = Context()
 
         file_path = os.path.dirname(os.path.realpath(__file__))
@@ -43,7 +44,8 @@ class ContentHandlerTest(unittest.TestCase):
         # Test templating of read content
         handler.setup(file_path, is_file=True, is_template_content=True)
         self.assertEqual(file_content, handler.get_content())
-        self.assertEqual(file_content, handler.get_content(context))  # No substitution
+        self.assertEqual(file_content, handler.get_content(
+            context))  # No substitution
         substituted = string.Template(file_content).safe_substitute(variables)
         context.bind_variables(variables)
         self.assertEqual(substituted, handler.get_content(context))
@@ -55,7 +57,8 @@ class ContentHandlerTest(unittest.TestCase):
         self.assertEqual(file_content, handler.get_content(context))
 
         # Test double templating with files
-        handler.setup(file_path, is_file=True, is_template_path=True, is_template_content=True)
+        handler.setup(file_path, is_file=True,
+                      is_template_path=True, is_template_content=True)
         self.assertEqual(substituted, handler.get_content(context=context))
 
     def test_cached_read(self):
@@ -80,16 +83,14 @@ class ContentHandlerTest(unittest.TestCase):
         handler.is_template_content = True
         cached_handler = handler.create_noread_version()
         self.assertEqual(file_content, handler.get_content())
-        self.assertEqual(handler.is_template_content, cached_handler.is_template_content)
+        self.assertEqual(handler.is_template_content,
+                         cached_handler.is_template_content)
         self.assertFalse(cached_handler.is_file)
 
         # Check dynamic paths don't try to template
         handler.is_template_path = True
         cached_handler = handler.create_noread_version()
         self.assertTrue(handler is cached_handler)
-
-
-
 
     def test_parse_content_simple(self):
         """ Test parsing of simple content """
@@ -104,7 +105,7 @@ class ContentHandlerTest(unittest.TestCase):
 
     def test_parse_content_file(self):
         """ Test parsing of file content """
-        node = {'file':'/myval'}
+        node = {'file': '/myval'}
         handler = ContentHandler.parse_content(node)
         self.assertEqual(node['file'], handler.content)
         self.assertFalse(handler.is_dynamic())
@@ -114,10 +115,10 @@ class ContentHandlerTest(unittest.TestCase):
 
     def test_parse_content_templated(self):
         """ Test parsing of templated content """
-        node = {'template':'myval $var'}
+        node = {'template': 'myval $var'}
         handler = ContentHandler.parse_content(node)
         context = Context()
-        context.bind_variable('var','cheese')
+        context.bind_variable('var', 'cheese')
         self.assertEqual(node['template'], handler.content)
         self.assertEqual('myval cheese', handler.get_content(context))
         self.assertTrue(handler.is_dynamic())
@@ -158,8 +159,8 @@ class ContentHandlerTest(unittest.TestCase):
     def test_parse_content_breaks(self):
         """ Test for handling parsing of some bad input cases """
         failing_configs = list()
-        failing_configs.append({'template' : None})
-        failing_configs.append({'file' : None})
+        failing_configs.append({'template': None})
+        failing_configs.append({'file': None})
         failing_configs.append({'file': {'template': None}})
         failing_configs.append({'file': {'template': 1}})
         failing_configs.append({'file': {'template': 1}})
@@ -168,7 +169,8 @@ class ContentHandlerTest(unittest.TestCase):
         for config in failing_configs:
             try:
                 handler = ContentHandler.parse_content(node)
-                self.fail("Should raise an exception on invalid parse, config: "+json.dumps(config, default=lambda o: o.__dict__))
+                self.fail("Should raise an exception on invalid parse, config: " +
+                          json.dumps(config, default=lambda o: o.__dict__))
             except Exception:
                 pass
 

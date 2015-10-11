@@ -15,54 +15,62 @@ class TestsTest(unittest.TestCase):
 
     def test_parse_test(self):
         """ Test basic ways of creating test objects from input object structure """
-        #Most basic case
-        input = {"url": "/ping", "method": "DELETE", "NAME":"foo", "group":"bar", "body":"<xml>input</xml>","headers":{"Accept":"Application/json"}}
-        test = Test.parse_test('',input)
+        # Most basic case
+        input = {"url": "/ping", "method": "DELETE", "NAME": "foo", "group": "bar",
+                 "body": "<xml>input</xml>", "headers": {"Accept": "Application/json"}}
+        test = Test.parse_test('', input)
         self.assertTrue(test.url == input['url'])
         self.assertTrue(test.method == input['method'])
         self.assertTrue(test.name == input['NAME'])
         self.assertTrue(test.group == input['group'])
         self.assertTrue(test.body == input['body'])
-        #Test headers match
-        self.assertFalse( set(test.headers.values()) ^ set(input['headers'].values()) )
+        # Test headers match
+        self.assertFalse(set(test.headers.values()) ^
+                         set(input['headers'].values()))
 
-        #Happy path, only gotcha is that it's a POST, so must accept 200 or 204 response code
+        # Happy path, only gotcha is that it's a POST, so must accept 200 or
+        # 204 response code
         input = {"url": "/ping", "meThod": "POST"}
-        test = Test.parse_test('',input)
+        test = Test.parse_test('', input)
         self.assertTrue(test.url == input['url'])
         self.assertTrue(test.method == input['meThod'])
-        self.assertTrue(test.expected_status == [200,201,204])
+        self.assertTrue(test.expected_status == [200, 201, 204])
 
         # Authentication
-        input = {"url": "/ping", "method": "GET", "auth_username" : "foo", "auth_password": "bar"}
-        test = Test.parse_test('',input)
+        input = {"url": "/ping", "method": "GET",
+                 "auth_username": "foo", "auth_password": "bar"}
+        test = Test.parse_test('', input)
         self.assertTrue(test.auth_username == input['auth_username'])
         self.assertTrue(test.auth_password == input['auth_password'])
         self.assertTrue(test.expected_status == [200])
 
-        #Test that headers propagate
-        input = {"url": "/ping", "method": "GET", "headers" : [{"Accept":"application/json"},{"Accept-Encoding":"gzip"}] }
-        test = Test.parse_test('',input)
-        expected_headers = {"Accept":"application/json","Accept-Encoding":"gzip"}
+        # Test that headers propagate
+        input = {"url": "/ping", "method": "GET",
+                 "headers": [{"Accept": "application/json"}, {"Accept-Encoding": "gzip"}]}
+        test = Test.parse_test('', input)
+        expected_headers = {"Accept": "application/json",
+                            "Accept-Encoding": "gzip"}
 
         self.assertTrue(test.url == input['url'])
         self.assertTrue(test.method == 'GET')
         self.assertTrue(test.expected_status == [200])
-        self.assertTrue(isinstance(test.headers,dict))
+        self.assertTrue(isinstance(test.headers, dict))
 
-        #Test no header mappings differ
-        self.assertFalse( set(test.headers.values()) ^ set(expected_headers.values()) )
+        # Test no header mappings differ
+        self.assertFalse(set(test.headers.values()) ^
+                         set(expected_headers.values()))
 
-
-        #Test expected status propagates and handles conversion to integer
-        input = [{"url": "/ping"},{"name": "cheese"},{"expected_status":["200",204,"202"]}]
-        test = Test.parse_test('',input)
+        # Test expected status propagates and handles conversion to integer
+        input = [{"url": "/ping"}, {"name": "cheese"},
+                 {"expected_status": ["200", 204, "202"]}]
+        test = Test.parse_test('', input)
         self.assertTrue(test.name == "cheese")
-        self.assertTrue(test.expected_status == [200,204,202])
+        self.assertTrue(test.expected_status == [200, 204, 202])
         self.assertFalse(test.is_context_modifier())
 
     def test_parse_nonstandard_http_method(self):
-        myinput = {"url": "/ping", "method": "PATCH", "NAME":"foo", "group":"bar", "body":"<xml>input</xml>","headers":{"Accept":"Application/json"}}
+        myinput = {"url": "/ping", "method": "PATCH", "NAME": "foo", "group": "bar",
+                   "body": "<xml>input</xml>", "headers": {"Accept": "Application/json"}}
         test = Test.parse_test('', myinput)
         self.assertEqual("PATCH", test.method)
 
@@ -82,7 +90,8 @@ class TestsTest(unittest.TestCase):
 
     def test_parse_custom_curl(self):
         # Basic case
-        myinput = {'url': '/ping', 'name': 'basic', 'curl_option_followLocatION': True}
+        myinput = {'url': '/ping', 'name': 'basic',
+                   'curl_option_followLocatION': True}
         test = Test.parse_test('', myinput)
         options = test.curl_options
         self.assertEqual(1, len(options))
@@ -109,9 +118,9 @@ class TestsTest(unittest.TestCase):
         test = Test()
         test.curl_options = {'FOLLOWLOCATION': True, 'MAXREDIRS': 5}
         mock_handle = pycurl.Curl()
-        mock_handle.setopt = mock.MagicMock(return_value = True)
+        mock_handle.setopt = mock.MagicMock(return_value=True)
         test.configure_curl(curl_handle=mock_handle)
-        #print mock_handle.setopt.call_args_list  # Debugging
+        # print mock_handle.setopt.call_args_list  # Debugging
         mock_handle.setopt.assert_any_call(mock_handle.FOLLOWLOCATION, True)
         mock_handle.setopt.assert_any_call(mock_handle.MAXREDIRS, 5)
         mock_handle.close()
@@ -119,13 +128,16 @@ class TestsTest(unittest.TestCase):
     def test_parse_test_templated_headers(self):
         """ Test parsing with templated headers """
 
-        heads = {"Accept":"Application/json", "$AuthHeader":"$AuthString"}
-        templated_heads = {"Accept":"Application/json", "apikey":"magic_passWord"}
+        heads = {"Accept": "Application/json", "$AuthHeader": "$AuthString"}
+        templated_heads = {"Accept": "Application/json",
+                           "apikey": "magic_passWord"}
         context = Context()
-        context.bind_variables({'AuthHeader': 'apikey', 'AuthString':'magic_passWord'})
+        context.bind_variables(
+            {'AuthHeader': 'apikey', 'AuthString': 'magic_passWord'})
 
         # If this doesn't throw errors we have silent failures
-        input_invalid = {"url": "/ping", "method": "DELETE", "NAME":"foo", "group":"bar", "body":"<xml>input</xml>","headers": 'goat'}
+        input_invalid = {"url": "/ping", "method": "DELETE", "NAME": "foo",
+                         "group": "bar", "body": "<xml>input</xml>", "headers": 'goat'}
         try:
             test = Test.parse_test('', input_invalid)
             test.fail("Expected error not thrown")
@@ -137,43 +149,49 @@ class TestsTest(unittest.TestCase):
             self.assertEqual(2, len(set(dict1.items()) & set(dict2.items())))
 
         # Before templating is used
-        input = {"url": "/ping", "method": "DELETE", "NAME":"foo", "group":"bar", "body":"<xml>input</xml>","headers": heads}
+        input = {"url": "/ping", "method": "DELETE", "NAME": "foo",
+                 "group": "bar", "body": "<xml>input</xml>", "headers": heads}
         test = Test.parse_test('', input)
         assert_dict_eq(heads, test.headers)
         assert_dict_eq(heads, test.get_headers(context=context))
 
         # After templating applied
-        input_templated = {"url": "/ping", "method": "DELETE", "NAME":"foo", "group":"bar", "body":"<xml>input</xml>","headers": {'tEmplate': heads}}
+        input_templated = {"url": "/ping", "method": "DELETE", "NAME": "foo",
+                           "group": "bar", "body": "<xml>input</xml>", "headers": {'tEmplate': heads}}
         test2 = Test.parse_test('', input_templated)
         assert_dict_eq(heads, test2.get_headers())
         assert_dict_eq(templated_heads, test2.get_headers(context=context))
 
     def test_parse_test_validators(self):
         """ Test that for a test it can parse the validators section correctly """
-        input = {"url": '/test', 'validators' : [
+        input = {"url": '/test', 'validators': [
             {'comparator': {
                 'jsonpath_mini': 'key.val',
                 'comparator': 'eq',
                 'expected': 3
             }},
-            {'extract_test': {'jsonpath_mini': 'key.val', 'test':'exists'}}
+            {'extract_test': {'jsonpath_mini': 'key.val', 'test': 'exists'}}
         ]}
 
-        test = Test.parse_test('',input)
+        test = Test.parse_test('', input)
         self.assertTrue(test.validators)
         self.assertEqual(2, len(test.validators))
-        self.assertTrue(isinstance(test.validators[0], validators.ComparatorValidator))
-        self.assertTrue(isinstance(test.validators[1], validators.ExtractTestValidator))
+        self.assertTrue(isinstance(
+            test.validators[0], validators.ComparatorValidator))
+        self.assertTrue(isinstance(
+            test.validators[1], validators.ExtractTestValidator))
 
         # Check the validators really work
-        self.assertTrue(test.validators[0].validate('{"id": 3, "key": {"val": 3}}'))
+        self.assertTrue(test.validators[0].validate(
+            '{"id": 3, "key": {"val": 3}}'))
 
     def test_parse_validators_fail(self):
         """ Test an invalid validator syntax throws exception """
-        input = {"url": '/test', 'validators' : ['comparator']}
+        input = {"url": '/test', 'validators': ['comparator']}
         try:
             test = Test.parse_test('', input)
-            self.fail("Should throw exception if not giving a dictionary-type comparator")
+            self.fail(
+                "Should throw exception if not giving a dictionary-type comparator")
         except TypeError:
             pass
 
@@ -214,7 +232,7 @@ class TestsTest(unittest.TestCase):
 
         test_config['extract_binds']['id'] = {
             'jsonpath_mini': 'query',
-            'test':'anotherquery'
+            'test': 'anotherquery'
         }
         try:
             test = Test.parse_test('', test_config)
@@ -228,9 +246,9 @@ class TestsTest(unittest.TestCase):
             'name': 'Default',
             'url': '/api',
             'validators': [
-                {'comparator':{'jsonpath_mini': 'id',
-                 'comparator': 'eq',
-                 'expected': {'template': '$id'}}}
+                {'comparator': {'jsonpath_mini': 'id',
+                                'comparator': 'eq',
+                                'expected': {'template': '$id'}}}
             ]
         }
         test = Test.parse_test('', test_config)
@@ -245,15 +263,14 @@ class TestsTest(unittest.TestCase):
         self.assertTrue(test.validators[0].validate(myjson, context=context))
         self.assertFalse(test.validators[0].validate(myjson))
 
-
     def test_parse_validator_extract_test(self):
         """ Tests parsing extract-test validator """
         test_config = {
             'name': 'Default',
             'url': '/api',
             'validators': [
-                {'extract_test':{'jsonpath_mini': 'login',
-                 'test': 'exists'}}
+                {'extract_test': {'jsonpath_mini': 'login',
+                                  'test': 'exists'}}
             ]
         }
         test = Test.parse_test('', test_config)
@@ -266,8 +283,9 @@ class TestsTest(unittest.TestCase):
     def test_variable_binding(self):
         """ Test that tests successfully bind variables """
         element = 3
-        input = [{"url": "/ping"},{"name": "cheese"},{"expected_status":["200",204,"202"]}]
-        input.append({"variable_binds":{'var':'value'}})
+        input = [{"url": "/ping"}, {"name": "cheese"},
+                 {"expected_status": ["200", 204, "202"]}]
+        input.append({"variable_binds": {'var': 'value'}})
 
         test = Test.parse_test('', input)
         binds = test.variable_binds
@@ -300,18 +318,18 @@ class TestsTest(unittest.TestCase):
         handler.is_template_content = True
         handler.content = '{"first_name": "Gaius","id": "$id","last_name": "Baltar","login": "$login"}'
         context = Context()
-        context.bind_variables({'id':9, 'login':'kvothe'})
+        context.bind_variables({'id': 9, 'login': 'kvothe'})
         test.set_body(handler)
 
         templated = test.realize(context=context)
         self.assertEqual(string.Template(handler.content).safe_substitute(context.get_values()),
-            templated.body)
+                         templated.body)
 
     def test_header_templating(self):
         test = Test()
         head_templated = {'$key': "$val"}
         context = Context()
-        context.bind_variables({'key': 'cheese', 'val':'gouda'})
+        context.bind_variables({'key': 'cheese', 'val': 'gouda'})
 
         # No templating applied
         test.headers = head_templated
@@ -336,8 +354,8 @@ class TestsTest(unittest.TestCase):
     def test_update_context_variables(self):
         test = Test()
         context = Context()
-        context.bind_variable('foo','broken')
-        test.variable_binds = {'foo':'correct', 'test':'value'}
+        context.bind_variable('foo', 'broken')
+        test.variable_binds = {'foo': 'correct', 'test': 'value'}
         test.update_context_before(context)
         self.assertEqual('correct', context.get_value('foo'))
         self.assertEqual('value', context.get_value('test'))
@@ -346,7 +364,7 @@ class TestsTest(unittest.TestCase):
         """ Test updating context variables using generator """
         test = Test()
         context = Context()
-        context.bind_variable('foo','broken')
+        context.bind_variable('foo', 'broken')
         test.variable_binds = {'foo': 'initial_value'}
         test.generator_binds = {'foo': 'gen'}
         context.add_generator('gen', generators.generator_basic_ids())

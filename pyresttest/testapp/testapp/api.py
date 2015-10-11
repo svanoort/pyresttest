@@ -17,11 +17,10 @@ class PersonResource(ModelResource):
         authorization = Authorization()
         list_allowed_methods = ['get', 'post']  # List or create single item
         detail_allowed_methods = ['get', 'post', 'put', 'delete', 'patch']
-        filtering = { #Search by fields
+        filtering = {  # Search by fields
             'id': ALL,
             'login': ALL,
             'first_name': ALL,
             'last_name': ALL
         }
         always_return_data = True  # Allows for POST to return object
-

@@ -16,6 +16,7 @@ except ImportError:
     from pyresttest import parsing
     from pyresttest import contenthandling
 
+
 class JsonSchemaValidator(validators.AbstractValidator):
     """ Json schema validator using the jsonschema library """
     schema = None
@@ -26,7 +27,8 @@ class JsonSchemaValidator(validators.AbstractValidator):
         # TODO add caching of parsed schema
 
         try:
-            # TODO try draft3/draft4 iter_errors - https://python-jsonschema.readthedocs.org/en/latest/validate/#jsonschema.IValidator.iter_errors
+            # TODO try draft3/draft4 iter_errors -
+            # https://python-jsonschema.readthedocs.org/en/latest/validate/#jsonschema.IValidator.iter_errors
             jsonschema.validate(json.loads(body), schema)
             return True
         except jsonschema.exceptions.ValidationError as ve:
@@ -41,8 +43,10 @@ class JsonSchemaValidator(validators.AbstractValidator):
         validator = JsonSchemaValidator()
         config = parsing.lowercase_keys(config)
         if 'schema' not in config:
-            raise ValueError("Cannot create schema validator without a 'schema' configuration element!")
-        validator.schema = contenthandling.ContentHandler.parse_content(config['schema'])
+            raise ValueError(
+                "Cannot create schema validator without a 'schema' configuration element!")
+        validator.schema = contenthandling.ContentHandler.parse_content(config[
+                                                                        'schema'])
         return validator
 
 VALIDATORS = {'json_schema': JsonSchemaValidator.parse}

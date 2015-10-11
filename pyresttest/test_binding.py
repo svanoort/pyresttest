@@ -1,6 +1,7 @@
 import unittest
 from binding import Context
 
+
 def count_gen():  # Generator that counts up from 1
     val = 1
     while(True):
@@ -8,6 +9,8 @@ def count_gen():  # Generator that counts up from 1
         val += 1
 
 """ Tests variable/generator binding """
+
+
 class BindingTest(unittest.TestCase):
 
     def test_variables(self):
@@ -17,12 +20,12 @@ class BindingTest(unittest.TestCase):
         self.assertTrue(context.get_value('foo') is None)
         self.assertEqual(0, context.mod_count)
 
-        context.bind_variable('foo','bar')
+        context.bind_variable('foo', 'bar')
         self.assertEqual('bar', context.get_value('foo'))
         self.assertEqual('bar', context.get_values()['foo'])
         self.assertEqual(1, context.mod_count)
 
-        context.bind_variable('foo','bar2')
+        context.bind_variable('foo', 'bar2')
         self.assertEqual('bar2', context.get_value('foo'))
         self.assertEqual(2, context.mod_count)
 

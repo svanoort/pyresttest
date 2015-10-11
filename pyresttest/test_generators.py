@@ -9,19 +9,20 @@ import sys
 if sys.version_info[0] == 3:
     from builtins import range as xrange
 
+
 class GeneratorTest(unittest.TestCase):
     """ Tests for generators """
-
 
     def generator_basic_test(self, generator, value_test_function=None):
         """ Basic test for a generator, checks values and applies test function """
         self.assertTrue(isinstance(generator, types.GeneratorType))
 
-        for x in xrange(0,100):
+        for x in xrange(0, 100):
             val = next(generator)
             self.assertTrue(val is not None)
             if value_test_function:
-                self.assertTrue(value_test_function(val), 'Test failed with value {0}'.format(val))
+                self.assertTrue(value_test_function(
+                    val), 'Test failed with value {0}'.format(val))
 
     def generator_repeat_test(self, generator_input):
         """ Basic test of a configured generator """
@@ -78,7 +79,7 @@ class GeneratorTest(unittest.TestCase):
 
         os.environ[variable] = value
         self.assertEqual(value, next(generator))
-        self.assertEqual(next(generator), os.path.expandvars('$'+variable))
+        self.assertEqual(next(generator), os.path.expandvars('$' + variable))
 
         # Restore environment
         if old_val is not None:
@@ -86,16 +87,17 @@ class GeneratorTest(unittest.TestCase):
         else:
             del os.environ[variable]
 
-
     def test_factory_text(self):
         """ Test the basic generator """
-        charsets = [string.ascii_letters, string.digits, string.ascii_uppercase, string.hexdigits]
+        charsets = [string.ascii_letters, string.digits,
+                    string.ascii_uppercase, string.hexdigits]
         # Test multiple charsets and string lengths
         for charset in charsets:
             # Test different lengths for charset
-            for my_length in xrange(1,17):
-                gen = generators.factory_generate_text(legal_characters = charset, min_length=my_length, max_length=my_length)()
-                for x in xrange(0,10):
+            for my_length in xrange(1, 17):
+                gen = generators.factory_generate_text(
+                    legal_characters=charset, min_length=my_length, max_length=my_length)()
+                for x in xrange(0, 10):
                     val = next(gen)
                     self.assertEqual(my_length, len(val))
 
@@ -109,14 +111,14 @@ class GeneratorTest(unittest.TestCase):
         gen = generators.factory_fixed_sequence(vals)()
         self.generator_basic_test(gen, lambda x: x in vals)
 
-        vals = set(['a','b','c'])
+        vals = set(['a', 'b', 'c'])
         gen = generators.factory_fixed_sequence(vals)()
         self.generator_basic_test(gen, lambda x: x in vals)
 
     def test_parse_fixed_sequence(self):
         vals = ['moobie', 'moby', 'moo']
         config = {'type': 'fixed_sequence',
-            'values': vals}
+                  'values': vals}
         gen = generators.parse_generator(config)
         self.generator_basic_test(gen, lambda x: x in vals)
 
@@ -130,25 +132,26 @@ class GeneratorTest(unittest.TestCase):
         gen = generators.factory_choice_generator(vals)()
         self.generator_basic_test(gen, lambda x: x in vals)
 
-        vals = set(['a','b','c'])
+        vals = set(['a', 'b', 'c'])
         gen = generators.factory_choice_generator(vals)()
         self.generator_basic_test(gen, lambda x: x in vals)
 
     def test_parse_choice_generatpr(self):
         vals = ['moobie', 'moby', 'moo']
         config = {'type': 'choice',
-            'values': vals}
+                  'values': vals}
         gen = generators.parse_generator(config)
         self.generator_basic_test(gen, lambda x: x in vals)
 
-
     def test_factory_text_multilength(self):
         """ Test that the random text generator can handle multiple lengths """
-        gen = generators.factory_generate_text(legal_characters='abcdefghij', min_length=1,max_length=100)()
+        gen = generators.factory_generate_text(
+            legal_characters='abcdefghij', min_length=1, max_length=100)()
         lengths = set()
-        for x in range(0,100):
+        for x in range(0, 100):
             lengths.add(len(next(gen)))
-        self.assertTrue(len(lengths) > 1, "Variable length string generator did not generate multiple string lengths")
+        self.assertTrue(len(
+            lengths) > 1, "Variable length string generator did not generate multiple string lengths")
 
     def test_character_sets(self):
         """ Verify all charsets are valid """
@@ -164,7 +167,8 @@ class GeneratorTest(unittest.TestCase):
 
         try:
             gen = generators.parse_generator(config)
-            self.fail("Should never parse an invalid character_set successfully, but did!")
+            self.fail(
+                "Should never parse an invalid character_set successfully, but did!")
         except ValueError:
             pass
 
@@ -178,7 +182,7 @@ class GeneratorTest(unittest.TestCase):
                     val = next(gen)
                     self.assertTrue(set(val).issubset(set(myset)))
             except Exception as e:
-                print('Exception occurred with charset: '+charset)
+                print('Exception occurred with charset: ' + charset)
                 raise e
 
         my_min = 1
@@ -189,35 +193,39 @@ class GeneratorTest(unittest.TestCase):
         temp_chars = 'ay78%&'
         config['characters'] = temp_chars
         gen = generators.parse_generator(config)
-        self.generator_basic_test(gen, value_test_function = lambda x: set(x).issubset(set(temp_chars)))
+        self.generator_basic_test(
+            gen, value_test_function=lambda x: set(x).issubset(set(temp_chars)))
 
         # Test for length setting
         config['length'] = '3'
         gen = generators.parse_generator(config)
-        self.generator_basic_test(gen, value_test_function = lambda x: len(x) == 3)
+        self.generator_basic_test(
+            gen, value_test_function=lambda x: len(x) == 3)
         del config['length']
 
         # Test for explicit min/max length
         config['min_length'] = '9'
         config['max_length'] = 12
         gen = generators.parse_generator(config)
-        self.generator_basic_test(gen, value_test_function = lambda x: len(x) >= 9 and len(x) <= 12)
-
+        self.generator_basic_test(
+            gen, value_test_function=lambda x: len(x) >= 9 and len(x) <= 12)
 
     def test_parse_basic(self):
         """ Test basic parsing, simple cases that should succeed or throw known errors """
-        config = {'type':'unsupported'}
+        config = {'type': 'unsupported'}
 
         try:
             gen = generators.parse_generator(config)
-            self.fail("Expected failure due to invalid generator type, did not emit it")
+            self.fail(
+                "Expected failure due to invalid generator type, did not emit it")
         except ValueError:
             pass
 
         # Try creating a random_int generator
         config['type'] = 'random_int'
         gen = generators.parse_generator(config)
-        self.generator_basic_test(gen, value_test_function = lambda x: isinstance(x,int))
+        self.generator_basic_test(
+            gen, value_test_function=lambda x: isinstance(x, int))
         self.generator_repeat_test(gen)
 
         # Sample variable

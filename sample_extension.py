@@ -7,6 +7,7 @@ import sys
 if sys.version_info[0] == 3:
     from past.builtins import basestring
 
+
 class ContainsValidator(validators.AbstractValidator):
     # Sample validator that verifies a string is contained in the request body
     contains_string = None
@@ -16,7 +17,8 @@ class ContainsValidator(validators.AbstractValidator):
         if result:
             return True
         else:  # Return failure object with additional information
-            message = "Request body did not contain string: {0}".format(self.contains_string)
+            message = "Request body did not contain string: {0}".format(
+                self.contains_string)
             return validators.Failure(message=message, details=None, validator=self)
 
     @staticmethod
@@ -27,6 +29,7 @@ class ContainsValidator(validators.AbstractValidator):
         validator = ContainsValidator()
         validator.contains_string = config
         return validator
+
 
 class WeirdzoExtractor(validators.AbstractExtractor):
     """ Always returns 'zorba' """
@@ -42,6 +45,7 @@ class WeirdzoExtractor(validators.AbstractExtractor):
     def extract_internal(self, query=None, args=None, body=None, headers=None):
         return 'zorba'
 
+
 def parse_generator_doubling(config):
     """ Returns generators that double with each value returned
         Config includes optional start value """
@@ -49,24 +53,27 @@ def parse_generator_doubling(config):
     if 'start' in config:
         start = int(config['start'])
 
-    # We cannot simply use start as the variable, because of scoping limitations
+    # We cannot simply use start as the variable, because of scoping
+    # limitations
     def generator():
         val = start
         while(True):
             yield val
-            val = val*2
+            val = val * 2
     return generator()
+
 
 def test_is_dict(input):
     """ Simple test that returns true if item is a dictionary """
     return isinstance(input, dict)
 
-# This is where the magic happens, each one of these is a registry of validators/extractors/generators to use
+# This is where the magic happens, each one of these is a registry of
+# validators/extractors/generators to use
 VALIDATORS = {'contains': ContainsValidator.parse}
 VALIDATOR_TESTS = {'is_dict': test_is_dict}
 
 # Converts to lowercase and tests for equality
-COMPARATORS = {'str.eq.lower': lambda a,b: str(a).lower() == str(b).lower()}
+COMPARATORS = {'str.eq.lower': lambda a, b: str(a).lower() == str(b).lower()}
 
 EXTRACTORS = {'weirdzo': WeirdzoExtractor.parse}
 GENERATORS = {'doubling': parse_generator_doubling}

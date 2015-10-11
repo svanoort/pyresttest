@@ -53,6 +53,7 @@ LOGGING_LEVELS = {'debug': logging.DEBUG,
 logging.basicConfig(format='%(levelname)s:%(message)s')
 logger = logging.getLogger('pyresttest')
 
+
 class cd:
     """Context manager for changing the current working directory"""
     # http://stackoverflow.com/questions/431684/how-do-i-cd-in-python/13197763#13197763
@@ -68,6 +69,7 @@ class cd:
     def __exit__(self, etype, value, traceback):
         if self.newPath:  # Don't CD to nothingness
             os.chdir(self.savedPath)
+
 
 class TestConfig:
     """ Configuration for a test run """
@@ -87,6 +89,7 @@ class TestConfig:
     def __str__(self):
         return json.dumps(self, default=safe_to_json)
 
+
 class TestSet:
     """ Encapsulates a set of tests and test configuration for them """
     tests = list()
@@ -100,6 +103,7 @@ class TestSet:
 
     def __str__(self):
         return json.dumps(self, default=safe_to_json)
+
 
 class BenchmarkResult:
     """ Stores results from a benchmark for reporting use """
@@ -116,6 +120,7 @@ class BenchmarkResult:
 
     def __str__(self):
         return json.dumps(self, default=safe_to_json)
+
 
 class TestResponse:
     """ Encapsulates everything about a test response """
@@ -140,14 +145,16 @@ class TestResponse:
 
 def read_test_file(path):
     """ Read test file at 'path' in YAML """
-    # TODO allow use of safe_load_all to handle multiple test sets in a given doc
+    # TODO allow use of safe_load_all to handle multiple test sets in a given
+    # doc
     teststruct = yaml.safe_load(read_file(path))
     return teststruct
+
 
 def parse_headers(header_string):
     """ Parse a header-string into individual headers
         Implementation based on: http://stackoverflow.com/a/5955949/95122
-	Note that headers are a list of (key, value) since duplicate headers are allowed
+        Note that headers are a list of (key, value) since duplicate headers are allowed
     """
     # First line is request line, strip it out
     if not header_string:
@@ -158,9 +165,10 @@ def parse_headers(header_string):
     else:
         header_msg = message_from_string(headers)
         # Note: HTTP headers are *case-insensitive* per RFC 2616
-        return [(k.lower(), v) for k,v in header_msg.items()]
+        return [(k.lower(), v) for k, v in header_msg.items()]
 
-def parse_testsets(base_url, test_structure, test_files = set(), working_directory = None, vars=None):
+
+def parse_testsets(base_url, test_structure, test_files=set(), working_directory=None, vars=None):
     """ Convert a Python data structure read from validated YAML to a set of structured testsets
     The data structure is assumed to be a list of dictionaries, each of which describes:
         - a tests (test structure)
@@ -182,12 +190,12 @@ def parse_testsets(base_url, test_structure, test_files = set(), working_directo
     if working_directory is None:
         working_directory = os.path.abspath(os.getcwd())
 
-    if vars and isinstance(vars,dict):
+    if vars and isinstance(vars, dict):
         test_config.variable_binds = vars
 
     # returns a testconfig and collection of tests
     for node in test_structure:  # Iterate through lists of test and configuration elements
-        if isinstance(node,dict):  # Each config element is a miniature key-value dictionary
+        if isinstance(node, dict):  # Each config element is a miniature key-value dictionary
             node = lowercase_keys(node)
             for key in node:
                 if key == u'import':
@@ -197,12 +205,13 @@ def parse_testsets(base_url, test_structure, test_files = set(), working_directo
                         test_files.add(importfile)
                         import_test_structure = read_test_file(importfile)
                         with cd(os.path.dirname(os.path.realpath(importfile))):
-                            import_testsets = parse_testsets(base_url, import_test_structure, test_files, vars=vars)
+                            import_testsets = parse_testsets(
+                                base_url, import_test_structure, test_files, vars=vars)
                             testsets.extend(import_testsets)
                 elif key == u'url':  # Simple test, just a GET to a URL
                     mytest = Test()
                     val = node[key]
-                    assert isinstance(val,str) or isinstance(val,unicode)
+                    assert isinstance(val, str) or isinstance(val, unicode)
                     mytest.url = base_url + val
                     tests_out.append(mytest)
                 elif key == u'test':  # Complex test with additional parameters
@@ -214,13 +223,15 @@ def parse_testsets(base_url, test_structure, test_files = set(), working_directo
                     benchmark = parse_benchmark(base_url, node[key])
                     benchmarks.append(benchmark)
                 elif key == u'config' or key == u'configuration':
-                    test_config = parse_configuration(node[key], base_config=test_config)
+                    test_config = parse_configuration(
+                        node[key], base_config=test_config)
     testset = TestSet()
     testset.tests = tests_out
     testset.config = test_config
     testset.benchmarks = benchmarks
     testsets.append(testset)
     return testsets
+
 
 def parse_configuration(node, base_config=None):
     """ Parse input config to configuration information """
@@ -251,6 +262,7 @@ def parse_configuration(node, base_config=None):
 
     return test_config
 
+
 def read_file(path):
     """ Read an input into a file, doing necessary conversions around relative path handling """
     with open(path, "r") as f:
@@ -258,7 +270,8 @@ def read_file(path):
         f.close()
     return string
 
-def run_test(mytest, test_config = TestConfig(), context = None):
+
+def run_test(mytest, test_config=TestConfig(), context=None):
     """ Put together test pieces: configure & run actual test, return results """
 
     # Initialize a context if not supplied
@@ -268,7 +281,8 @@ def run_test(mytest, test_config = TestConfig(), context = None):
 
     mytest.update_context_before(my_context)
     templated_test = mytest.realize(my_context)
-    curl = templated_test.configure_curl(timeout=test_config.timeout, context=my_context)
+    curl = templated_test.configure_curl(
+        timeout=test_config.timeout, context=my_context)
     result = TestResponse()
     result.test = templated_test
 
@@ -278,10 +292,10 @@ def run_test(mytest, test_config = TestConfig(), context = None):
     curl.setopt(pycurl.WRITEFUNCTION, body.write)
     curl.setopt(pycurl.HEADERFUNCTION, headers.write)
     if test_config.verbose:
-        curl.setopt(pycurl.VERBOSE,True)
+        curl.setopt(pycurl.VERBOSE, True)
     if test_config.ssl_insecure:
-        curl.setopt(pycurl.SSL_VERIFYPEER,0)
-        curl.setopt(pycurl.SSL_VERIFYHOST,0)
+        curl.setopt(pycurl.SSL_VERIFYPEER, 0)
+        curl.setopt(pycurl.SSL_VERIFYHOST, 0)
 
     result.passed = None
 
@@ -304,9 +318,11 @@ def run_test(mytest, test_config = TestConfig(), context = None):
     try:
         curl.perform()  # Run the actual call
     except Exception as e:
-        # Curl exception occurred (network error), do not pass go, do not collect $200
+        # Curl exception occurred (network error), do not pass go, do not
+        # collect $200
         trace = traceback.format_exc()
-        result.failures.append(Failure(message="Curl Exception: {0}".format(e), details=trace, failure_type=validators.FAILURE_CURL_EXCEPTION))
+        result.failures.append(Failure(message="Curl Exception: {0}".format(
+            e), details=trace, failure_type=validators.FAILURE_CURL_EXCEPTION))
         result.passed = False
         curl.close()
         return result
@@ -320,27 +336,32 @@ def run_test(mytest, test_config = TestConfig(), context = None):
     response_code = curl.getinfo(pycurl.RESPONSE_CODE)
     result.response_code = response_code
 
-    logger.debug("Initial Test Result, based on expected response code: "+str(response_code in mytest.expected_status))
+    logger.debug("Initial Test Result, based on expected response code: " +
+                 str(response_code in mytest.expected_status))
 
     if response_code in mytest.expected_status:
         result.passed = True
     else:
         # Invalid response code
         result.passed = False
-        failure_message = "Invalid HTTP response code: response code {0} not in expected codes [{1}]".format(response_code, mytest.expected_status)
-        result.failures.append(Failure(message=failure_message, details=None, failure_type=validators.FAILURE_INVALID_RESPONSE))
+        failure_message = "Invalid HTTP response code: response code {0} not in expected codes [{1}]".format(
+            response_code, mytest.expected_status)
+        result.failures.append(Failure(
+            message=failure_message, details=None, failure_type=validators.FAILURE_INVALID_RESPONSE))
 
     # Parse HTTP headers
     try:
         result.response_headers = parse_headers(result.response_headers)
     except Exception as e:
         trace = traceback.format_exc()
-        result.failures.append(Failure(message="Header parsing exception: {0}".format(e), details=trace, failure_type=validators.FAILURE_TEST_EXCEPTION))
+        result.failures.append(Failure(message="Header parsing exception: {0}".format(
+            e), details=trace, failure_type=validators.FAILURE_TEST_EXCEPTION))
         result.passed = False
         curl.close()
         return result
 
-    # print str(test_config.print_bodies) + ',' + str(not result.passed) + ' , ' + str(test_config.print_bodies or not result.passed)
+    # print str(test_config.print_bodies) + ',' + str(not result.passed) + ' ,
+    # ' + str(test_config.print_bodies or not result.passed)
 
     head = result.response_headers
 
@@ -348,13 +369,16 @@ def run_test(mytest, test_config = TestConfig(), context = None):
     if result.passed is True:
         body = result.body
         if mytest.validators is not None and isinstance(mytest.validators, list):
-            logger.debug("executing this many validators: " + str(len(mytest.validators)))
+            logger.debug("executing this many validators: " +
+                         str(len(mytest.validators)))
             failures = result.failures
             for validator in mytest.validators:
-                validate_result = validator.validate(body=body, headers=head, context=my_context)
+                validate_result = validator.validate(
+                    body=body, headers=head, context=my_context)
                 if not validate_result:
                     result.passed = False
-                # Proxy for checking if it is a Failure object, because of import issues with isinstance there
+                # Proxy for checking if it is a Failure object, because of
+                # import issues with isinstance there
                 if hasattr(validate_result, 'details'):
                     failures.append(validate_result)
                 # TODO add printing of validation for interactive mode
@@ -364,7 +388,8 @@ def run_test(mytest, test_config = TestConfig(), context = None):
         # Only do context updates if test was successful
         mytest.update_context_after(result.body, head, my_context)
 
-    # Print response body if override is set to print all *OR* if test failed (to capture maybe a stack trace)
+    # Print response body if override is set to print all *OR* if test failed
+    # (to capture maybe a stack trace)
     if test_config.print_bodies or not result.passed:
         if test_config.interactive:
             print("RESPONSE:")
@@ -381,7 +406,8 @@ def run_test(mytest, test_config = TestConfig(), context = None):
     curl.close()
     return result
 
-def run_benchmark(benchmark, test_config = TestConfig(), context = None):
+
+def run_benchmark(benchmark, test_config=TestConfig(), context=None):
     """ Perform a benchmark, (re)using a given, configured CURL call to do so
         The actual analysis of metrics is performed separately, to allow for testing
     """
@@ -396,7 +422,8 @@ def run_benchmark(benchmark, test_config = TestConfig(), context = None):
     message = ''  # Message is name of benchmark... print it?
 
     if (benchmark_runs <= 0):
-        raise Exception("Invalid number of benchmark runs, must be > 0 :" + benchmark_runs)
+        raise Exception(
+            "Invalid number of benchmark runs, must be > 0 :" + benchmark_runs)
 
     result = TestResponse()
 
@@ -413,8 +440,10 @@ def run_benchmark(benchmark, test_config = TestConfig(), context = None):
     output.name = benchmark.name
     output.group = benchmark.group
     metricnames = list(benchmark.metrics)
-    metricvalues = [METRICS[name] for name in metricnames]  # Metric variable for curl, to avoid hash lookup for every metric name
-    results = [list() for x in xrange(0, len(metricnames))]  # Initialize arrays to store results for each metric
+    # Metric variable for curl, to avoid hash lookup for every metric name
+    metricvalues = [METRICS[name] for name in metricnames]
+    # Initialize arrays to store results for each metric
+    results = [list() for x in xrange(0, len(metricnames))]
     curl = pycurl.Curl()
 
     # Benchmark warm-up to allow for caching, JIT compiling, on client
@@ -422,8 +451,10 @@ def run_benchmark(benchmark, test_config = TestConfig(), context = None):
     for x in xrange(0, warmup_runs):
         benchmark.update_context_before(my_context)
         templated = benchmark.realize(my_context)
-        curl = templated.configure_curl(timeout=test_config.timeout, context=my_context, curl_handle=curl)
-        curl.setopt(pycurl.WRITEFUNCTION, lambda x: None)  # Do not store actual response body at all.
+        curl = templated.configure_curl(
+            timeout=test_config.timeout, context=my_context, curl_handle=curl)
+        # Do not store actual response body at all.
+        curl.setopt(pycurl.WRITEFUNCTION, lambda x: None)
         curl.perform()
 
     logger.info('Warmup: ' + message + ' finished')
@@ -434,8 +465,10 @@ def run_benchmark(benchmark, test_config = TestConfig(), context = None):
         # Setup benchmark
         benchmark.update_context_before(my_context)
         templated = benchmark.realize(my_context)
-        curl = templated.configure_curl(timeout=test_config.timeout, context=my_context, curl_handle=curl)
-        curl.setopt(pycurl.WRITEFUNCTION, lambda x: None)  # Do not store actual response body at all.
+        curl = templated.configure_curl(
+            timeout=test_config.timeout, context=my_context, curl_handle=curl)
+        # Do not store actual response body at all.
+        curl.setopt(pycurl.WRITEFUNCTION, lambda x: None)
 
         try:  # Run the curl call, if it errors, then add to failure counts for benchmark
             curl.perform()
@@ -447,7 +480,7 @@ def run_benchmark(benchmark, test_config = TestConfig(), context = None):
 
         # Get all metrics values for this run, and store to metric lists
         for i in xrange(0, len(metricnames)):
-            results[i].append( curl.getinfo(metricvalues[i]) )
+            results[i].append(curl.getinfo(metricvalues[i]))
 
     curl.close()
     logger.info('Benchmark: ' + message + ' ending')
@@ -484,9 +517,10 @@ def analyze_benchmark_results(benchmark_result, benchmark):
         for aggregate_name in aggregate_list:
             if numbers:  # Only compute aggregates if numbers exist
                 aggregate_function = AGGREGATES[aggregate_name]
-                aggregate_results.append( (metricname, aggregate_name, aggregate_function(numbers)) )
+                aggregate_results.append(
+                    (metricname, aggregate_name, aggregate_function(numbers)))
             else:
-                aggregate_results.append( (metricname, aggregate_name, None) )
+                aggregate_results.append((metricname, aggregate_name, None))
 
     output.aggregates = aggregate_results
     return output
@@ -518,11 +552,13 @@ def metrics_to_tuples(raw_metrics):
         output.append(new_row)
     return output
 
-def write_benchmark_json(file_out, benchmark_result, benchmark, test_config = TestConfig()):
+
+def write_benchmark_json(file_out, benchmark_result, benchmark, test_config=TestConfig()):
     """ Writes benchmark to file as json """
     json.dump(benchmark_result, file_out, default=safe_to_json)
 
-def write_benchmark_csv(file_out, benchmark_result, benchmark, test_config = TestConfig()):
+
+def write_benchmark_csv(file_out, benchmark_result, benchmark, test_config=TestConfig()):
     """ Writes benchmark to file as csv """
     writer = csv.writer(file_out)
     writer.writerow(('Benchmark', benchmark_result.name))
@@ -531,20 +567,23 @@ def write_benchmark_csv(file_out, benchmark_result, benchmark, test_config = Tes
 
     # Write result arrays
     if benchmark_result.results:
-        writer.writerow(('Results',''))
+        writer.writerow(('Results', ''))
         writer.writerows(metrics_to_tuples(benchmark_result.results))
     if benchmark_result.aggregates:
-        writer.writerow(('Aggregates',''))
+        writer.writerow(('Aggregates', ''))
         writer.writerows(benchmark_result.aggregates)
 
 # Method to call when writing benchmark file
-OUTPUT_METHODS = {u'csv' : write_benchmark_csv, u'json': write_benchmark_json}
+OUTPUT_METHODS = {u'csv': write_benchmark_csv, u'json': write_benchmark_json}
+
 
 def log_failure(failure, context=None, test_config=TestConfig()):
     """ Log a failure from a test """
-    logger.error("Test Failure, failure type: {0}, Reason: {1}".format(failure.failure_type, failure.message))
+    logger.error("Test Failure, failure type: {0}, Reason: {1}".format(
+        failure.failure_type, failure.message))
     if failure.details:
-        logger.error("Validator/Error details:"+str(failure.details))
+        logger.error("Validator/Error details:" + str(failure.details))
+
 
 def run_testsets(testsets):
     """ Execute a set of tests, using given TestSet list input """
@@ -568,7 +607,8 @@ def run_testsets(testsets):
 
         # Make sure we actually have tests to execute
         if not mytests and not mybenchmarks:
-            # no tests in this test set, probably just imports.. skip to next test set
+            # no tests in this test set, probably just imports.. skip to next
+            # test set
             break
 
         myinteractive = True if myinteractive or myconfig.interactive else False
@@ -580,32 +620,37 @@ def run_testsets(testsets):
                 group_results[test.group] = list()
                 group_failure_counts[test.group] = 0
 
-            result = run_test(test, test_config = myconfig, context=context)
+            result = run_test(test, test_config=myconfig, context=context)
             result.body = None  # Remove the body, save some memory!
 
-            if not result.passed: # Print failure, increase failure counts for that test group
+            if not result.passed:  # Print failure, increase failure counts for that test group
                 # Use result test URL to allow for templating
-                logger.error('Test Failed: '+test.name+" URL="+result.test.url+" Group="+test.group+" HTTP Status Code: "+str(result.response_code))
+                logger.error('Test Failed: ' + test.name + " URL=" + result.test.url +
+                             " Group=" + test.group + " HTTP Status Code: " + str(result.response_code))
 
                 # Print test failure reasons
                 if result.failures:
                     for failure in result.failures:
-                        log_failure(failure, context=context, test_config=myconfig)
+                        log_failure(failure, context=context,
+                                    test_config=myconfig)
 
-                # Increment test failure counts for that group (adding an entry if not present)
+                # Increment test failure counts for that group (adding an entry
+                # if not present)
                 failures = group_failure_counts[test.group]
                 failures = failures + 1
                 group_failure_counts[test.group] = failures
 
-            else: # Test passed, print results
-                logger.info('Test Succeeded: '+test.name+" URL="+test.url+" Group="+test.group)
+            else:  # Test passed, print results
+                logger.info('Test Succeeded: ' + test.name +
+                            " URL=" + test.url + " Group=" + test.group)
 
             # Add results for this test group to the resultset
             group_results[test.group].append(result)
 
             # handle stop_on_failure flag
             if not result.passed and test.stop_on_failure is not None and test.stop_on_failure:
-                print('STOP ON FAILURE! stopping test set execution, continuing with other test sets')
+                print(
+                    'STOP ON FAILURE! stopping test set execution, continuing with other test sets')
                 break
 
         for benchmark in mybenchmarks:  # Run benchmarks, analyze, write
@@ -613,17 +658,23 @@ def run_testsets(testsets):
                 logger.debug('Skipping benchmark, no metrics to collect')
                 continue
 
-            logger.info("Benchmark Starting: "+benchmark.name+" Group: "+benchmark.group)
-            benchmark_result = run_benchmark(benchmark, myconfig, context=context)
+            logger.info("Benchmark Starting: " + benchmark.name +
+                        " Group: " + benchmark.group)
+            benchmark_result = run_benchmark(
+                benchmark, myconfig, context=context)
             print(benchmark_result)
-            logger.info("Benchmark Done: "+benchmark.name+" Group: "+benchmark.group)
+            logger.info("Benchmark Done: " + benchmark.name +
+                        " Group: " + benchmark.group)
 
             if benchmark.output_file:  # Write file
-                logger.debug('Writing benchmark to file in format: '+benchmark.output_format)
+                logger.debug(
+                    'Writing benchmark to file in format: ' + benchmark.output_format)
                 write_method = OUTPUT_METHODS[benchmark.output_format]
-                my_file =  open(benchmark.output_file, 'w')  # Overwrites file
-                logger.debug("Benchmark writing to file: " + benchmark.output_file)
-                write_method(my_file, benchmark_result, benchmark, test_config = myconfig)
+                my_file = open(benchmark.output_file, 'w')  # Overwrites file
+                logger.debug("Benchmark writing to file: " +
+                             benchmark.output_file)
+                write_method(my_file, benchmark_result,
+                             benchmark, test_config=myconfig)
                 my_file.close()
 
     if myinteractive:
@@ -636,11 +687,14 @@ def run_testsets(testsets):
         failures = group_failure_counts[group]
         total_failures = total_failures + failures
         if (failures > 0):
-            print(u'Test Group '+group+u' FAILED: '+ str((test_count-failures))+'/'+str(test_count) + u' Tests Passed!')
+            print(u'Test Group ' + group + u' FAILED: ' + str((test_count -
+                                                               failures)) + '/' + str(test_count) + u' Tests Passed!')
         else:
-            print(u'Test Group '+group+u' SUCCEEDED: '+ str((test_count-failures))+'/'+str(test_count) + u' Tests Passed!')
+            print(u'Test Group ' + group + u' SUCCEEDED: ' + str((test_count -
+                                                                  failures)) + '/' + str(test_count) + u' Tests Passed!')
 
     return total_failures
+
 
 def register_extensions(modules):
     """ Import the modules and register their respective extensions """
@@ -651,9 +705,11 @@ def register_extensions(modules):
         segments = ext.split('.')
         module = segments.pop()
         package = '.'.join(segments)
-        module = __import__(ext, globals(), locals(), package)  # Necessary to get the root module back
+        # Necessary to get the root module back
+        module = __import__(ext, globals(), locals(), package)
 
-        # Extensions are registered by applying a register function to sets of registry name/function pairs inside an object
+        # Extensions are registered by applying a register function to sets of
+        # registry name/function pairs inside an object
         extension_applies = {
             'VALIDATORS': validators.register_validator,
             'COMPARATORS': validators.register_comparator,
@@ -672,14 +728,18 @@ def register_extensions(modules):
                     has_registry = True
 
         if not has_registry:
-            raise ImportError("Extension to register did not contain any registries: {0}".format(ext))
+            raise ImportError(
+                "Extension to register did not contain any registries: {0}".format(ext))
 
-# AUTOIMPORTS, these should run just before the main method, to ensure everything else is loaded
+# AUTOIMPORTS, these should run just before the main method, to ensure
+# everything else is loaded
 try:
     import jsonschema
     register_extensions('ext.validator_jsonschema')
 except ImportError as ie:
-    logging.debug("Failed to load jsonschema validator, make sure the jsonschema module is installed if you wish to use schema validators.")
+    logging.debug(
+        "Failed to load jsonschema validator, make sure the jsonschema module is installed if you wish to use schema validators.")
+
 
 def main(args):
     """
@@ -696,7 +756,8 @@ def main(args):
     """
 
     if 'log' in args and args['log'] is not None:
-        logger.setLevel(LOGGING_LEVELS.get(args['log'].lower(), logging.NOTSET))
+        logger.setLevel(LOGGING_LEVELS.get(
+            args['log'].lower(), logging.NOTSET))
 
     if 'import_extensions' in args and args['import_extensions']:
         extensions = args['import_extensions'].split(';')
@@ -722,7 +783,8 @@ def main(args):
     if 'absolute_urls' in args and args['absolute_urls']:
         base_url = ''
 
-    tests = parse_testsets(base_url, test_structure, working_directory=os.path.dirname(test_file), vars=my_vars)
+    tests = parse_testsets(base_url, test_structure,
+                           working_directory=os.path.dirname(test_file), vars=my_vars)
 
     # Override configs from command line if config set
     for t in tests:
@@ -746,20 +808,33 @@ def main(args):
 
     sys.exit(failures)
 
+
 def parse_command_line_args(args_in):
     """ Runs everything needed to execute from the command line, so main method is callable without arg parsing """
-    parser = OptionParser(usage="usage: %prog base_url test_filename.yaml [options] ")
-    parser.add_option(u"--print-bodies", help="Print all response bodies", action="store", type="string", dest="print_bodies")
-    parser.add_option(u"--print-headers", help="Print all response headers", action="store", type="string", dest="print_headers")
-    parser.add_option(u"--log", help="Logging level", action="store", type="string")
-    parser.add_option(u"--interactive", help="Interactive mode", action="store", type="string")
-    parser.add_option(u"--url", help="Base URL to run tests against", action="store", type="string")
-    parser.add_option(u"--test", help="Test file to use", action="store", type="string")
-    parser.add_option(u'--import_extensions', help='Extensions to import, separated by semicolons', action="store", type="string")
-    parser.add_option(u'--vars', help='Variables to set, as a YAML dictionary', action="store", type="string")
-    parser.add_option(u'--verbose', help='Put cURL into verbose mode for extra debugging power', action='store_true', default=False, dest="verbose")
-    parser.add_option(u'--ssl-insecure', help='Disable cURL host and peer cert verification', action='store_true', default=False, dest="ssl_insecure")
-    parser.add_option(u'--absolute-urls', help='Enable absolute URLs in tests instead of relative paths', action="store_true", dest="absolute_urls")
+    parser = OptionParser(
+        usage="usage: %prog base_url test_filename.yaml [options] ")
+    parser.add_option(u"--print-bodies", help="Print all response bodies",
+                      action="store", type="string", dest="print_bodies")
+    parser.add_option(u"--print-headers", help="Print all response headers",
+                      action="store", type="string", dest="print_headers")
+    parser.add_option(u"--log", help="Logging level",
+                      action="store", type="string")
+    parser.add_option(u"--interactive", help="Interactive mode",
+                      action="store", type="string")
+    parser.add_option(
+        u"--url", help="Base URL to run tests against", action="store", type="string")
+    parser.add_option(u"--test", help="Test file to use",
+                      action="store", type="string")
+    parser.add_option(u'--import_extensions',
+                      help='Extensions to import, separated by semicolons', action="store", type="string")
+    parser.add_option(
+        u'--vars', help='Variables to set, as a YAML dictionary', action="store", type="string")
+    parser.add_option(u'--verbose', help='Put cURL into verbose mode for extra debugging power',
+                      action='store_true', default=False, dest="verbose")
+    parser.add_option(u'--ssl-insecure', help='Disable cURL host and peer cert verification',
+                      action='store_true', default=False, dest="ssl_insecure")
+    parser.add_option(u'--absolute-urls', help='Enable absolute URLs in tests instead of relative paths',
+                      action="store_true", dest="absolute_urls")
 
     (args, unparsed_args) = parser.parse_args(args_in)
     args = vars(args)
@@ -775,10 +850,13 @@ def parse_command_line_args(args_in):
             args['url'] = unparsed_args[0]
         else:
             parser.print_help()
-            parser.error("wrong number of arguments, need both url and test filename, either as 1st and 2nd parameters or via --url and --test")
+            parser.error(
+                "wrong number of arguments, need both url and test filename, either as 1st and 2nd parameters or via --url and --test")
 
-    args['cwd'] = os.path.realpath(os.path.abspath(os.getcwd()))  # So modules can be loaded from current folder
+    # So modules can be loaded from current folder
+    args['cwd'] = os.path.realpath(os.path.abspath(os.getcwd()))
     return args
+
 
 def command_line_run(args_in):
     args = parse_command_line_args(args_in)

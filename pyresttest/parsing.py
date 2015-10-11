@@ -8,6 +8,7 @@ if sys.version_info[0] == 3:
 Parsing utilities, pulled out so they can be used in multiple modules
 """
 
+
 def safe_to_json(in_obj):
     """ Safely get dict from object if present for json dumping """
     if isinstance(in_obj, bytearray):
@@ -19,6 +20,7 @@ def safe_to_json(in_obj):
     except:
         return repr(in_obj)
 
+
 def flatten_dictionaries(input):
     """ Flatten a list of dictionaries into a single dictionary, to allow flexible YAML use
       Dictionary comprehensions can do this, but would like to allow for pre-Python 2.7 use
@@ -27,18 +29,20 @@ def flatten_dictionaries(input):
     if isinstance(input, list):
         for map in input:
             output.update(map)
-    else: #Not a list of dictionaries
-        output = input;
+    else:  # Not a list of dictionaries
+        output = input
     return output
+
 
 def lowercase_keys(input_dict):
     """ Take input and if a dictionary, return version with keys all lowercase and cast to str """
     if not isinstance(input_dict, dict):
         return input_dict
     safe = dict()
-    for key,value in input_dict.items():
+    for key, value in input_dict.items():
         safe[str(key).lower()] = value
     return safe
+
 
 def safe_to_bool(input):
     """ Safely convert user input to a boolean, throwing exception if not boolean or boolean-appropriate string
@@ -51,7 +55,8 @@ def safe_to_bool(input):
     elif isinstance(input, basestring) and input.lower() == u'true':
         return True
     else:
-        raise TypeError('Input Object is not a boolean or string form of boolean!')
+        raise TypeError(
+            'Input Object is not a boolean or string form of boolean!')
 
 
 class SuperConfigurator(object):
@@ -71,7 +76,7 @@ class SuperConfigurator(object):
         """
         if validator_func and not validator(value):
             raise TypeError("Illegal argument for {0}".format(value))
-        storeable = value    
+        storeable = value
         if converter_func:
             storeable = converter_func(value)
         if store_func:

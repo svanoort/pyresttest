@@ -7,6 +7,7 @@ Basic context implementation for binding variables to values
 
 logger = logging.getLogger('pyresttest.binding')
 
+
 class Context(object):
     """ Manages binding of variables & generators, with both variable name and generator name being strings """
 
@@ -33,7 +34,8 @@ class Context(object):
             Once created, you can set values with the generator via bind_generator_next """
 
         if not isinstance(generator, types.GeneratorType):
-            raise ValueError('Cannot add generator named {0}, it is not a generator type'.format(generator_name))
+            raise ValueError(
+                'Cannot add generator named {0}, it is not a generator type'.format(generator_name))
 
         self.generators[str(generator_name)] = generator
         #logging.debug('Context: Added generator named {0}'.format(generator_name))
@@ -48,7 +50,7 @@ class Context(object):
         if prev != val:
             self.variables[str_name] = val
             self.mod_count = self.mod_count + 1
-            #Logging is /expensive/
+            # Logging is /expensive/
             #logging.debug('Context: Set variable named {0} to next value {1} from generator named {2}'.format(variable_name, val, generator_name))
         return val
 

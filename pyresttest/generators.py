@@ -29,8 +29,8 @@ CHARACTER_SETS = {
     'ascii_uppercase': string.ascii_uppercase,
     'digits': string.digits,
     'hexdigits': string.hexdigits,
-    'hex_lower':  string.digits+'abcdef',
-    'hex_upper':  string.digits+'ABCDEF',
+    'hex_lower':  string.digits + 'abcdef',
+    'hex_upper':  string.digits + 'ABCDEF',
     'letters': string.ascii_letters,
     'lowercase': string.ascii_lowercase,
     'octdigits': string.octdigits,
@@ -38,12 +38,13 @@ CHARACTER_SETS = {
     'printable': string.printable,
     'uppercase': string.ascii_uppercase,
     'whitespace': string.whitespace,
-    'url.slug': string.ascii_lowercase+string.digits+'-',
-    'url.safe': string.ascii_letters+string.digits+'-~_.',
+    'url.slug': string.ascii_lowercase + string.digits + '-',
+    'url.safe': string.ascii_letters + string.digits + '-~_.',
     'alphanumeric': string.ascii_letters + string.digits,
     'alphanumeric_lower': string.ascii_lowercase + string.digits,
     'alphanumeric_upper': string.ascii_uppercase + string.digits
 }
+
 
 def factory_generate_ids(starting_id=1, increment=1):
     """ Return function generator for ids starting at starting_id
@@ -56,15 +57,18 @@ def factory_generate_ids(starting_id=1, increment=1):
             val += local_increment
     return generate_started_ids
 
+
 def generator_basic_ids():
     """ Return ids generator starting at 1 """
     return factory_generate_ids(1)()
+
 
 def generator_random_int32():
     """ Random integer generator for up to 32-bit signed ints """
     rand = random.Random()
     while (True):
         yield random.randint(0, INT32_MAX_VALUE)
+
 
 def factory_generate_text(legal_characters=string.ascii_letters, min_length=8, max_length=8):
     """ Returns a generator function for text with given legal_characters string and length
@@ -78,10 +82,12 @@ def factory_generate_text(legal_characters=string.ascii_letters, min_length=8, m
         rand = random.Random()
         while(True):
             length = random.randint(local_min_len, local_max_len)
-            array = [random.choice(legal_characters) for x in xrange(0, length)]
+            array = [random.choice(legal_characters)
+                     for x in xrange(0, length)]
             yield ''.join(array)
 
     return generate_text
+
 
 def factory_fixed_sequence(values):
     """ Return a generator that runs through a list of values in order, looping after end """
@@ -95,14 +101,16 @@ def factory_fixed_sequence(values):
                 i = 0
     return seq_generator
 
+
 def parse_fixed_sequence(config):
     """ Parse fixed sequence string """
     vals = config['values']
     if not vals:
         raise ValueError('Values for fixed sequence must exist')
-    if not isinstance(vals,list):
+    if not isinstance(vals, list):
         raise ValueError('Values must be a list of entries')
     return factory_fixed_sequence(vals)()
+
 
 def factory_choice_generator(values):
     """ Return a generator that picks values from a list randomly """
@@ -114,12 +122,13 @@ def factory_choice_generator(values):
             yield random.choice(my_list)
     return choice_generator
 
+
 def parse_choice_generator(config):
     """ Parse choice generator """
     vals = config['values']
     if not vals:
         raise ValueError('Values for choice sequence must exist')
-    if not isinstance(vals,list):
+    if not isinstance(vals, list):
         raise ValueError('Values must be a list of entries')
     return factory_choice_generator(vals)()
 
@@ -134,6 +143,7 @@ def factory_env_variable(env_variable):
 
     return return_variable
 
+
 def factory_env_string(env_string):
     """ Return a generator function that uses OS expand path to expand environment variables in string """
 
@@ -146,6 +156,7 @@ def factory_env_string(env_string):
 
 """ Implements the parsing logic for YAML, and acts as single point for reading configuration """
 
+
 def parse_random_text_generator(configuration):
     """ Parses configuration options for a random text generator """
     character_set = configuration.get(u'character_set')
@@ -153,7 +164,8 @@ def parse_random_text_generator(configuration):
     if character_set:
         character_set = character_set.lower()
         if character_set not in CHARACTER_SETS:
-            raise ValueError("Illegal character set name, is not defined: {0}".format(character_set))
+            raise ValueError(
+                "Illegal character set name, is not defined: {0}".format(character_set))
         characters = CHARACTER_SETS[character_set]
     else:  # Custom characters listing, not a character set
         characters = str(configuration.get(u'characters'))
@@ -179,14 +191,15 @@ def parse_random_text_generator(configuration):
 
 # List of valid generator types
 GENERATOR_TYPES = set(['env_variable',
-    'env_string',
-    'number_sequence',
-    'random_int',
-    'random_text',
-    'fixed_sequence'
-])
+                       'env_string',
+                       'number_sequence',
+                       'random_int',
+                       'random_text',
+                       'fixed_sequence'
+                       ])
 
 GENERATOR_PARSING = {'fixed_sequence': parse_fixed_sequence}
+
 
 def register_generator(typename, parse_function):
     """ Register a new generator for use in testing
@@ -194,14 +207,17 @@ def register_generator(typename, parse_function):
         parse_function will parse a configuration object (dict)
     """
     if not isinstance(typename, basestring):
-        raise TypeError('Generator type name {0} is invalid, must be a string'.format(typename))
+        raise TypeError(
+            'Generator type name {0} is invalid, must be a string'.format(typename))
     if typename in GENERATOR_TYPES:
-        raise ValueError('Generator type named {0} already exists'.format(typename))
+        raise ValueError(
+            'Generator type named {0} already exists'.format(typename))
     GENERATOR_TYPES.add(typename)
     GENERATOR_PARSING[typename] = parse_function
 
 # Try registering a new generator
 register_generator('choice', parse_choice_generator)
+
 
 def parse_generator(configuration):
     """ Parses a configuration built from yaml and returns a generator
@@ -212,7 +228,8 @@ def parse_generator(configuration):
     gen_type = str(configuration.get(u'type')).lower()
 
     if gen_type not in GENERATOR_TYPES:
-        raise ValueError('Generator type given {0} is not valid '.format(gen_type))
+        raise ValueError(
+            'Generator type given {0} is not valid '.format(gen_type))
 
     # Do the easy parsing, delegate more complex logic to parsing functions
     if gen_type == u'env_variable':

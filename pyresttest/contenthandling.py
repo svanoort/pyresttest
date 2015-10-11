@@ -11,6 +11,7 @@ if sys.version_info[0] == 3:
 Encapsulates contend handling logic, for pulling file content into tests
 """
 
+
 class ContentHandler:
     """ Handles content that may be (lazily) read from filesystem and/or templated to various degrees
     Also creates pixie dust and unicorn farts on demand
@@ -40,7 +41,8 @@ class ContentHandler:
         if self.is_file:
             path = self.content
             if self.is_template_path and context:
-                path = string.Template(path).safe_substitute(context.get_values())
+                path = string.Template(path).safe_substitute(
+                    context.get_values())
             data = None
             with open(path, 'r') as f:
                 data = f.read()
@@ -62,7 +64,7 @@ class ContentHandler:
         output = ContentHandler()
         output.is_template_content = self.is_template_content
         with open(self.content, 'r') as f:
-                output.content = f.read()
+            output.content = f.read()
         return output
 
     def setup(self, input, is_file=False, is_template_path=False, is_template_content=False):
@@ -100,10 +102,12 @@ class ContentHandler:
             # Finally we've found the value!
             if isinstance(node, basestring):
                 output.content = node
-                output.setup(node, is_file=is_file, is_template_path=is_template_path, is_template_content=is_template_content)
+                output.setup(node, is_file=is_file, is_template_path=is_template_path,
+                             is_template_content=is_template_content)
                 return output
             elif not isinstance(node, dict) and not isinstance(node, list):
-                raise TypeError("Content must be a string, dictionary, or list of dictionaries")
+                raise TypeError(
+                    "Content must be a string, dictionary, or list of dictionaries")
 
             is_done = True
 

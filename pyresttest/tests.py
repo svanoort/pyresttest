@@ -33,19 +33,20 @@ BASECURL = pycurl.Curl()  # Used for some validation/parsing
 
 DEFAULT_TIMEOUT = 10  # Seconds
 
-#Map HTTP method names to curl methods
-#Kind of obnoxious that it works this way...
-HTTP_METHODS = {u'GET' : pycurl.HTTPGET,
-    u'PUT' : pycurl.UPLOAD,
-    u'POST' : pycurl.POST,
-    u'DELETE'  : 'DELETE'}
+# Map HTTP method names to curl methods
+# Kind of obnoxious that it works this way...
+HTTP_METHODS = {u'GET': pycurl.HTTPGET,
+                u'PUT': pycurl.UPLOAD,
+                u'POST': pycurl.POST,
+                u'DELETE': 'DELETE'}
+
 
 class Test(object):
     """ Describes a REST test """
-    _url  = None
+    _url = None
     expected_status = [200]  # expected HTTP status code or codes
     _body = None
-    _headers = dict() #HTTP Headers
+    _headers = dict()  # HTTP Headers
     method = u'GET'
     group = u'Default'
     name = u'Unnamed'
@@ -68,7 +69,6 @@ class Test(object):
     @staticmethod
     def has_contains():
         return 'contains' in validators.VALIDATORS
-
 
     def ninja_copy(self):
         """ Optimization: limited copy of test object, for realize() methods
@@ -113,9 +113,11 @@ class Test(object):
         else:
             return self._body.get_content(context=context)
 
-    body = property(get_body, set_body, None, 'Request body, if any (for POST/PUT methods)')
+    body = property(get_body, set_body, None,
+                    'Request body, if any (for POST/PUT methods)')
 
     NAME_URL = 'url'
+
     def set_url(self, value, isTemplate=False):
         """ Set URL, passing flag if using a template """
         if isTemplate:
@@ -134,6 +136,7 @@ class Test(object):
 
     NAME_HEADERS = 'headers'
     # Totally different from others
+
     def set_headers(self, value, isTemplate=False):
         """ Set headers, passing flag if using a template """
         if isTemplate:
@@ -149,12 +152,13 @@ class Test(object):
 
         # We need to apply templating to both keys and values
         vals = context.get_values()
+
         def template_tuple(tuple_input):
             return (string.Template(str(tuple_item)).safe_substitute(vals) for tuple_item in tuple_input)
         return dict(map(template_tuple, self._headers.items()))
 
-    headers = property(get_headers, set_headers, None, 'Headers dictionary for request')
-
+    headers = property(get_headers, set_headers, None,
+                       'Headers dictionary for request')
 
     def update_context_before(self, context):
         """ Make pre-test context updates, by applying variable and generator updates """
@@ -168,9 +172,9 @@ class Test(object):
         """ Run the extraction routines to update variables based on HTTP response body """
         if self.extract_binds:
             for key, value in self.extract_binds.items():
-                result = value.extract(body=response_body, headers=headers, context=context)
+                result = value.extract(
+                    body=response_body, headers=headers, context=context)
                 context.bind_variable(key, result)
-
 
     def is_context_modifier(self):
         """ Returns true if context can be modified by this test
@@ -220,7 +224,7 @@ class Test(object):
             newbod = bod.create_noread_version()
 
         output = self
-        if newbod: # Read body
+        if newbod:  # Read body
             output = copy.copy(self)
             output._body = newbod
         return output
@@ -252,7 +256,8 @@ class Test(object):
             curl.setopt(curl.READFUNCTION, StringIO(bod).read)
 
         if self.auth_username and self.auth_password:
-            curl.setopt(pycurl.USERPWD, '%s:%s' % (self.auth_username, self.auth_password))
+            curl.setopt(pycurl.USERPWD, '%s:%s' %
+                        (self.auth_username, self.auth_password))
             if self.auth_type:
                 curl.setopt(pycurl.HTTPAUTH, self.auth_type)
 
@@ -271,16 +276,19 @@ class Test(object):
             else:
                 curl.setopt(pycurl.INFILESIZE, 0)
         elif self.method == u'DELETE':
-            curl.setopt(curl.CUSTOMREQUEST,'DELETE')
+            curl.setopt(curl.CUSTOMREQUEST, 'DELETE')
         elif self.method and self.method.upper() != 'GET':  # Support PATCH/HEAD/ETC
             curl.setopt(curl.CUSTOMREQUEST, self.method.upper())
 
         head = self.get_headers(context=context)
-        if head: #Convert headers dictionary to list of header entries, tested and working
-            headers = [str(headername)+':'+str(headervalue) for headername, headervalue in head.items()]
+        if head:  # Convert headers dictionary to list of header entries, tested and working
+            headers = [str(headername) + ':' + str(headervalue)
+                       for headername, headervalue in head.items()]
         else:
             headers = list()
-        headers.append("Expect:")  # Fix for expecting 100-continue from server, which not all servers will send!
+        # Fix for expecting 100-continue from server, which not all servers
+        # will send!
+        headers.append("Expect:")
         headers.append("Connection: close")
         curl.setopt(curl.HTTPHEADER, headers)
 
@@ -288,11 +296,12 @@ class Test(object):
         # And the key/value pairs are set
         if self.curl_options:
             for (key, value) in filter(lambda x: x[0] is not None and x[1] is not None, self.curl_options.items()):
-                curl.setopt(getattr(curl, key), value)  # getattr to look up constant for variable name
+                # getattr to look up constant for variable name
+                curl.setopt(getattr(curl, key), value)
         return curl
 
     @classmethod
-    def parse_test(cls, base_url, node, input_test = None, test_path=None):
+    def parse_test(cls, base_url, node, input_test=None, test_path=None):
         """ Create or modify a test, input_test, using configuration in node, and base_url
         If no input_test is given, creates a new one
 
@@ -309,38 +318,46 @@ class Test(object):
         if not mytest:
             mytest = Test()
 
-        node = lowercase_keys(flatten_dictionaries(node)) #Clean up for easy parsing
+        # Clean up for easy parsing
+        node = lowercase_keys(flatten_dictionaries(node))
 
-        #Copy/convert input elements into appropriate form for a test object
+        # Copy/convert input elements into appropriate form for a test object
         for configelement, configvalue in node.items():
-            #Configure test using configuration elements
+            # Configure test using configuration elements
             if configelement == u'url':
                 temp = configvalue
                 if isinstance(configvalue, dict):
                     # Template is used for URL
                     val = lowercase_keys(configvalue)[u'template']
-                    assert isinstance(val, basestring) or isinstance(val,int)
-                    url = base_url + unicode(val,'UTF-8').encode('ascii','ignore')
+                    assert isinstance(val, basestring) or isinstance(val, int)
+                    url = base_url + \
+                        unicode(val, 'UTF-8').encode('ascii', 'ignore')
                     mytest.set_url(url, isTemplate=True)
                 else:
-                    assert isinstance(configvalue, basestring) or isinstance(configvalue,int)
-                    mytest.url = base_url + unicode(configvalue,'UTF-8').encode('ascii','ignore')
+                    assert isinstance(configvalue, basestring) or isinstance(
+                        configvalue, int)
+                    mytest.url = base_url + \
+                        unicode(configvalue, 'UTF-8').encode('ascii', 'ignore')
             elif configelement == u'auth_username':
                 assert isinstance(configvalue, basestring)
-                mytest.auth_username = unicode(configvalue,'UTF-8').encode('ascii','ignore')
+                mytest.auth_username = unicode(
+                    configvalue, 'UTF-8').encode('ascii', 'ignore')
             elif configelement == u'auth_password':
                 assert isinstance(configvalue, basestring)
-                mytest.auth_password = unicode(configvalue,'UTF-8').encode('ascii','ignore')
-            elif configelement == u'method': #Http method, converted to uppercase string
-                var = unicode(configvalue,'UTF-8').upper()
+                mytest.auth_password = unicode(
+                    configvalue, 'UTF-8').encode('ascii', 'ignore')
+            elif configelement == u'method':  # Http method, converted to uppercase string
+                var = unicode(configvalue, 'UTF-8').upper()
                 assert isinstance(var, basestring) and len(var) > 0
                 mytest.method = var
-            elif configelement == u'group': #Test group
-                assert isinstance(configvalue, basestring) or isinstance(configvalue,int)
-                mytest.group = unicode(configvalue,'UTF-8')
-            elif configelement == u'name': #Test name
-                assert isinstance(configvalue, basestring) or isinstance(configvalue,int)
-                mytest.name = unicode(configvalue,'UTF-8')
+            elif configelement == u'group':  # Test group
+                assert isinstance(configvalue, basestring) or isinstance(
+                    configvalue, int)
+                mytest.group = unicode(configvalue, 'UTF-8')
+            elif configelement == u'name':  # Test name
+                assert isinstance(configvalue, basestring) or isinstance(
+                    configvalue, int)
+                mytest.name = unicode(configvalue, 'UTF-8')
             elif configelement == u'extract_binds':
                 # Add a list of extractors, of format:
                 # {variable_name: {extractor_type: extractor_config}, ... }
@@ -350,37 +367,44 @@ class Test(object):
 
                 for variable_name, extractor in binds.items():
                     if not isinstance(extractor, dict) or len(extractor) == 0:
-                        raise TypeError("Extractors must be defined as maps of extractorType:{configs} with 1 entry")
+                        raise TypeError(
+                            "Extractors must be defined as maps of extractorType:{configs} with 1 entry")
                     if len(extractor) > 1:
-                        raise ValueError("Cannot define multiple extractors for given variable name")
+                        raise ValueError(
+                            "Cannot define multiple extractors for given variable name")
                     extractor_type, extractor_config = extractor.items()[0]
-                    extractor = validators.parse_extractor(extractor_type, extractor_config)
+                    extractor = validators.parse_extractor(
+                        extractor_type, extractor_config)
                     mytest.extract_binds[variable_name] = extractor
 
             elif configelement == u'validators':
                 # Add a list of validators
                 if not isinstance(configvalue, list):
-                    raise Exception('Misconfigured validator section, must be a list of validators')
+                    raise Exception(
+                        'Misconfigured validator section, must be a list of validators')
                 if mytest.validators is None:
                     mytest.validators = list()
 
                 # create validator and add to list of validators
                 for var in configvalue:
                     if not isinstance(var, dict):
-                        raise TypeError("Validators must be defined as validatorType:{configs} ")
+                        raise TypeError(
+                            "Validators must be defined as validatorType:{configs} ")
                     for validator_type, validator_config in var.items():
-                        validator = validators.parse_validator(validator_type, validator_config)
+                        validator = validators.parse_validator(
+                            validator_type, validator_config)
                         mytest.validators.append(validator)
 
-            elif configelement == u'body': #Read request body, as a ContentHandler
+            elif configelement == u'body':  # Read request body, as a ContentHandler
                 # Note: os.path.expandirs removed
                 mytest.body = ContentHandler.parse_content(configvalue)
-            elif configelement == 'headers': #HTTP headers to use, flattened to a single string-string dictionary
+            elif configelement == 'headers':  # HTTP headers to use, flattened to a single string-string dictionary
                 mytest.headers
                 configvalue = flatten_dictionaries(configvalue)
 
                 if isinstance(configvalue, dict):
-                    templates = filter(lambda x: str(x[0]).lower() == 'template', configvalue.items())
+                    templates = filter(lambda x: str(
+                        x[0]).lower() == 'template', configvalue.items())
                 else:
                     templates = None
 
@@ -390,13 +414,15 @@ class Test(object):
                 elif isinstance(configvalue, dict):
                     mytest.headers = configvalue
                 else:
-                    raise TypeError("Illegal header type: headers must be a dictionary or list of dictionary keys")
+                    raise TypeError(
+                        "Illegal header type: headers must be a dictionary or list of dictionary keys")
 
-            elif configelement == 'expected_status': #List of accepted HTTP response codes, as integers
+            elif configelement == 'expected_status':  # List of accepted HTTP response codes, as integers
                 expected = list()
-                #If item is a single item, convert to integer and make a list of 1
-                #Otherwise, assume item is a list and convert to a list of integers
-                if isinstance(configvalue,list):
+                # If item is a single item, convert to integer and make a list of 1
+                # Otherwise, assume item is a list and convert to a list of
+                # integers
+                if isinstance(configvalue, list):
                     for item in configvalue:
                         expected.append(int(item))
                 else:
@@ -421,20 +447,22 @@ class Test(object):
                         mytest.curl_options = dict()
                     mytest.curl_options[curlopt] = configvalue
                 else:
-                    raise ValueError("Illegal curl option: {0}".format(curlopt))
+                    raise ValueError(
+                        "Illegal curl option: {0}".format(curlopt))
 
+        # tempcurl, we adjust defaults to be reasonable, if the user does not
+        # specify them
 
-        #tempcurl, we adjust defaults to be reasonable, if the user does not specify them
-
-        #For non-GET requests, accept additional response codes indicating success
+        # For non-GET requests, accept additional response codes indicating success
         # (but only if not expected statuses are not explicitly specified)
-        #  this is per HTTP spec: http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.5
+        # this is per HTTP spec:
+        # http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.5
         if 'expected_status' not in node.keys():
             if mytest.method == 'POST':
-                mytest.expected_status = [200,201,204]
+                mytest.expected_status = [200, 201, 204]
             elif mytest.method == 'PUT':
-                mytest.expected_status = [200,201,204]
+                mytest.expected_status = [200, 201, 204]
             elif mytest.method == 'DELETE':
-                mytest.expected_status = [200,202,204]
+                mytest.expected_status = [200, 202, 204]
             # Fallthrough default is simply [200]
         return mytest

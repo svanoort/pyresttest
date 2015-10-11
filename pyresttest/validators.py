@@ -37,24 +37,24 @@ logger = logging.getLogger('pyresttest.validators')
 
 # Binary comparison tests
 COMPARATORS = {
-    'count_eq': lambda x,y: safe_length(x) == y,
+    'count_eq': lambda x, y: safe_length(x) == y,
     'lt': operator.lt,
     'less_than': operator.lt,
     'le': operator.lt,
     'less_than_or_equal': operator.lt,
     'eq': operator.eq,
     'equals': operator.eq,
-    'str_eq': lambda x,y: operator.eq(str(x), str(y)),
+    'str_eq': lambda x, y: operator.eq(str(x), str(y)),
     'ne': operator.ne,
     'not_equals': operator.ne,
     'ge': operator.ge,
     'greater_than_or_equal': operator.ge,
     'gt': operator.gt,
     'greater_than': operator.gt,
-    'contains': lambda x,y: x and operator.contains(x,y), # is y in x
-    'contained_by': lambda x,y: y and operator.contains(y,x), # is x in y
-    'regex': lambda x,y: regex_compare(str(x), str(y)),
-    'type': lambda x,y: test_type(x, y)
+    'contains': lambda x, y: x and operator.contains(x, y),  # is y in x
+    'contained_by': lambda x, y: y and operator.contains(y, x),  # is x in y
+    'regex': lambda x, y: regex_compare(str(x), str(y)),
+    'type': lambda x, y: test_type(x, y)
 }
 COMPARATORS['length_eq'] = COMPARATORS['count_eq']
 
@@ -65,15 +65,16 @@ TYPES = {
     'number': (int, long, float),
     'int': (int, long),
     'float': float,
-    'boolean': bool, 
+    'boolean': bool,
     'string': basestring,
     'array': list,
-    'list': list, 
+    'list': list,
     'dict': dict,
     'map': dict,
     'scalar': (bool, int, long, float, basestring, type(None)),
     'collection': (list, dict, set)
 }
+
 
 def test_type(val, mytype):
     """ Check value fits one of the types, if so return true, else false """
@@ -81,24 +82,26 @@ def test_type(val, mytype):
     typelist = TYPES.get(mytype.lower())
 
     if typelist is None:
-        raise TypeError("Type {0} is not a valid type to test against!".format(mytype.lower()))
-    try: 
-       for testtype in typelist:
-           if isinstance(val, testtype):
-               return True
-       return False
+        raise TypeError(
+            "Type {0} is not a valid type to test against!".format(mytype.lower()))
+    try:
+        for testtype in typelist:
+            if isinstance(val, testtype):
+                return True
+        return False
     except TypeError:
-       return isinstance(val, typelist)
+        return isinstance(val, typelist)
 
 # Unury comparison tests
 VALIDATOR_TESTS = {
     'exists': lambda x: x is not None,
-    'not_exists' : lambda x: x is None
+    'not_exists': lambda x: x is None
 }
 
 # Validators and Extractors are registered once their parse functions exist
 EXTRACTORS = dict()
 VALIDATORS = dict()
+
 
 def safe_length(var):
     """ Exception-safe length check, returns -1 if no length on type or error """
@@ -109,7 +112,8 @@ def safe_length(var):
         pass
     return output
 
-def regex_compare(input,regex):
+
+def regex_compare(input, regex):
     return bool(re.search(regex, input))
 
 # Validator Failure Reasons
@@ -119,6 +123,7 @@ FAILURE_TEST_EXCEPTION = 'Test Execution Exception'
 FAILURE_VALIDATOR_FAILED = 'Validator Failed'
 FAILURE_VALIDATOR_EXCEPTION = 'Validator Exception'
 FAILURE_EXTRACTOR_EXCEPTION = 'Extractor Exception'
+
 
 class Failure(object):
     """ Encapsulates why and how a validation failed for user consumption
@@ -174,13 +179,15 @@ class AbstractExtractor(object):
     def templated_query(self, context=None):
         query = self.query
         if context and self.is_templated:
-            query = string.Template(query).safe_substitute(context.get_values())
+            query = string.Template(query).safe_substitute(
+                context.get_values())
         return query
 
     def get_readable_config(self, context=None):
         """ Print a human-readable version of the configuration """
         query = self.templated_query(context=context)
-        output = 'Extractor Type: {0},  Query: "{1}", Templated?: {2}'.format(self.extractor_type, query, self.is_templated)
+        output = 'Extractor Type: {0},  Query: "{1}", Templated?: {2}'.format(
+            self.extractor_type, query, self.is_templated)
         args_string = None
         if self.args:
             args_string = ", Args: " + str(self.args)
@@ -198,12 +205,14 @@ class AbstractExtractor(object):
                 extractor_base.is_templated = True
                 extractor_base.query = config
             except KeyError:
-                raise ValueError("Cannot define a dictionary config for abstract extractor without it having template key")
+                raise ValueError(
+                    "Cannot define a dictionary config for abstract extractor without it having template key")
         elif isinstance(config, basestring):
             extractor_base.query = config
             extractor_base.is_templated = False
         else:
-            raise TypeError("Base extractor must have a string or {template: querystring} configuration node!")
+            raise TypeError(
+                "Base extractor must have a string or {template: querystring} configuration node!")
         return extractor_base
 
 
@@ -224,7 +233,8 @@ class MiniJsonExtractor(AbstractExtractor):
     @staticmethod
     def query_dictionary(query, dictionary, delimiter='.'):
         """ Do an xpath-like query with dictionary, using a template if relevant """
-        # Based on http://stackoverflow.com/questions/7320319/xpath-like-query-for-nested-python-dictionaries
+        # Based on
+        # http://stackoverflow.com/questions/7320319/xpath-like-query-for-nested-python-dictionaries
 
         try:
             for x in query.strip(delimiter).split(delimiter):
@@ -251,7 +261,8 @@ class HeaderExtractor(AbstractExtractor):
 
     def extract_internal(self, query=None, args=None, body=None, headers=None):
         low = query.lower()
-        extracted = [y[1] for y in filter(lambda x: x[0] == low, headers)]  # Value for all matching key names
+        # Value for all matching key names
+        extracted = [y[1] for y in filter(lambda x: x[0] == low, headers)]
         if len(extracted) == 0:
             raise ValueError("Invalid header name {0}".format(query))
         elif len(extracted) == 1:
@@ -264,6 +275,7 @@ class HeaderExtractor(AbstractExtractor):
         base = HeaderExtractor()
         return cls.configure_base(config, base)
 
+
 class RawBodyExtractor(AbstractExtractor):
     """ Extractor that returns the full request body """
     extractor_type = 'raw_body'
@@ -275,9 +287,10 @@ class RawBodyExtractor(AbstractExtractor):
 
     @classmethod
     def parse(cls, config, extractor_base=None):
-        ## Doesn't take any real configuration
+        # Doesn't take any real configuration
         base = RawBodyExtractor()
         return base
+
 
 def _get_extractor(config_dict):
     """ Utility function, get an extract function for a single valid extractor name in config
@@ -288,7 +301,9 @@ def _get_extractor(config_dict):
         if key in EXTRACTORS:
             return parse_extractor(key, value)
     else:  # No valid extractor
-        raise Exception('No valid extractor name to use in input: {0}'.format(config_dict))
+        raise Exception(
+            'No valid extractor name to use in input: {0}'.format(config_dict))
+
 
 class AbstractValidator(object):
     """ Encapsulates basic validator handling """
@@ -298,6 +313,7 @@ class AbstractValidator(object):
     def validate(self, body=None, headers=None, context=None):
         """ Run the validation function, return true or a Failure """
         pass
+
 
 class ComparatorValidator(AbstractValidator):
     """ Does extract and compare from request body   """
@@ -313,17 +329,20 @@ class ComparatorValidator(AbstractValidator):
     def get_readable_config(self, context=None):
         """ Get a human-readable config string """
         string_frags = list()
-        string_frags.append("Extractor: "+self.extractor.get_readable_config(context=context))
+        string_frags.append(
+            "Extractor: " + self.extractor.get_readable_config(context=context))
         if isinstance(self.expected, AbstractExtractor):
-            string_frags.append("Expected value extractor: "+self.expected.get_readable_config(context=context))
+            string_frags.append("Expected value extractor: " +
+                                self.expected.get_readable_config(context=context))
         elif self.isTemplateExpected:
-            string_frags.append('Expected is templated, raw value: {0}'.format(self.expected))
+            string_frags.append(
+                'Expected is templated, raw value: {0}'.format(self.expected))
         return os.linesep.join(string_frags)
 
-
     def validate(self, body=None, headers=None, context=None):
-        try :
-            extracted_val = self.extractor.extract(body=body, headers=headers, context=context)
+        try:
+            extracted_val = self.extractor.extract(
+                body=body, headers=headers, context=context)
         except Exception as e:
             trace = traceback.format_exc()
             return Failure(message="Extractor threw exception", details=trace, validator=self, failure_type=FAILURE_EXTRACTOR_EXCEPTION)
@@ -332,19 +351,22 @@ class ComparatorValidator(AbstractValidator):
         expected_val = None
         if isinstance(self.expected, AbstractExtractor):
             try:
-                expected_val = self.expected.extract(body=body, headers=headers, context=context)
+                expected_val = self.expected.extract(
+                    body=body, headers=headers, context=context)
             except Exception as e:
                 trace = traceback.format_exc()
                 return Failure(message="Expected value extractor threw exception", details=trace, validator=self, failure_type=FAILURE_EXTRACTOR_EXCEPTION)
         elif self.isTemplateExpected and context:
-            expected_val = string.Template(self.expected).safe_substitute(context.get_values())
+            expected_val = string.Template(
+                self.expected).safe_substitute(context.get_values())
         else:
             expected_val = self.expected
 
         comparison = self.comparator(extracted_val, expected_val)
         if not comparison:
             failure = Failure(validator=self)
-            failure.message = "Comparison failed, evaluating {0}({1}, {2}) returned False".format(self.comparator_name, extracted_val, expected_val)
+            failure.message = "Comparison failed, evaluating {0}({1}, {2}) returned False".format(
+                self.comparator_name, extracted_val, expected_val)
             failure.details = self.get_readable_config(context=context)
             failure.failure_type = FAILURE_VALIDATOR_FAILED
             return failure
@@ -370,7 +392,8 @@ class ComparatorValidator(AbstractValidator):
         output.extractor = _get_extractor(config)
 
         if output.extractor is None:
-            raise ValueError("Extract function for comparison is not valid or not found!")
+            raise ValueError(
+                "Extract function for comparison is not valid or not found!")
 
         if 'comparator' not in config:  # Equals comparator if unspecified
             output.comparator_name = 'eq'
@@ -383,9 +406,11 @@ class ComparatorValidator(AbstractValidator):
         try:
             expected = config['expected']
         except KeyError:
-            raise ValueError("No expected value found in comparator validator config, one must be!")
+            raise ValueError(
+                "No expected value found in comparator validator config, one must be!")
 
-        # Expected value can be another extractor query, or a single value, or a templated value
+        # Expected value can be another extractor query, or a single value, or
+        # a templated value
 
         if isinstance(expected, basestring) or isinstance(expected, (int, long, float, complex)):
             output.expected = expected
@@ -394,15 +419,18 @@ class ComparatorValidator(AbstractValidator):
             template = expected.get('template')
             if template:  # Templated string
                 if not isinstance(template, basestring):
-                    raise ValueError("Can't template a comparator-validator unless template value is a string")
+                    raise ValueError(
+                        "Can't template a comparator-validator unless template value is a string")
                 output.isTemplateExpected = True
                 output.expected = template
             else:  # Extractor to compare against
-                output.expected =  _get_extractor(expected)
+                output.expected = _get_extractor(expected)
                 if not output.expected:
-                    raise ValueError("Can't supply a non-template, non-extract dictionary to comparator-validator")
+                    raise ValueError(
+                        "Can't supply a non-template, non-extract dictionary to comparator-validator")
 
         return output
+
 
 class ExtractTestValidator(AbstractValidator):
     """ Does extract and test from request body """
@@ -414,7 +442,7 @@ class ExtractTestValidator(AbstractValidator):
 
     def get_readable_config(self, context=None):
         """ Get a human-readable config string """
-        return "Extractor: "+self.extractor.get_readable_config(context=context)
+        return "Extractor: " + self.extractor.get_readable_config(context=context)
 
     @staticmethod
     def parse(config):
@@ -432,7 +460,8 @@ class ExtractTestValidator(AbstractValidator):
 
     def validate(self, body=None, headers=None, context=None):
         try:
-            extracted = self.extractor.extract(body=body, headers=headers, context=context)
+            extracted = self.extractor.extract(
+                body=body, headers=headers, context=context)
         except Exception as e:
             trace = traceback.format_exc()
             return Failure(message="Exception thrown while running extraction from body", details=trace, validator=self, failure_type=FAILURE_EXTRACTOR_EXCEPTION)
@@ -441,10 +470,13 @@ class ExtractTestValidator(AbstractValidator):
         if tested:
             return True
         else:
-            failure = Failure(details=self.get_readable_config(context=context), validator=self, failure_type=FAILURE_VALIDATOR_FAILED)
-            failure.message = "Extract and test validator failed on test: {0}({1})".format(self.test_name, extracted)
+            failure = Failure(details=self.get_readable_config(
+                context=context), validator=self, failure_type=FAILURE_VALIDATOR_FAILED)
+            failure.message = "Extract and test validator failed on test: {0}({1})".format(
+                self.test_name, extracted)
             # TODO can we do better with details?
             return failure
+
 
 def parse_extractor(extractor_type, config):
     """ Convert extractor type and config to an extractor instance
@@ -455,24 +487,29 @@ def parse_extractor(extractor_type, config):
     """
     parse = EXTRACTORS.get(extractor_type.lower())
     if not parse:
-        raise ValueError("Extractor {0} is not a valid extractor type".format(extractor_type))
+        raise ValueError(
+            "Extractor {0} is not a valid extractor type".format(extractor_type))
     parsed = parse(config)
 
     if isinstance(parsed, AbstractExtractor):  # Parser gave a full extractor
         return parsed
 
-    # Look for matching attributes... simple inheritance has issues because of cross-module loading
+    # Look for matching attributes... simple inheritance has issues because of
+    # cross-module loading
     items = AbstractExtractor().__dict__
     if set(parsed.__dict__.keys()).issuperset(set(items.keys())):
         return parsed
     else:
-        raise TypeError("Parsing functions for extractors must return an AbstractExtractor instance!")
+        raise TypeError(
+            "Parsing functions for extractors must return an AbstractExtractor instance!")
+
 
 def parse_validator(name, config_node):
     '''Parse a validator from configuration and use it '''
     name = name.lower()
     if name not in VALIDATORS:
-        raise ValueError("Name {0} is not a named validator type!".format(name))
+        raise ValueError(
+            "Name {0} is not a named validator type!".format(name))
     valid = VALIDATORS[name](config_node)
 
     if valid.name is None:  # Carry over validator name if none set in parser
@@ -480,6 +517,7 @@ def parse_validator(name, config_node):
     if valid.config is None:  # Store config info if absent
         valid.config = config_node
     return valid
+
 
 def register_validator(name, parse_function):
     ''' Registers a validator for use by this library
@@ -498,34 +536,43 @@ def register_validator(name, parse_function):
 
     VALIDATORS[name] = parse_function
 
+
 def register_extractor(extractor_name, parse_function):
     """ Register a new body extraction function """
     if not isinstance(extractor_name, basestring):
         raise TypeError("Cannot register a non-string extractor name")
     if extractor_name.lower() == 'comparator':
-        raise ValueError("Cannot register extractors called 'comparator', that is a reserved name")
+        raise ValueError(
+            "Cannot register extractors called 'comparator', that is a reserved name")
     elif extractor_name.lower() == 'test':
-        raise ValueError("Cannot register extractors called 'test', that is a reserved name")
+        raise ValueError(
+            "Cannot register extractors called 'test', that is a reserved name")
     elif extractor_name.lower() == 'expected':
-        raise ValueError("Cannot register extractors called 'expected', that is a reserved name")
+        raise ValueError(
+            "Cannot register extractors called 'expected', that is a reserved name")
     elif extractor_name in EXTRACTORS:
-        raise ValueError("Cannot register an extractor name that already exists: {0}".format(extractor_name))
+        raise ValueError(
+            "Cannot register an extractor name that already exists: {0}".format(extractor_name))
     EXTRACTORS[extractor_name] = parse_function
+
 
 def register_test(test_name, test_function):
     """ Register a new one-argument test function """
     if not isinstance(test_name, basestring):
         raise TypeError("Cannot register a non-string test name")
     elif test_name in VALIDATOR_TESTS:
-        raise ValueError("Cannot register a test name that already exists: {0}".format(test_name))
+        raise ValueError(
+            "Cannot register a test name that already exists: {0}".format(test_name))
     VALIDATOR_TESTS[test_name] = test_function
+
 
 def register_comparator(comparator_name, comparator_function):
     """ Register a new twpo-argument comparator function returning true or false """
     if not isinstance(comparator_name, basestring):
         raise TypeError("Cannot register a non-string comparator name")
     elif comparator_name in COMPARATORS:
-        raise ValueError("Cannot register a comparator name that already exists: {0}".format(comparator_name))
+        raise ValueError(
+            "Cannot register a comparator name that already exists: {0}".format(comparator_name))
     COMPARATORS[comparator_name] = comparator_function
 
 # --- REGISTRY OF EXTRACTORS AND VALIDATORS ---
@@ -534,7 +581,8 @@ register_extractor('header', HeaderExtractor.parse)
 register_extractor('raw_body', RawBodyExtractor.parse)
 # ENHANCEME: add JsonPath-rw support for full JsonPath syntax
 # ENHANCEME: add elementree support for xpath extract on XML, very simple no?
-#  See: https://docs.python.org/2/library/xml.etree.elementtree.html, findall syntax
+# See: https://docs.python.org/2/library/xml.etree.elementtree.html,
+# findall syntax
 
 register_validator('comparator', ComparatorValidator.parse)
 register_validator('compare', ComparatorValidator.parse)

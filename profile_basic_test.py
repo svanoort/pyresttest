@@ -6,6 +6,7 @@ from pyresttest.generators import factory_generate_ids
 
 import cProfile
 
-cProfile.run('resttest.command_line_run(["http://localhost:8000","pyresttest/content-test.yaml"])', sort='tottime')
+cProfile.run(
+    'resttest.command_line_run(["http://localhost:8000","pyresttest/content-test.yaml"])', sort='tottime')
 #cProfile.run('resttest.command_line_run(["http://localhost:8000","schema_test.yaml"])', sort='tottime')
 #cProfile.run('resttest.command_line_run(["https://api.github.com","github_api_test.yaml"])', sort='tottime')
