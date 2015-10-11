@@ -76,8 +76,8 @@ node {
         clean_workspace()
         // Requires credentials and credentials binding plugin
         // Uses a secret stored pypirc file with pypitest enabled
-        sh 'python setup.py sdist bdist bdist_wheel upload -r pypitest'
-
+        sh 'python setup.py sdist bdist upload -r pypitest'
+        //TODO Needs some setup to enable wheel packaging
     }
 
     stage name:'Test PyPy installation'
