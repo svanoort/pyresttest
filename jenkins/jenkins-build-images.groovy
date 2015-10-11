@@ -3,7 +3,7 @@ def run_test(dockerImg, python_name, version) {
   echo "My id is $id"
   try {
     dockerImg.inside {
-      sh "$python_name /tmp/verify_image.pyp"
+      sh "$python_name /tmp/verify_image.py"
     }
     dockerImg.tag(version, true)
     dockerImg.tag('latest', true)
