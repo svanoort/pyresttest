@@ -67,7 +67,8 @@ node {
         servertests()
     }
 
-    stage name:'Publish to test PyPi', concurrency:1
+    // THIS DOESN'T WORK YET, SIGH
+    /*stage name:'Publish to test PyPi', concurrency:1
     withCredentials([[$class: 'FileBinding', variable: 'SECRET', credentialsId: '014760b9-3146-49e6-8198-849094a28246']]) {
         sh 'cp $SECRET .pypirc'
     }
@@ -79,6 +80,7 @@ node {
         sh 'python setup.py sdist bdist upload -r pypitest'
         //TODO Needs some setup to enable wheel packaging
     }
+    */
 
     stage name:'Test PyPy installation'
 
@@ -87,7 +89,7 @@ node {
         clean_workspace()
         sh 'rpm -ivh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm'
         sh 'yum install -y python-pip'
-        sh 'pip install pyresttest'
+        sh 'pip install -i https://testpypi.python.org/pypi pyresttest'
         headlesstests()
     }
 
