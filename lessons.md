@@ -1,6 +1,6 @@
-# Mistakes and Blessings
+# Blessings and Mistakes
 
-Herein is a chronicle of the consequences of good and bad design/implementation decisions, that others may learn more easily what this taught the hard way. 
+Herein lies a chronicle of the consequences of good and bad design/implementation decisions, that others may learn more easily what this project taught the hard way. 
 
 ## Bad:
 * Using flatten_dictionaries to handle invalid duplicate values in configs causes more grief than it saves
