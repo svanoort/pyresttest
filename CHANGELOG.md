@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.6.0-SNAPSHOT (pending release as 1.6.0)
+## 1.6.0 Mon Oct 12 07:30:00 2015 -0400
 **Features:**
 * BETA: Add a type testing comparator to assist with validating request/header bodies
   - Issue: https://github.com/svanoort/pyresttest/issues/90 (derived from online feedback)
@@ -18,6 +18,8 @@
   - https://github.com/svanoort/pyresttest/issues/70
   - https://github.com/svanoort/pyresttest/issues/63
 * Extractors did not raise an exception on failure: https://github.com/svanoort/pyresttest/issues/64
+* Fix issue with use of curl WRITEDATA opt on CentOS 2.6 (use writefunction instead)
+* Fix/document installation issues with dependencies
 
 **Known Issues / Back-Compatibility:**
 * Minor: generator letters/uppercase/lowercase are now always ASCII, not locale-aware
