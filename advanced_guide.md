@@ -61,8 +61,8 @@ To demonstrate static variable binding, this does binding for both first and las
 
 ```
 
-Currently, templating is only supported for the request body and URL.
-There are technical challenges adding it everywhere, but plans to add it where needed to other options.
+Currently, templating is only supported for the request body, URL, and headers.
+There are technical challenges adding it everywhere, it's coming as part of a rewrite of framework internals.
 
 # Generators Listing
 List of all generators and their configuration elements (required, optional, and meaning).
