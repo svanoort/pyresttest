@@ -1,7 +1,7 @@
 from distutils.core import setup
 
 setup(name='pyresttest',
-      version='1.6.0.dev',
+      version='1.6.0',
       description='Python RESTful API Testing & Microbenchmarking Tool',
       long_description='Python RESTful API Testing & Microbenchmarking Tool \n Documentation at https://github.com/svanoort/pyresttest',
       maintainer='Sam Van Oort',
@@ -22,7 +22,7 @@ setup(name='pyresttest',
                   'pyresttest.parsing', 'pyresttest.validators', 'pyresttest.contenthandling',
                   'pyresttest.benchmarks', 'pyresttest.tests', 'pyresttest.ext.validator_jsonschema'],
       license='Apache License, Version 2.0',
-      requires=['pyyaml', 'pycurl'],
+      install_requires=['pyyaml', 'pycurl'],
       # Make this executable from command line when installed
       scripts=['util/pyresttest', 'util/resttest.py'],
       provides=['pyresttest']

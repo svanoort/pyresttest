@@ -49,13 +49,25 @@ Apache License, Version 2.0
 The best way to install PyRestTest is via Python's pip packaging tool.
 
 If that is not installed, we'll need to install it first:
-```shell
-wget https://bootstrap.pypa.io/get-pip.py && sudo python get-pip.py
-```
+* Ubuntu/Debian: (sudo) `apt-get install python-pip`
+* CentOS/RHEL: (sudo) `yum install python-pip`
+* Mac OS X with homebrew: `brew install python`  (it's included)
+* Or with just python installed: `wget https://bootstrap.pypa.io/get-pip.py && sudo python get-pip.py`
+
+**Then install package python-pycurl:**
+* Ubuntu: (sudo) `apt-get install python-pycurl`
+* CentOS/RHEL: (sudo) `yum install python-pycurl`
+*This is needed because the pycurl dependency may fail to install by pip.*
+
 Then we install pyresttest:
 ```shell
 sudo pip install pyresttest
 ```
+
+**If it fails like this:** 
+`__main__.ConfigurationError: Could not run curl-config: [Errno 2] No such file or directory`
+
+Then you need to install python-pycurl (pip tried and failed to install it)
 
 There are also options to [install from repo](#installation-without-pip), or [build an RPM](#pure-rpm-based-install).
 
