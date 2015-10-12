@@ -21,13 +21,13 @@ Apache License, Version 2.0
 - config:
     - testset: "Basic tests"
 
-- test: # create entity
+- test: 
     - name: "Basic get"
     - url: "/api/person/"
-- test: # create entity
+- test: 
     - name: "Get single person"
     - url: "/api/person/1/"
-- test: # create entity
+- test: 
     - name: "Delete a single person, verify that works"
     - url: "/api/person/1/"
     - method: 'DELETE'
