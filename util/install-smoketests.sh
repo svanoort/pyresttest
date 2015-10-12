@@ -15,7 +15,7 @@ pip show version pyresttest
 # test (each returns exit code)
 resttest.py 2>/dev/null | grep 'Usage'
 pyresttest 2>/dev/null | grep 'Usage'
-resttest.py https://api.github.com /tmp/pyresttest/github_api_smoketest.yaml
+resttest.py https://api.github.com /tmp/pyresttest/examples/github_api_smoketest.yaml
 
 
 # Install on Ubuntu14

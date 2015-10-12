@@ -81,10 +81,10 @@ The root folder of this library also includes a ton of example tests.
 
 ## Running A Simple Test
 
-Run a simple test that checks a URL returns a 200:
+Run a basic test of the github API:
 
 ```shell
-resttest.py https://github.com simple_test.yaml
+resttest.py https://api.github.com examples/github_api_smoketest.yaml
 ```
 
 ## Using JSON Validation
@@ -93,7 +93,7 @@ A simple set of tests that show how json validation can be used to check content
 Test includes both successful and unsuccessful validation using github API.
 
 ```shell
-resttest.py https://api.github.com github_api_test.yaml
+resttest.py https://api.github.com examples/github_api_test.yaml
 ```
 
 (For help: python resttest.py  --help )
@@ -102,13 +102,13 @@ resttest.py https://api.github.com github_api_test.yaml
 Same as the other test but running in interactive mode.
 
 ```python
-resttest.py https://api.github.com github_api_test.yaml --interactive true --print-bodies true
+resttest.py https://api.github.com examples/github_api_test.yaml --interactive true --print-bodies true
 ```
 
 ## Verbose Output
 
 ```shell
-resttest.py https://api.github.com github_api_test.yaml --log debug
+resttest.py https://api.github.com examples/github_api_test.yaml --log debug
 ```
 
 # Getting Started: Quickstart Requirements
@@ -396,7 +396,7 @@ There are 5 top level test syntax elements:
 ```yaml
 ---
 # Will load the test sets from miniapp-test.yaml and run them
-- import: miniapp-test.yaml
+- import: examples/miniapp-test.yaml
 ```
 
 ## Url Test
@@ -600,7 +600,7 @@ sudo yum install rpm-build
 
 ## Why YAML and not XML/JSON?
 - XML is extremely verbose and has many gotchas for parsing
-- You **CAN use JSON for tests**, it's a subset of YAML. See [miniapp-test.json](miniapp-test.json) for an example. 
+- You **CAN use JSON for tests**, it's a subset of YAML. See [miniapp-test.json](examples/miniapp-test.json) for an example. 
 - YAML tends to be the most concise, natural, and easy to write of these three options
 
 ## Does it do load tests?

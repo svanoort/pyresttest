@@ -18,7 +18,7 @@ else
 fi
 
 # Test script runs
-resttest.py https://github.com ../simple_test.yaml
+resttest.py https://api.github.com ../examples/github_api_smoketest.yaml
 if [$? -ne 0]; then
     echo 'ERROR: Runnable script failed to execute okay testing GitHub query'
 fi
