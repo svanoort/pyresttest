@@ -2,7 +2,7 @@ pyresttest
 ==========
 
 # What Is It?
-- A REST testing and API microbenchmarking framework
+- A REST testing and API microbenchmarking tool
 - Tests are defined in basic YAML or JSON config files, no code needed
 - Minimal dependencies (pycurl, pyyaml), making it easy to deploy on-server for smoketests/healthchecks
 - Supports [generate/extract/validate](advanced_guide.md) mechanisms to create full test scenarios
@@ -37,11 +37,13 @@ Apache License, Version 2.0
     - method: "PUT"
     - body: '{"first_name": "Gaius","id": 1,"last_name": "Baltar","login": "gbaltar"}'
     - headers: {'Content-Type': 'application/json'}
+    - validators: 
+        - compare: {header: content-type, comparator: contains, expected:'json'}
 - test: # create entity by POST
     - name: "Create person"
     - url: "/api/person/"
     - method: "POST"
-    - body: '{"first_name": "Willim","last_name": "Adama","login": "theadmiral"}'
+    - body: '{"first_name": "William","last_name": "Adama","login": "theadmiral"}'
     - headers: {Content-Type: application/json}
   ```
 
@@ -435,7 +437,7 @@ One caveat: *if you define the same element (example, URL) twice in the same enc
 
 
 # Benchmarking?
-Oh, yes please! PyRestTest is now benchmark-enabled, allowing you to collect low-level network performance metrics from Curl itself.
+Oh, yes please! PyRestTest allows you to collect low-level network performance metrics from Curl itself.
 
 Benchmarks are based off of tests: they extend the configuration elements in a test, allowing you to configure the REST call similarly.
 However, they do not perform validation on the HTTP response, instead they collect metrics.
@@ -563,10 +565,9 @@ find -iname '*.rpm'   # Gets the RPM name
 ### Installing from RPM
 ```shell
 sudo yum localinstall my_rpm_name
-sudo yum install PyYAML
+sudo yum install PyYAML python-pycurl
 ```
-- You need to install PyYAML manually because Python distutils can't translate python dependencies to RPM packages. 
-- This is not needed for PyCurl because it is built in by default
+- You need to install PyYAML & PyCurl manually because Python distutils can't translate python dependencies to RPM packages. 
 
 **Gotcha:** Python distutils add a dependency on your major python version. 
 **This means you can't build an RPM for a system with Python 2.6 on a Python 2.7 system.**
@@ -580,8 +581,8 @@ sudo yum install rpm-build
 
 # Changelog, (Back)Compatibility, and Releases
 * [The changelog is here](CHANGELOG.md).  
-* Python 2.6 and 2.7 compatible, working on Python 3 support
-    - Tested on Ubuntu 14.x currently, working on CentOS/SuSe tests
+* Python 2.6 and 2.7 compatible (tested on Ubuntu 14/python 2.7 and CentOS 6/python 6.6)
+* [Working on Python 3 support](https://github.com/svanoort/pyresttest/issues/98)
 * Releases occur every few months to [PyPi](https://pypi.python.org/pypi/pyresttest/) once a few features are ready to go
 * PyRestTest uses [Semantic Versioning 2.0](http://semver.org/)
 * **Back-compatibility is important! PyRestTest makes a strong effort to maintain command-line and YAML format back-compatibility since 1.0.**
@@ -618,4 +619,4 @@ For pull requests to get easily merged, please:
 - Include documentation as appropriate
 - Attempt to adhere to PEP8 style guidelines and project style
 
-Bear in mind that this is largely a one-man, outside-of-working-hours effort at the moment, so response times will vary.  That said: every feature request gets heard, and even if it takes a while, all the reasonable features will get incorporated.  **If you fork the main repo, check back periodically... you may discover that the next release includes something to meet your needs and then some.**
+Bear in mind that this is largely a one-man, outside-of-working-hours effort at the moment, so response times will vary.  That said: every feature request gets heard, and even if it takes a while, all the reasonable features will get incorporated.  **If you fork the main repo, check back periodically... you may discover that the next release includes something to meet your needs and then some!**
