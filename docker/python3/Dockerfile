@@ -8,3 +8,4 @@ RUN apt-get update && apt-get install --no-install-recommends -y git-core tar \
 RUN pip3 install pycurl pyyaml django==1.6.5 django-tastypie future
 
 COPY verify_image.py /tmp/verify_image.py
+RUN chmod a+rwx /tmp/verify_image.py

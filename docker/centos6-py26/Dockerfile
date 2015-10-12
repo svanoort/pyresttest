@@ -9,3 +9,4 @@ RUN yum install -y python-pip git-core python-mock rpm-build tar && yum clean al
     && pip install discover pyyaml django==1.6.5 django-tastypie
 
 COPY verify_image.py /tmp/verify_image.py
+RUN chmod a+rwx /tmp/verify_image.py

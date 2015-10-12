@@ -25,11 +25,11 @@ node {
   def python3 = docker.build("pyresttest-build-python3:test", 'docker/python3')
 
   stage name:'test/tag', concurrency: 1
-  run_test(ubuntu14_py27, 'python', '0.2')
-  run_test(centos6_py26, 'python', '0.2')
+  run_test(ubuntu14_py27, 'python', '0.3')
+  run_test(centos6_py26, 'python', '0.3')
 
   // For some inexplicable reasons, the test script here is more brittle than the others
   // Direct docker run works, it hit issues with docker.build, so... okay?
-  run_test(python3, 'python3', '0.3')
+  run_test(python3, 'python3', '0.4')
 }
 

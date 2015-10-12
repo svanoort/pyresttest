@@ -8,3 +8,4 @@ RUN apt-get update && apt-get install --no-install-recommends -y python python-p
 RUN pip install mock pyyaml django==1.6.5 django-tastypie
 
 COPY verify_image.py /tmp/verify_image.py
+RUN chmod a+rwx /tmp/verify_image.py
