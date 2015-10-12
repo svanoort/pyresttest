@@ -1,7 +1,7 @@
 from distutils.core import setup
 
 setup(name='pyresttest',
-      version='1.6.0',
+      version='1.6.1.dev',
       description='Python RESTful API Testing & Microbenchmarking Tool',
       long_description='Python RESTful API Testing & Microbenchmarking Tool \n Documentation at https://github.com/svanoort/pyresttest',
       maintainer='Sam Van Oort',
