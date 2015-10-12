@@ -37,8 +37,10 @@ Apache License, Version 2.0
     - method: "PUT"
     - body: '{"first_name": "Gaius","id": 1,"last_name": "Baltar","login": "gbaltar"}'
     - headers: {'Content-Type': 'application/json'}
-    - validators: 
+    - validators:  # This is how we do more complex testing!
         - compare: {header: content-type, comparator: contains, expected:'json'}
+        - compare: {jsonpath_mini: 'login', expected: 'gbaltar'}  # JSON extraction
+        - compare: {raw_body:"", comparator:contains, expected: 'Baltar' }  # Tests on raw response
 - test: # create entity by POST
     - name: "Create person"
     - url: "/api/person/"
