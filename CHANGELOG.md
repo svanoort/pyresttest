@@ -18,7 +18,7 @@
   - https://github.com/svanoort/pyresttest/issues/70
   - https://github.com/svanoort/pyresttest/issues/63
 * Extractors did not raise an exception on failure: https://github.com/svanoort/pyresttest/issues/64
-* Fix issue with use of curl WRITEDATA opt on CentOS 2.6 (use writefunction instead)
+* Fix issue with use of curl WRITEDATA opt on CentOS 6 / Python 2.6 (use writefunction instead)
 * Fix/document installation issues with dependencies
 
 **Known Issues / Back-Compatibility:**
