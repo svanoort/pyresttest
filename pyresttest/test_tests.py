@@ -85,7 +85,7 @@ class TestsTest(unittest.TestCase):
             myinput['method'] = ''
             test.parse_test('', myinput)
             fail("Should fail to pass a nonstring HTTP method")
-        except AssertionError:
+        except (TypeError, AssertionError):
             pass
 
     def test_parse_custom_curl(self):
