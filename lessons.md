@@ -1,6 +1,6 @@
 # Lessons
 
-A walkthrough of good and bad decisions in building PyRestTest and their consequences.  Perhaps informative for others, and at the least interesting to reflect on.  Interesting at the least because of how it reflects growing knowledge of the python ecosystem. 
+A walkthrough of good and bad decisions in building PyRestTest and their consequences.  Perhaps informative for others, and at the least interesting because of how it reflects growing knowledge of the python ecosystem. 
 
 ## Mistakes:
 * Parsing configuration: using flatten_dictionaries to handle invalid duplicate values in configs causes more grief than it saves
