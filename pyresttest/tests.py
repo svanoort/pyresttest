@@ -249,7 +249,7 @@ class Test(object):
         curl.setopt(curl.URL, str(self.url))
         curl.setopt(curl.TIMEOUT, timeout)
 
-        bod = self.body
+        bod = self.body.encode('unicode_escape') if self.body else None
 
         # Set read function for post/put bodies
         if bod and len(bod) > 0:
