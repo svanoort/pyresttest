@@ -1,0 +1,20 @@
+---
+- config:
+    - testset: "Test Unicode handling within tests"
+- test: # Inline body, template URL and body
+    - name: "Create/update a person with unicode in it"
+    - url: {"template":"/api/person/100/"}
+    - method: "PUT"
+    - headers: {'Content-Type': 'application/json'}
+    - body: '{"first_name": "指事字","id": "100","last_name": "Baltar","login": "指字"}'
+- test:
+    - name: "See if we can retrieve and validate unicode bodies"
+    - url: {template: "/api/person/100/"}
+    - validators: 
+        - compare: {'jsonpath_mini':'first_name', 'comparator':'contains', 'expected':'指事字'}
+- test:
+    - name: "Let's try using unicode URL"
+    - url: '/api/person/?login=指字'
+    - validators:
+        - assert: {'jsonpath_mini':'objects.0', 'test':'exists'}
+        - compare: {'jsonpath_mini':'objects.0.first_name', 'expected':'指事字'}

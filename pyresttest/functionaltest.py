@@ -270,6 +270,19 @@ class RestTestCase(unittest.TestCase):
         self.assertTrue(
             failures == 0, 'Simple tests failed where success expected')
 
+    def test_unicode_use(self):
+        """ Read and execute test set  with context use, from file """
+
+        # Get absolute path to test file, in the same folder as this test
+        path = os.path.join(os.path.dirname(
+            os.path.realpath(__file__)), 'unicode-test.yaml')
+        print(path)
+        tests = resttest.parse_testsets('http://localhost:8000', resttest.read_test_file(
+            path), working_directory=os.path.dirname(os.path.realpath(__file__)))
+        failures = resttest.run_testsets(tests)
+        self.assertTrue(
+            failures == 0, 'Simple tests failed where success expected')
+
     def test_benchmark_get(self):
         """ Benchmark basic local get test """
         benchmark_config = resttest.Benchmark()
