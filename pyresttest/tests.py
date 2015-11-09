@@ -401,12 +401,14 @@ class Test(object):
                     # Template is used for URL
                     val = lowercase_keys(configvalue)[u'template']
                     assert isinstance(val, basestring) or isinstance(val, int)
+                    # FIXME TODO replace with proper URL section joining taking unicode inputs
                     url = base_url + \
                         unicode(val, 'UTF-8').encode('ascii', 'ignore')
                     mytest.set_url(url, isTemplate=True)
                 else:
                     assert isinstance(configvalue, basestring) or isinstance(
                         configvalue, int)
+                    # FIXME TODO replace with proper URL section joining taking unicode inputs
                     mytest.url = base_url + \
                         unicode(configvalue, 'UTF-8').encode('ascii', 'ignore')
             elif configelement == u'extract_binds':

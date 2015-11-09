@@ -1,13 +1,46 @@
 import sys
+import string
 
 # Python 3 compatibility
-if sys.version_info[0] == 3:
+PYTHON_MAJOR_VERSION = sys.version_info[0]
+if PYTHON_MAJOR_VERSION == 3:
     from past.builtins import basestring
 
 """
 Parsing utilities, pulled out so they can be used in multiple modules
 """
 
+def encode_unicode_bytes(my_string):
+    """ Shim function, converts Unicode to UTF-8 encoded bytes regardless of the source format 
+        Intended for python 3 compatibility mode, and b/c PyCurl only takes raw bytes
+    """
+    if not isinstance(my_string, basestring):
+        my_string = repr(my_string)
+    if PYTHON_MAJOR_VERSION == 2:
+        if isinstance(my_string, str):
+            return my_string
+        elif isinstance(my_string, unicode):
+            return my_string.encode('utf-8')
+    else:
+        if isinstance(my_string, str):
+            return my_string.encode('utf-8')
+        elif isinstance(my_string, bytes):
+            return my_string
+
+# TODO create a full class that extends string.Template
+def safe_substitute_unicode_template(templated_string, variable_map):
+    """ Perform string.Template safe_substitute on unicode input with unicode variable values by using escapes
+        Catch: cannot accept unicode variable names, just values 
+        Returns a Unicode type output, if you want UTF-8 bytes, do encode_unicode_bytes on it
+    """
+
+    if PYTHON_MAJOR_VERSION > 2:  # Python 3 handles unicode templating natively, yay!
+        return string.Template(templated_string).safe_substitute(variable_map)
+
+    my_template = string.Template(encode_unicode_bytes(templated_string))
+    my_escaped_dict = dict(map(lambda x: (x[0], encode_unicode_bytes(x[1])), variable_map.items()))
+    templated = my_template.safe_substitute(my_escaped_dict)
+    return unicode(templated, 'utf-8')
 
 def safe_to_json(in_obj):
     """ Safely get dict from object if present for json dumping """
