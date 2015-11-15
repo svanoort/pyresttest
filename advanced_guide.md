@@ -147,6 +147,8 @@ The basic 'jsonpath_mini' extractor provides a very limited [JsonPath](http://go
 
 The elements of this  syntax are a list of keys or indexes, descending down a tree, seperated by periods. Numbers are assumed to be array indices.
 
+If you wish to return the whole object, you may use an empty "" query or "." -- this can be helpful for APIs returning an array of objects, where you want to count the number of objects returned (using countEq operator). 
+
 **Example:**
 Given this JSON:
 ```json
@@ -172,6 +174,11 @@ Will return: NOTHING (None object) -- that key is not defined for 'person'.
 
 - This query: 'thing'
 Will return: {"foo":"bar"}
+
+*Note that if you use this in templates it will appear as {u'foo': u'bar'} because it is converted to a python dictionary.*  If you with to use it in other tests, you will need to extract the component elements individually.
+
+- This query: '.'
+Will return: the whole response (as a python object). This can be very useful if you want to do contains or count operations on it.
 
 - This query: 'thing.0'
 Will return: None -- trick question, 'thing' is not an array!

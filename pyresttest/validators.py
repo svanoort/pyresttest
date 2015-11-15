@@ -237,12 +237,14 @@ class MiniJsonExtractor(AbstractExtractor):
         # http://stackoverflow.com/questions/7320319/xpath-like-query-for-nested-python-dictionaries
 
         try:
-            for x in query.strip(delimiter).split(delimiter):
-                try:
-                    x = int(x)
-                    dictionary = dictionary[x]
-                except ValueError:
-                    dictionary = dictionary[x]
+            stripped_query = query.strip(delimiter)
+            if stripped_query:
+                for x in stripped_query.split(delimiter):
+                    try:
+                        x = int(x)
+                        dictionary = dictionary[x]
+                    except ValueError:
+                        dictionary = dictionary[x]
         except:
             return None
         return dictionary
