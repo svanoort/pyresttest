@@ -48,6 +48,12 @@ Apache License, Version 2.0
     - body: '{"first_name": "William","last_name": "Adama","login": "theadmiral"}'
     - headers: {Content-Type: application/json}
   ```
+# Examples
+* Here's a [really good example](examples/miniapp-extract-validate.yaml) for how to create a user and then do tests on it.  
+  - This shows how to use extraction from responses, templating, and different test types
+* If you're trying to do something fancy, take a look at the [content-test.yaml](pyresttest/content-test.yaml).
+  - This shows most kinds of templating & variable uses. It shows how to read from file, using a variable in the file path, and templating on its content!
+* There's a [whole folder](https://github.com/svanoort/pyresttest/tree/master/examples) of example tests to help get started
 
 # How Do I Get It?
 The best way to install PyRestTest is via Python's pip packaging tool.
