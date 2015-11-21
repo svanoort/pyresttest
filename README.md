@@ -1,6 +1,8 @@
 pyresttest
 ==========
 
+[![Join the chat at https://gitter.im/svanoort/pyresttest](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/svanoort/pyresttest?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 # What Is It?
 - A REST testing and API microbenchmarking tool
 - Tests are defined in basic YAML or JSON config files, no code needed
