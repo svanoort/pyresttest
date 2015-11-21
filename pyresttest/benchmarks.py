@@ -17,8 +17,7 @@ except:
 # Python 3 compatibility shims
 from six import binary_type
 from six import text_type
-if sys.version_info[0] == 3:
-    from past.builtins import basestring
+from six import string_types
 
 """
 Encapsulates logic related to benchmarking
@@ -232,11 +231,11 @@ def parse_benchmark(base_url, node):
             else:
                 raise Exception('Invalid benchmark output format: ' + format)
         elif key == u'output_file':
-            if not isinstance(value, basestring):
+            if not isinstance(value, string_types):
                 raise Exception("Invalid output file format")
             benchmark.output_file = value
         elif key == u'metrics':
-            if isinstance(value, basestring):
+            if isinstance(value, string_types):
                 # Single value
                 benchmark.add_metric(text_type(value, 'UTF-8'))
             elif isinstance(value, list) or isinstance(value, set):
@@ -244,25 +243,25 @@ def parse_benchmark(base_url, node):
                 for metric in value:
                     if isinstance(metric, dict):
                         for metricname, aggregate in metric.items():
-                            if not isinstance(metricname, basestring):
+                            if not isinstance(metricname, string_types):
                                 raise Exception(
                                     "Invalid metric input: non-string metric name")
-                            if not isinstance(aggregate, basestring):
+                            if not isinstance(aggregate, string_types):
                                 raise Exception(
                                     "Invalid aggregate input: non-string aggregate name")
                             # TODO unicode-safe this
                             benchmark.add_metric(
                                 text_type(metricname, 'UTF-8'), text_type(aggregate, 'UTF-8'))
 
-                    elif isinstance(metric, basestring):
+                    elif isinstance(metric, string_types):
                         benchmark.add_metric(text_type(metric, 'UTF-8'))
             elif isinstance(value, dict):
                 # Dictionary of metric-aggregate pairs
                 for metricname, aggregate in value.items():
-                    if not isinstance(metricname, basestring):
+                    if not isinstance(metricname, string_types):
                         raise Exception(
                             "Invalid metric input: non-string metric name")
-                    if not isinstance(aggregate, basestring):
+                    if not isinstance(aggregate, string_types):
                         raise Exception(
                             "Invalid aggregate input: non-string aggregate name")
                     benchmark.add_metric(

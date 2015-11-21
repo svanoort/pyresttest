@@ -20,9 +20,7 @@ except:
 # Python 3 compatibility shims
 from six import binary_type
 from six import text_type
-
-if sys.version_info[0] == 3:
-    from past.builtins import basestring
+from six import string_types
 
 """
 Pull out the Test objects and logic associated with them
@@ -111,7 +109,7 @@ class Test(object):
         """ Read body from file, applying template if pertinent """
         if self._body is None:
             return None
-        elif isinstance(self._body, basestring):
+        elif isinstance(self._body, string_types):
             return self._body
         else:
             return self._body.get_content(context=context)
@@ -326,7 +324,7 @@ class Test(object):
 
         def coerce_to_string(val):
             try:
-                assert isinstance(val, basestring) or isinstance(val, int)  # TODO see if this even accepts an int
+                assert isinstance(val, string_types) or isinstance(val, int)  # TODO see if this even accepts an int
             except AssertionError:
                 raise TypeError("Input {0} is not a string or integer, and it needs to be!".format(val))
 
@@ -334,7 +332,7 @@ class Test(object):
 
         def coerce_string_to_ascii(val):
             try:
-                assert isinstance(val, basestring)
+                assert isinstance(val, string_types)
             except AssertionError:
                 raise TypeError("Input {0} is not a string, string expected".format(val))
 
@@ -343,7 +341,7 @@ class Test(object):
 
         def coerce_http_method(val):
             try:
-                assert isinstance(val, basestring) and len(val) > 0
+                assert isinstance(val, string_types) and len(val) > 0
             except AssertionError:
                 raise TypeError("Invalid HTTP method name: input {0} is not a string or has 0 length".format(val))
             return text_type(val, 'UTF-8').upper()
@@ -406,13 +404,13 @@ class Test(object):
                 if isinstance(configvalue, dict):
                     # Template is used for URL
                     val = lowercase_keys(configvalue)[u'template']
-                    assert isinstance(val, basestring) or isinstance(val, int)
+                    assert isinstance(val, string_types) or isinstance(val, int)
                     # FIXME TODO replace with proper URL section joining taking unicode inputs
                     url = base_url + \
                         text_type(val, 'UTF-8').encode('ascii', 'ignore')
                     mytest.set_url(url, isTemplate=True)
                 else:
-                    assert isinstance(configvalue, basestring) or isinstance(
+                    assert isinstance(configvalue, string_types) or isinstance(
                         configvalue, int)
                     # FIXME TODO replace with proper URL section joining taking unicode inputs
                     mytest.url = base_url + \
