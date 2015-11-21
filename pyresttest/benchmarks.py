@@ -14,7 +14,9 @@ except:
     except ImportError:
         from io import StringIO
 
-# Python 3 compatibility
+# Python 3 compatibility shims
+from six import binary_type
+from six import text_type
 if sys.version_info[0] == 3:
     from past.builtins import basestring
 
@@ -234,9 +236,9 @@ def parse_benchmark(base_url, node):
                 raise Exception("Invalid output file format")
             benchmark.output_file = value
         elif key == u'metrics':
-            if isinstance(value, unicode) or isinstance(value, str):
+            if isinstance(value, basestring):
                 # Single value
-                benchmark.add_metric(unicode(value, 'UTF-8'))
+                benchmark.add_metric(text_type(value, 'UTF-8'))
             elif isinstance(value, list) or isinstance(value, set):
                 # List of single values or list of {metric:aggregate, ...}
                 for metric in value:
@@ -250,10 +252,10 @@ def parse_benchmark(base_url, node):
                                     "Invalid aggregate input: non-string aggregate name")
                             # TODO unicode-safe this
                             benchmark.add_metric(
-                                unicode(metricname, 'UTF-8'), unicode(aggregate, 'UTF-8'))
+                                text_type(metricname, 'UTF-8'), text_type(aggregate, 'UTF-8'))
 
-                    elif isinstance(metric, unicode) or isinstance(metric, str):
-                        benchmark.add_metric(unicode(metric, 'UTF-8'))
+                    elif isinstance(metric, basestring):
+                        benchmark.add_metric(text_type(metric, 'UTF-8'))
             elif isinstance(value, dict):
                 # Dictionary of metric-aggregate pairs
                 for metricname, aggregate in value.items():
@@ -264,7 +266,7 @@ def parse_benchmark(base_url, node):
                         raise Exception(
                             "Invalid aggregate input: non-string aggregate name")
                     benchmark.add_metric(
-                        unicode(metricname, 'UTF-8'), unicode(aggregate, 'UTF-8'))
+                        text_type(metricname, 'UTF-8'), text_type(aggregate, 'UTF-8'))
             else:
                 raise Exception(
                     "Invalid benchmark metric datatype: " + str(value))

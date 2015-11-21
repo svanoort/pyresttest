@@ -209,9 +209,9 @@ class RestTestCase(unittest.TestCase):
         test_response2 = resttest.run_test(test2)
         self.assertTrue(test_response2.passed)
         self.assertTrue(
-            u'"last_name": "Adama"' in test_response2.unicode_body())
+            u'"last_name": "Adama"' in test_response2.body.decode('UTF-8'))
         self.assertTrue(
-            u'"login": "theadmiral"' in test_response2.unicode_body())
+            u'"login": "theadmiral"' in test_response2.body.decode('UTF-8'))
 
     def test_post(self):
         """ Test POST to create an item """
@@ -255,7 +255,7 @@ class RestTestCase(unittest.TestCase):
         test2.url = self.prefix + '/api/person/?first_name__contains=Gaius'
         test_response2 = resttest.run_test(test2)
         self.assertTrue(test_response2.passed)
-        self.assertTrue(u'"objects": []' in test_response2.unicode_body())
+        self.assertTrue(u'"objects": []' in test_response2.body.decode('UTF-8'))
 
     def test_full_context_use(self):
         """ Read and execute test set  with context use, from file """

@@ -17,7 +17,10 @@ except:
     except ImportError:
         from io import StringIO
 
-# Python 3 compatibility
+# Python 3 compatibility shims
+from six import binary_type
+from six import text_type
+
 if sys.version_info[0] == 3:
     from past.builtins import basestring
 
@@ -326,21 +329,24 @@ class Test(object):
                 assert isinstance(val, basestring) or isinstance(val, int)  # TODO see if this even accepts an int
             except AssertionError:
                 raise TypeError("Input {0} is not a string or integer, and it needs to be!".format(val))
-            return unicode(val, 'UTF-8')
+
+            return text_type(val, 'UTF-8')
 
         def coerce_string_to_ascii(val):
             try:
                 assert isinstance(val, basestring)
             except AssertionError:
                 raise TypeError("Input {0} is not a string, string expected".format(val))
-            return unicode(val, 'UTF-8').encode('ascii', 'ignore')
+
+            # FIXME needs to force always unicode output from string
+            return text_type(val, 'UTF-8').encode('ascii', 'ignore')
 
         def coerce_http_method(val):
             try:
                 assert isinstance(val, basestring) and len(val) > 0
             except AssertionError:
                 raise TypeError("Invalid HTTP method name: input {0} is not a string or has 0 length".format(val))
-            return unicode(val, 'UTF-8').upper()
+            return text_type(val, 'UTF-8').upper()
 
         def coerce_list_of_ints(val):
             """ If single value, try to parse as integer, else try to parse as list of integer """
@@ -403,14 +409,14 @@ class Test(object):
                     assert isinstance(val, basestring) or isinstance(val, int)
                     # FIXME TODO replace with proper URL section joining taking unicode inputs
                     url = base_url + \
-                        unicode(val, 'UTF-8').encode('ascii', 'ignore')
+                        text_type(val, 'UTF-8').encode('ascii', 'ignore')
                     mytest.set_url(url, isTemplate=True)
                 else:
                     assert isinstance(configvalue, basestring) or isinstance(
                         configvalue, int)
                     # FIXME TODO replace with proper URL section joining taking unicode inputs
                     mytest.url = base_url + \
-                        unicode(configvalue, 'UTF-8').encode('ascii', 'ignore')
+                        text_type(configvalue, 'UTF-8').encode('ascii', 'ignore')
             elif configelement == u'extract_binds':
                 # Add a list of extractors, of format:
                 # {variable_name: {extractor_type: extractor_config}, ... }

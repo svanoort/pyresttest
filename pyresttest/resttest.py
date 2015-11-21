@@ -139,9 +139,6 @@ class TestResponse:
     def __str__(self):
         return json.dumps(self, default=safe_to_json)
 
-    def unicode_body(self):
-        return unicode(self.body.decode('UTF-8'))
-
 
 def read_test_file(path):
     """ Read test file at 'path' in YAML """
@@ -211,7 +208,7 @@ def parse_testsets(base_url, test_structure, test_files=set(), working_directory
                 elif key == u'url':  # Simple test, just a GET to a URL
                     mytest = Test()
                     val = node[key]
-                    assert isinstance(val, str) or isinstance(val, unicode)
+                    assert isinstance(val, basestring)
                     mytest.url = base_url + val
                     tests_out.append(mytest)
                 elif key == u'test':  # Complex test with additional parameters

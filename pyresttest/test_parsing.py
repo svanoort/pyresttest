@@ -106,13 +106,13 @@ class TestParsing(unittest.TestCase):
         except TypeError:
             pass  # Good
 
-    def test_safe_to_json(self):        
+    def test_safe_to_json(self):
         if PYTHON_MAJOR_VERSION == 2:
             self.assertEqual(u'adj12321nv', safe_to_json(
                 bytearray(b'adj12321nv', 'UTF-8')))
-        else: 
+        else:
             self.assertEqual(u'adj12321nv', safe_to_json(u'adj12321nv'))
-        
+
         self.assertEqual(u'5.2', safe_to_json(5.2))
 
         class Special(object):
