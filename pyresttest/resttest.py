@@ -13,12 +13,12 @@ from email import message_from_string  # For headers handling
 import time
 
 try:
-    from cStringIO import StringIO
+    from cStringIO import StringIO as MyIO
 except:
     try:
-        from StringIO import StringIO
+        from StringIO import StringIO as MyIO
     except ImportError:
-        from io import StringIO
+        from io import BytesIO as MyIO
 
 # Python 3 compatibility
 if sys.version_info[0] == 3:
@@ -284,8 +284,8 @@ def run_test(mytest, test_config=TestConfig(), context=None):
     result.test = templated_test
 
     # reset the body, it holds values from previous runs otherwise
-    headers = StringIO()
-    body = StringIO()
+    headers = MyIO()
+    body = MyIO()
     curl.setopt(pycurl.WRITEFUNCTION, body.write)
     curl.setopt(pycurl.HEADERFUNCTION, headers.write)
     if test_config.verbose:

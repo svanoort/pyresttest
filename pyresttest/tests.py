@@ -10,12 +10,12 @@ from parsing import *
 
 # Find the best implementation available on this platform
 try:
-    from cStringIO import StringIO
+    from cStringIO import StringIO as MyIO
 except:
     try:
-        from StringIO import StringIO
+        from StringIO import StringIO as MyIO
     except ImportError:
-        from io import StringIO
+        from io import BytesIO as MyIO
 
 # Python 3 compatibility shims
 from six import binary_type
@@ -250,11 +250,15 @@ class Test(object):
         curl.setopt(curl.URL, str(self.url))
         curl.setopt(curl.TIMEOUT, timeout)
 
+        is_unicoded = False
         bod = self.body
+        if isinstance(bod, text_type):  # Encode unicode
+            bod = bod.encode('UTF-8')
+            is_unicoded = True
 
         # Set read function for post/put bodies
         if bod and len(bod) > 0:
-            curl.setopt(curl.READFUNCTION, StringIO(bod).read)
+            curl.setopt(curl.READFUNCTION, MyIO(bod).read)
 
         if self.auth_username and self.auth_password:
             curl.setopt(pycurl.USERPWD, '%s:%s' %
@@ -281,8 +285,18 @@ class Test(object):
         elif self.method and self.method.upper() != 'GET':  # Support PATCH/HEAD/ETC
             curl.setopt(curl.CUSTOMREQUEST, self.method.upper())
 
+        # Template headers as needed and convert headers dictionary to list of header entries
         head = self.get_headers(context=context)
-        if head:  # Convert headers dictionary to list of header entries, tested and working
+        head = copy.copy(head)  # We're going to mutate it, need to copy
+
+        # Set charset if doing unicode conversion and not set explicitly
+        # TESTME
+        if is_unicoded and u'content-type' in head.keys():
+            content = head[u'content-type']
+            if u'charset' not in content:
+                head[u'content-type'] = content + u' ; charset=UTF-8'
+
+        if head:
             headers = [str(headername) + ':' + str(headervalue)
                        for headername, headervalue in head.items()]
         else:
@@ -327,7 +341,6 @@ class Test(object):
                 assert isinstance(val, string_types) or isinstance(val, int)  # TODO see if this even accepts an int
             except AssertionError:
                 raise TypeError("Input {0} is not a string or integer, and it needs to be!".format(val))
-
             return text_type(val, 'UTF-8')
 
         def coerce_string_to_ascii(val):

@@ -7,12 +7,12 @@ import sys
 from parsing import *
 
 try:
-    from cStringIO import StringIO
+    from cStringIO import StringIO as MyIO
 except:
     try:
-        from StringIO import StringIO
+        from StringIO import StringIO as MyIO
     except ImportError:
-        from io import StringIO
+        from io import BytesIO as MyIO
 
 # Python 3 compatibility shims
 from six import binary_type
