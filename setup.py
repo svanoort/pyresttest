@@ -4,7 +4,7 @@ dependencies = ['pyyaml', 'pycurl', 'six']
 
 # Add additional compatibility shims
 if sys.version_info[0] > 2:
-  dependencies.append('past')
+  dependencies.append('future')
 
 setup(name='pyresttest',
       version='1.6.1.dev',
