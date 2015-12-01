@@ -6,14 +6,6 @@ import tests
 import sys
 from parsing import *
 
-try:
-    from cStringIO import StringIO as MyIO
-except:
-    try:
-        from StringIO import StringIO as MyIO
-    except ImportError:
-        from io import BytesIO as MyIO
-
 # Python 3 compatibility shims
 from six import binary_type
 from six import text_type
