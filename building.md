@@ -26,8 +26,8 @@ There are two options for how to work with code
     - pyresttest-build-ubuntu-14 acts as the python 2.7 and apt-based distro environment
     - pyresttest-build-python3 acts as a clean testbed for work on python3 compatibility
   2. After building you can use them as dev environments in volumes:
-    - (sudo) docker run -v `PWD`:/tmp/pyresttest -it --rm pyresttest-build-centos6 /bin/bash
-    - (sudo) docker run -v `PWD`:/tmp/pyresttest -it --rm pyresttest-build-ubuntu-14 /bin/bash
+    - (sudo) docker run -v `pwd`:/tmp/pyresttest -it --rm pyresttest-build-centos6 /bin/bash
+    - (sudo) docker run -v `pwd`:/tmp/pyresttest -it --rm pyresttest-build-ubuntu-14 /bin/bash
   3. OR just run the images and clone the repo from within them:
     1. (sudo) docker run -it --rm pyresttest-build-ubuntu-14 /bin/bash
     2. Inside container: cd /tmp && git clone https://github.com/svanoort/pyresttest.git
