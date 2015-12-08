@@ -291,6 +291,15 @@ Samples:
 
 # Installation: Troubleshooting and Special Cases
 
+# Curl ConfigurationError on Pip Install
+If you get an error like this on installation:
+```__main__.ConfigurationError: Could not run curl-config: [Errno 2] No such file or directory```
+
+Then the PyCurl installation is broken.  This is easily fixed by installing needed libcurl libraries and then trying to install:
+
+- On Ubuntu/Debian: `sudo apt-get install libcurl4-openssl-dev`
+- On CentOS/RHEL: `yum install libcurl-devel`
+
 # Installation without Pip
 ```
 git clone https://github.com/svanoort/pyresttest.git
