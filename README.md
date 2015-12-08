@@ -346,8 +346,13 @@ You'll need to install rpm-build, and then it should work.
 sudo yum install rpm-build
 ```
 
-# Changelog, (Back)Compatibility, and Releases
-* [The changelog is here](CHANGELOG.md).  
+# Project Policies
+* PyRestTest uses the Github flow
+  - The master branch is an integration branch for mature features
+  - Releases are cut periodically from master (every 3-6 months generally, or more often if breaking bugs are present) and released to PyPi
+  - Feature development is done in feature branches and merged to master by PR when tested (validated by continuous integration in Jenkins)
+  - The 'stable' branch tracks the last release, use this if you want to run PyRestTest from source
+* [The changelog is here](CHANGELOG.md), this will show past releases and features merged to master for the next release but not released 
 * Python 2.6 and 2.7 compatible (tested on Ubuntu 14/python 2.7 and CentOS 6/python 6.6)
 * [Working on Python 3 support](https://github.com/svanoort/pyresttest/issues/98)
 * Releases occur every few months to [PyPi](https://pypi.python.org/pypi/pyresttest/) once a few features are ready to go
@@ -378,11 +383,12 @@ sudo yum install rpm-build
 
 ## Feedback
 We welcome any feedback you have, including pull requests, reported issues, etc!
+**For new contributors** there are a whole set of issues labelled with [help wanted](https://github.com/svanoort/pyresttest/labels/help%20wanted) which are excellent starting points to offer a contribution! 
 
-For instructions on building, see [building.md](building.md).
+For instructions on how to set up a dev environment for PyRestTest, see [building.md](building.md).
 
 For pull requests to get easily merged, please:
-- Include unit tests, and verify that run_tests.sh passes
+- Include unit tests (and functional tests, as appropriate) and verify that run_tests.sh passes
 - Include documentation as appropriate
 - Attempt to adhere to PEP8 style guidelines and project style
 
