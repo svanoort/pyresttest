@@ -194,8 +194,7 @@ jsonpath_mini: {template: $keyname.age}
 - If it is set to 'thing', then it will return nothing (because the 'thing' object lacks an 'age' key)
 
 ## Extractor: jmespath
-The 'jmespath' extractor provides fulll [JMESPath](http://jmespath.org/) implementation to grab data from JSON and requires jmespath library to be available for import
-Full range of JMESPath expressions is supported.
+The 'jmespath' extractor provides fulll [JMESPath](http://jmespath.org/) implementation to grab data from JSON and requires jmespath library to be available for import. Full range of JMESPath expressions is supported.
 
 **Example:**
 Given this JSON:
@@ -248,69 +247,29 @@ Given this JSON:
 }
 ```
 
-- This query: 'test1.a'
-Will return:  "foo"
-
-- This query: 'test1.b'
-Will return:  "bar"
-
-- This query: 'test1.c'
-Will return:  "baz"
-
-- This query: 'test2.a.b.c.d'
-Will return:  "value"
-
-- This query: 'test3[1]'
-Will return:  "b"
-
-- This query: 'test4.a.b.c[0].d[1][0]'
-Will return:  1
-
-- This query: 'length(test5[0:5])'
-Will return:  5
-
-- This query: 'test5[1:3]'
-Will return:  '[1, 2]'
-
-- This query: 'test5[::@]'
-Will return:  '[0, 2, 4, 6, 8]'
-
-- This query: 'test5[5:0:-1]'
-Will return:  '[5, 4, 3, 2, 1]'
-
-- This query: 'test6.people[*].first'
-Will return:  "['James', 'Jacob', 'Jayden']"
-
-- This query: 'test6.people[:2].first'
-Will return:  "['James', 'Jacob']"
-
-- This query: 'test6.people[*].first | [0]'
-Will return:  'James'
-
-- This query: 'test7.ops.*.numArgs'
-Will return:  '[2, 3]'
-
-- This query: 'test8.reservations[*].instances[*].state'
-Will return:  "[['running', 'stopped'], ['terminated', 'runnning']]"
-
-- This query: 'test9[]'
-Will return:  '[0, 1, 2, 3, 4, 5, [6, 7]]'
-
-- This query: "test10.machines[?state=='running'].name"
-Will return:  "['a', 'c']"
-
-- This query: "test10.machines[?state!='running'][name, state] | [0]"
-Will return:  "['b', 'stopped']"
-
-- This query: 'length(test11.people)'
-Will return:  3
-
-- This query: 'max_by(test11.people, &age).name'
-Will return:  'a'
-
-- This query: "test12.myarray[?contains(@, 'foo') == `true`]"
-Will return:  "['foo', 'foobar', 'barfoo', 'barfoobaz']"
-
+| Query                           | Output                        |
+|---------------------------------|-------------------------------|
+| ```'test1.a'```                 | ```"foo"```                   |
+| ```'test1.b'```                 | ```"bar"```                   |
+| ```'test1.c'```                 | ```"baz"```                   |
+| ```'test2.a.b.c.d'```           | ```"value"```                 |
+| ```'test3[1]'```                | ```"b"``` |
+|```'test4.a.b.c[0].d[1][0]'``` | ```1``` |
+|```'length(test5[0:5])'``` | ```5``` |
+|```'test5[1:3]'``` | ```'[1, 2]'``` |
+|```'test5[::2]'``` | ```'[0, 2, 4, 6, 8]'``` |
+|```'test5[5:0:-1]'``` | ```'[5, 4, 3, 2, 1]'``` |
+|```'test6.people[*].first'``` | ```"['James', 'Jacob', 'Jayden']"``` |
+|```'test6.people[:2].first'``` | ```"['James', 'Jacob']"``` |
+|```'test6.people[*].first | [0]'``` | ```'James'``` |
+|```'test7.ops.*.numArgs'``` | ```'[2, 3]'``` |
+|```'test8.reservations[*].instances[*].state'``` | ```"[['running', 'stopped'], ['terminated', 'runnning']]"``` |
+|```'test9[]'``` | ```'[0, 1, 2, 3, 4, 5, [6, 7]]'``` |
+|```"test10.machines[?state=='running'].name"``` | ```"['a', 'c']"``` |
+|```"test10.machines[?state!='running'][name, state] | [0]"``` | ```"['b', 'stopped']"``` |
+|```'length(test11.people)'``` | ```3``` |
+|```'max_by(test11.people, &age).name'``` | ```'a'``` |
+|```"test12.myarray[?contains(@, 'foo') == `true`]"``` | ```"['foo', 'foobar', 'barfoo', 'barfoobaz']"``` |
 
 ## Extractor: header
 This extracts the value of an HTTP header from the response. 
