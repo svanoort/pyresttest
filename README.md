@@ -1,6 +1,43 @@
 pyresttest
 ==========
 
+# Table of Contents
+
+- [What Is It?](#)
+- [Key Facts](#)
+- [System Requirements](#)
+- [Sample Test](#)
+- [Examples](#)
+- [How Do I Get It?](#)
+- [How Do I Use It?](#)
+	- [Running A Simple Test](#)
+	- [Using JSON Validation](#)
+	- [Interactive Mode](#)
+	- [Verbose Output](#)
+- [Other Goodies](#)
+- [Basic Test Set Syntax](#)
+	- [Import example](#)
+	- [Url Test](#)
+	- [Custom HTTP Options (special curl settings)](#)
+	- [Syntax Limitations](#)
+- [Benchmarking?](#)
+	- [Metrics](#)
+	- [Benchmark report formats:](#)
+- [Installation: Troubleshooting and Special Cases](#)
+- [Curl ConfigurationError on Pip Install](#)
+- [Installation without Pip](#)
+	- [Cannot find pycurl, or yaml](#)
+	- [Pure RPM-based install?](#)
+	- [Building the RPM:](#)
+		- [Installing from RPM](#)
+	- [Building an RPM for RHEL 6/CentOS 6](#)
+- [Project Policies](#)
+- [FAQ](#)
+	- [Why not pure-python tests?](#)
+	- [Why YAML and not XML/JSON?](#)
+	- [Does it do load tests?](#)
+- [Feedback and Contributions](#)
+
 # What Is It?
 - A REST testing and API microbenchmarking tool
 - Tests are defined in basic YAML or JSON config files, no code needed
@@ -381,7 +418,7 @@ sudo yum install rpm-build
 - Adding load testing features would greatly increase complexity
 - But some form might come eventually!
 
-## Feedback
+# Feedback and Contributions
 We welcome any feedback you have, including pull requests, reported issues, etc!
 **For new contributors** there are a whole set of issues labelled with [help wanted](https://github.com/svanoort/pyresttest/labels/help%20wanted) which are excellent starting points to offer a contribution! 
 
