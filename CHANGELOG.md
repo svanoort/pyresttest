@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.7.0 Unreleased but on master branch (tentative Pip release in December)
+**Features:**
+* JsonPath_Mini extractor supports ability to return the root response object now with the "." syntax -- thanks for the PR! https://github.com/svanoort/pyresttest/pull/106
+
 ## 1.6.0 Mon Oct 12 07:30:00 2015 -0400
 **Features:**
 * BETA: Add a type testing comparator to assist with validating request/header bodies

@@ -168,6 +168,27 @@ class ValidatorsTest(unittest.TestCase):
         val = validators.MiniJsonExtractor.query_dictionary(query, mydict)
         self.assertEqual('val', val)
 
+    def test_jsonpathmini_wholeobject(self):
+        """ Verify that the whole Json object can be returned by delimiter queries """
+
+        myobj = {'key': {'val': 3}}
+        query = ''
+        val = validators.MiniJsonExtractor.query_dictionary(query, myobj)
+        self.assertEqual(myobj, val)
+
+        myobj = [{'key': 'val'}, 3.0, {1: 'val'}]
+        val = validators.MiniJsonExtractor.query_dictionary(query, myobj)
+        self.assertEqual(myobj, val)
+        
+        query = '.'
+        val = validators.MiniJsonExtractor.query_dictionary(query, myobj)
+        self.assertEqual(myobj, val)
+
+        query = '..'
+        val = validators.MiniJsonExtractor.query_dictionary(query, myobj)
+        self.assertEqual(myobj, val)
+                
+
     def test_parse_extractor_minijson(self):
         config = 'key.val'
         extractor = validators.MiniJsonExtractor.parse(config)
