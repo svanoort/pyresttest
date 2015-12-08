@@ -3,40 +3,30 @@ pyresttest
 
 # Table of Contents
 
-- [What Is It?](#)
-- [Key Facts](#)
-- [System Requirements](#)
-- [Sample Test](#)
-- [Examples](#)
-- [How Do I Get It?](#)
-- [How Do I Use It?](#)
-	- [Running A Simple Test](#)
-	- [Using JSON Validation](#)
-	- [Interactive Mode](#)
-	- [Verbose Output](#)
-- [Other Goodies](#)
-- [Basic Test Set Syntax](#)
-	- [Import example](#)
-	- [Url Test](#)
-	- [Custom HTTP Options (special curl settings)](#)
-	- [Syntax Limitations](#)
-- [Benchmarking?](#)
-	- [Metrics](#)
-	- [Benchmark report formats:](#)
-- [Installation: Troubleshooting and Special Cases](#)
-- [Curl ConfigurationError on Pip Install](#)
-- [Installation without Pip](#)
-	- [Cannot find pycurl, or yaml](#)
-	- [Pure RPM-based install?](#)
-	- [Building the RPM:](#)
-		- [Installing from RPM](#)
-	- [Building an RPM for RHEL 6/CentOS 6](#)
-- [Project Policies](#)
-- [FAQ](#)
-	- [Why not pure-python tests?](#)
-	- [Why YAML and not XML/JSON?](#)
-	- [Does it do load tests?](#)
-- [Feedback and Contributions](#)
+- [What Is It?](#what-is-it)
+- [Key Facts](#key-facts)
+- [System Requirements](#system-requirements)
+- [Sample Test](#sample-test)
+- [Examples](#examples)
+- [How Do I Get It?](#how-do-i-get-it)
+- [How Do I Use It?](#how-do-i-use-it)
+	- [Running A Simple Test](#running-a-simple-test)
+	- [Using JSON Validation](#using-json-validation)
+	- [Interactive Mode](#interactive-mode)
+	- [Verbose Output](#verbose-output)
+- [Other Goodies](#other-goodies)
+- [Basic Test Set Syntax](#basic-test-syntax)
+	- [Import example](#import-example)
+	- [Url Test](#url-test)
+	- [Custom HTTP Options (special curl settings)](#custom-http-options-special-curl-settings)
+	- [Syntax Limitations](#syntax-limitations)
+- [Benchmarking?](#benchmarking)
+	- [Metrics](#metrics)
+	- [Benchmark report formats:](#benchmark-report-formats)
+- [Installation: Troubleshooting and Special Cases](#installation-troubleshooting-and-special-cases)
+- [Project Policies](#project-policies)
+- [FAQ](#faq)
+- [Feedback and Contributions](#feedback-and-contributions)
 
 # What Is It?
 - A REST testing and API microbenchmarking tool
@@ -328,7 +318,7 @@ Samples:
 
 # Installation: Troubleshooting and Special Cases
 
-# Curl ConfigurationError on Pip Install
+## Curl ConfigurationError on Pip Install
 If you get an error like this on installation:
 ```__main__.ConfigurationError: Could not run curl-config: [Errno 2] No such file or directory```
 
@@ -337,7 +327,7 @@ Then the PyCurl installation is broken.  This is easily fixed by installing need
 - On Ubuntu/Debian: `sudo apt-get install libcurl4-openssl-dev`
 - On CentOS/RHEL: `yum install libcurl-devel`
 
-# Installation without Pip
+## Installation without Pip
 ```
 git clone https://github.com/svanoort/pyresttest.git
 cd pyresttest
