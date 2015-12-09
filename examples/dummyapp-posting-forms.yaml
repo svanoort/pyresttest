@@ -1,0 +1,27 @@
+# Demonstrate POSTing form data, since most examples are JSON
+# Per issue: https://github.com/svanoort/pyresttest/issues/115
+
+# PyRestTest takes a very low-level approach to support
+# submitting request bodies with everything from JSON to images.
+# From its point of view, it's just binary data with a header.
+
+# This means that for form data, we will have to manually concatenate fields,
+# add separators, and do url encoding as appropriate
+# Per: https://en.wikipedia.org/wiki/POST_(HTTP)#Use_for_submitting_web_forms
+# Eventually this will get a helper method (not yet though)
+
+# The test below will post these form data elements:
+# data = {'Name': 'Gareth Wylie',
+#   'Age': 24,
+#   'Formula': 'a + b == 13%!'
+# }
+
+---
+- config:
+    - testset: "Submitting form data"
+- test:
+    - name: 'POST some form data!'
+    - method: 'POST'
+    - url: '/form-api'
+    - body: 'Name=Gareth+Wylie&Age=24&Formula=a+%2B+b+%3D%3D+13%25%21'
+    - headers: {'Content-Type': 'application/x-www-form-urlencoded'}
