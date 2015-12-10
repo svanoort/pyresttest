@@ -1,4 +1,3 @@
-import string
 import os
 import sys
 from parsing import *
@@ -53,7 +52,7 @@ class ContentHandler:
                 return data
         else:
             if self.is_template_content and context:
-                return string.Template(self.content).safe_substitute(context.get_values())
+                return safe_substitute_unicode_template(self.content, context.get_values())
             else:
                 return self.content
 
