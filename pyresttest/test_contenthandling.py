@@ -155,6 +155,14 @@ class ContentHandlerTest(unittest.TestCase):
         self.assertFalse(handler.is_template_path)
         self.assertTrue(handler.is_template_content)
 
+    def test_parse_content_template_unicode(self):
+        """ Unicode parsing tests """
+        node = {'template': u'myval 😽 $var'}
+        handler = ContentHandler.parse_content(node)
+        context = Context()
+        context.bind_variable('var', 'cheese')
+        self.assertEqual(u'myval 😽 cheese', handler.get_content(context))
+
     def test_parse_content_templated_file_path(self):
         """ Test parsing of templated file path """
         node = {'file': {'template': '/$host-path.yaml'}}
