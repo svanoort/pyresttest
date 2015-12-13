@@ -26,22 +26,24 @@
     - validators:
         - compare: {'jsonpath_mini':'first_name', 'comparator':'eq', 'expected':'my指事字name'}
         - compare: {'jsonpath_mini':'first_name', 'comparator':'eq', 'expected':{template: "$firstname2"}}
+# Below needs RFC3986 IRI to URI conversion support to work (there are libraries for this)
+# See: http://www.ietf.org/rfc/rfc3986.txt
 #- test:
 #    - name: "Let's try using unicode URL"
 #    - url: '/api/person/?login=指字'
 #    - validators:
-#        - assert: {'jsonpath_mini':'objects.0', 'test':'exists'}
+#        - assertTrue: {'jsonpath_mini':'objects.0', 'test':'exists'}
 #        - compare: {'jsonpath_mini':'objects.0.first_name', 'expected':'指事字'}
 #- test:
 #    - name: "Using a unicode template for the url"
 #    - variable_binds: {'myname': '指字'}
 #    - url: {template: '/api/person/?login=$myname'}
 #    - validators:
-#        - assert: {'jsonpath_mini':'objects.0', 'test':'exists'}
+#        - assertTrue: {'jsonpath_mini':'objects.0', 'test':'exists'}
 #        - compare: {'jsonpath_mini':'objects.0.first_name', 'expected':'指事字'}
 #- test:
 #    - name: "Unicode template for the expected value"
 #    - url: {template: '/api/person/?login=指字'}
 #    - validators:
-#        - assert: {'jsonpath_mini':'objects.0', 'test':'exists'}
+#        - assertTrue: {'jsonpath_mini':'objects.0', 'test':'exists'}
 #        - compare: {'jsonpath_mini':'objects.0.first_name', 'expected': {template: '$firstname'}}

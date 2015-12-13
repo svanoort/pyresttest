@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import unittest
 import string
 from tests import *
@@ -10,48 +12,106 @@ except:
     from unittest import mock
 
 
+# Python 3 compatibility shims
+from six import binary_type
+from six import text_type
+from six import string_types
+
 class TestsTest(unittest.TestCase):
     """ Testing for basic REST test methods, how meta! """
+
+    # Parsing methods
+    def test_coerce_to_string(self):
+        self.assertEqual(u'1', coerce_to_string(1))
+        self.assertEqual(u'stuff', coerce_to_string(u'stuff'))
+        self.assertEqual(u'stuff', coerce_to_string('stuff'))
+        self.assertEqual(u'st😽uff', coerce_to_string(u'st😽uff'))
+
+        try:
+            blah = coerce_to_string({'key': 'value'})
+            self.fail('Coercing to string should fail given a non-string or integer type')
+        except:
+            pass
+
+        try:
+            blah = coerce_to_string(None)
+            self.fail('Coercing to string should fail given a None type')
+        except:
+            pass
+
+    def test_coerce_string_to_ascii(self):
+        self.assertEqual(binary_type('stuff'), coerce_string_to_ascii(u'stuff'))
+
+        try:
+            blah = coerce_string_to_ascii(u'st😽uff')
+            self.fail('Coercing to ASCII string should fail for non-ASCII data')
+        except:
+            pass
+
+        try:
+            blah = coerce_string_to_ascii(1)
+            self.fail('Coercing to ASCII string should fail given a non-string type')
+        except:
+            pass
+
+        try:
+            blah = coerce_string_to_ascii(None)
+            self.fail('Coercing to string should fail given a None type')
+        except:
+            pass
+
+    def test_coerce_list_of_ints(self):
+        self.assertEqual([1], coerce_list_of_ints(1))
+        self.assertEqual([2], coerce_list_of_ints('2'))
+        self.assertEqual([18], coerce_list_of_ints(u'18'))
+        self.assertEqual([1, 2], coerce_list_of_ints([1, 2]))
+        self.assertEqual([1, 2], coerce_list_of_ints([1, '2']))
+
+        try:
+            val = coerce_list_of_ints('goober')
+            fail("Shouldn't allow coercing a random string to a list of ints")
+        except:
+            pass
 
     def test_parse_test(self):
         """ Test basic ways of creating test objects from input object structure """
         # Most basic case
-        input = {"url": "/ping", "method": "DELETE", "NAME": "foo", "group": "bar",
+        myinput = {"url": "/ping", "method": "DELETE", "NAME": "foo", "group": "bar",
                  "body": "<xml>input</xml>", "headers": {"Accept": "Application/json"}}
-        test = Test.parse_test('', input)
-        self.assertTrue(test.url == input['url'])
-        self.assertTrue(test.method == input['method'])
-        self.assertTrue(test.name == input['NAME'])
-        self.assertTrue(test.group == input['group'])
-        self.assertTrue(test.body == input['body'])
+        test = Test.parse_test('', myinput)
+        self.assertEqual(test.url,  myinput['url'])
+        self.assertEqual(test.method, myinput['method'])
+        self.assertEqual(test.name, myinput['NAME'])
+        self.assertEqual(test.group, myinput['group'])
+        self.assertEqual(test.body, myinput['body'])
         # Test headers match
         self.assertFalse(set(test.headers.values()) ^
-                         set(input['headers'].values()))
+                         set(myinput['headers'].values()))
 
         # Happy path, only gotcha is that it's a POST, so must accept 200 or
         # 204 response code
-        input = {"url": "/ping", "meThod": "POST"}
-        test = Test.parse_test('', input)
-        self.assertTrue(test.url == input['url'])
-        self.assertTrue(test.method == input['meThod'])
+        myinput = {"url": "/ping", "meThod": "POST"}
+        test = Test.parse_test('', myinput)
+        self.assertTrue(test.url == myinput['url'])
+        self.assertTrue(test.method == myinput['meThod'])
         self.assertTrue(test.expected_status == [200, 201, 204])
 
         # Authentication
-        input = {"url": "/ping", "method": "GET",
+        myinput = {"url": "/ping", "method": "GET",
                  "auth_username": "foo", "auth_password": "bar"}
-        test = Test.parse_test('', input)
-        self.assertTrue(test.auth_username == input['auth_username'])
-        self.assertTrue(test.auth_password == input['auth_password'])
+        test = Test.parse_test('', myinput)
+        self.assertTrue(test.auth_username == myinput['auth_username'])
+        self.assertTrue(test.auth_password == myinput['auth_password'])
         self.assertTrue(test.expected_status == [200])
 
         # Test that headers propagate
-        input = {"url": "/ping", "method": "GET",
+        myinput = {"url": "/ping", "method": "GET",
                  "headers": [{"Accept": "application/json"}, {"Accept-Encoding": "gzip"}]}
-        test = Test.parse_test('', input)
+        test = Test.parse_test('', myinput)
         expected_headers = {"Accept": "application/json",
                             "Accept-Encoding": "gzip"}
 
-        self.assertTrue(test.url == input['url'])
+        self.assertTrue(test.url == myinput['url'])
         self.assertTrue(test.method == 'GET')
         self.assertTrue(test.expected_status == [200])
         self.assertTrue(isinstance(test.headers, dict))
@@ -61,9 +121,9 @@ class TestsTest(unittest.TestCase):
                          set(expected_headers.values()))
 
         # Test expected status propagates and handles conversion to integer
-        input = [{"url": "/ping"}, {"name": "cheese"},
+        myinput = [{"url": "/ping"}, {"name": "cheese"},
                  {"expected_status": ["200", 204, "202"]}]
-        test = Test.parse_test('', input)
+        test = Test.parse_test('', myinput)
         self.assertTrue(test.name == "cheese")
         self.assertTrue(test.expected_status == [200, 204, 202])
         self.assertFalse(test.is_context_modifier())

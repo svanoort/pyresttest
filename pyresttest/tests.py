@@ -17,6 +17,12 @@ except:
     except ImportError:
         from io import BytesIO as MyIO
 
+# Python 2/3 switches
+if sys.version_info[0] > 2:
+    import urllib.parse as urlparse
+else:
+    import urlparse
+
 # Python 3 compatibility shims
 from six import binary_type
 from six import text_type
@@ -41,6 +47,38 @@ HTTP_METHODS = {u'GET': pycurl.HTTPGET,
                 u'POST': pycurl.POST,
                 u'DELETE': 'DELETE'}
 
+# Parsing helper functions
+def coerce_to_string(val):
+    if isinstance(val, text_type):
+        return val
+    elif isinstance(val, int):
+        return text_type(val)
+    elif isinstance(val, binary_type):
+        return val.decode('utf-8')
+    else:
+        raise TypeError("Input {0} is not a string or integer, and it needs to be!".format(val))
+
+def coerce_string_to_ascii(val):
+    if isinstance(val, text_type):
+        return val.encode('ascii')
+    elif isinstance(val, binary_type):
+        return val
+    else:
+        raise TypeError("Input {0} is not a string, string expected".format(val))
+
+def coerce_http_method(val):
+    try:
+        assert isinstance(val, string_types) and len(val) > 0
+    except AssertionError:
+        raise TypeError("Invalid HTTP method name: input {0} is not a string or has 0 length".format(val))
+    return text_type(val, 'UTF-8').upper()
+
+def coerce_list_of_ints(val):
+    """ If single value, try to parse as integer, else try to parse as list of integer """
+    if isinstance(val, list):
+        return [int(x) for x in val]
+    else:
+        return [int(val)]
 
 class Test(object):
     """ Describes a REST test """
@@ -336,35 +374,7 @@ class Test(object):
         # Clean up for easy parsing
         node = lowercase_keys(flatten_dictionaries(node))
 
-        def coerce_to_string(val):
-            try:
-                assert isinstance(val, string_types) or isinstance(val, int)  # TODO see if this even accepts an int
-            except AssertionError:
-                raise TypeError("Input {0} is not a string or integer, and it needs to be!".format(val))
-            return text_type(val, 'UTF-8')
 
-        def coerce_string_to_ascii(val):
-            try:
-                assert isinstance(val, string_types)
-            except AssertionError:
-                raise TypeError("Input {0} is not a string, string expected".format(val))
-
-            # FIXME needs to force always unicode output from string
-            return text_type(val, 'UTF-8').encode('ascii', 'ignore')
-
-        def coerce_http_method(val):
-            try:
-                assert isinstance(val, string_types) and len(val) > 0
-            except AssertionError:
-                raise TypeError("Invalid HTTP method name: input {0} is not a string or has 0 length".format(val))
-            return text_type(val, 'UTF-8').upper()
-
-        def coerce_list_of_ints(val):
-            """ If single value, try to parse as integer, else try to parse as list of integer """
-            if isinstance(val, list):
-                return [int(x) for x in val]
-            else:
-                return [int(val)]
 
         # Simple table of variable name, coerce function, and optionally special store function
         CONFIG_ELEMENTS = {
@@ -418,16 +428,12 @@ class Test(object):
                     # Template is used for URL
                     val = lowercase_keys(configvalue)[u'template']
                     assert isinstance(val, string_types) or isinstance(val, int)
-                    # FIXME TODO replace with proper URL section joining taking unicode inputs
-                    url = base_url + \
-                        text_type(val, 'UTF-8').encode('ascii', 'ignore')
+                    url = urlparse.urljoin(base_url, coerce_to_string(val))
                     mytest.set_url(url, isTemplate=True)
                 else:
                     assert isinstance(configvalue, string_types) or isinstance(
                         configvalue, int)
-                    # FIXME TODO replace with proper URL section joining taking unicode inputs
-                    mytest.url = base_url + \
-                        text_type(configvalue, 'UTF-8').encode('ascii', 'ignore')
+                    mytest.url = urlparse.urljoin(base_url, coerce_to_string(configvalue))
             elif configelement == u'extract_binds':
                 # Add a list of extractors, of format:
                 # {variable_name: {extractor_type: extractor_config}, ... }
