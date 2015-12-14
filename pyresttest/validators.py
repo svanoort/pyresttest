@@ -8,8 +8,13 @@ import os
 import re
 import sys
 
+# Python 3 compatibility shims
+from six import binary_type
+from six import text_type
+
 # Python 3 compatibility
-if sys.version_info[0] > 2:
+PYTHON_MAJOR_VERSION = sys.version_info[0]
+if PYTHON_MAJOR_VERSION > 2:
     from past.builtins import basestring
     from past.builtins import long
 
@@ -224,6 +229,9 @@ class MiniJsonExtractor(AbstractExtractor):
     is_body_extractor = True
 
     def extract_internal(self, query=None, args=None, body=None, headers=None):
+        if PYTHON_MAJOR_VERSION > 2 and isinstance(body, binary_type):
+            body = text_type(body, 'utf-8')  # Default JSON encoding
+
         try:
             body = json.loads(body)
             return self.query_dictionary(query, body)

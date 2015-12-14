@@ -6,16 +6,16 @@ from tests import *
 from binding import Context
 from contenthandling import ContentHandler
 import generators
-try:
-    import mock
-except:
-    from unittest import mock
 
+PYTHON_MAJOR_VERSION = sys.version_info[0]
+if PYTHON_MAJOR_VERSION > 2:
+    from unittest import mock
+else:
+    import mock
 
 # Python 3 compatibility shims
 from six import binary_type
 from six import text_type
-from six import string_types
 
 class TestsTest(unittest.TestCase):
     """ Testing for basic REST test methods, how meta! """
@@ -26,39 +26,24 @@ class TestsTest(unittest.TestCase):
         self.assertEqual(u'stuff', coerce_to_string(u'stuff'))
         self.assertEqual(u'stuff', coerce_to_string('stuff'))
         self.assertEqual(u'st😽uff', coerce_to_string(u'st😽uff'))
+        self.assertRaises(TypeError, coerce_to_string, {'key': 'value'})
+        self.assertRaises(TypeError, coerce_to_string, None)
 
-        try:
-            blah = coerce_to_string({'key': 'value'})
-            self.fail('Coercing to string should fail given a non-string or integer type')
-        except:
-            pass
 
-        try:
-            blah = coerce_to_string(None)
-            self.fail('Coercing to string should fail given a None type')
-        except:
-            pass
+    def test_coerce_http_method(self):
+        self.assertEqual(u'HEAD', coerce_http_method(u'hEaD'))
+        self.assertEqual(u'HEAD', coerce_http_method(b'hEaD'))
+        self.assertRaises(TypeError, coerce_http_method, 5)
+        self.assertRaises(TypeError, coerce_http_method, None)
+        self.assertRaises(TypeError, coerce_http_method, u'')
+
 
     def test_coerce_string_to_ascii(self):
-        self.assertEqual(binary_type('stuff'), coerce_string_to_ascii(u'stuff'))
+        self.assertEqual(b'stuff', coerce_string_to_ascii(u'stuff'))
+        self.assertRaises(UnicodeEncodeError, coerce_string_to_ascii, u'st😽uff')
+        self.assertRaises(TypeError, coerce_string_to_ascii, 1)
+        self.assertRaises(TypeError, coerce_string_to_ascii, None)
 
-        try:
-            blah = coerce_string_to_ascii(u'st😽uff')
-            self.fail('Coercing to ASCII string should fail for non-ASCII data')
-        except:
-            pass
-
-        try:
-            blah = coerce_string_to_ascii(1)
-            self.fail('Coercing to ASCII string should fail given a non-string type')
-        except:
-            pass
-
-        try:
-            blah = coerce_string_to_ascii(None)
-            self.fail('Coercing to string should fail given a None type')
-        except:
-            pass
 
     def test_coerce_list_of_ints(self):
         self.assertEqual([1], coerce_list_of_ints(1))
@@ -92,17 +77,17 @@ class TestsTest(unittest.TestCase):
         # 204 response code
         myinput = {"url": "/ping", "meThod": "POST"}
         test = Test.parse_test('', myinput)
-        self.assertTrue(test.url == myinput['url'])
-        self.assertTrue(test.method == myinput['meThod'])
-        self.assertTrue(test.expected_status == [200, 201, 204])
+        self.assertEqual(test.url, myinput['url'])
+        self.assertEqual(test.method, myinput['meThod'])
+        self.assertEqual(test.expected_status, [200, 201, 204])
 
         # Authentication
         myinput = {"url": "/ping", "method": "GET",
                  "auth_username": "foo", "auth_password": "bar"}
         test = Test.parse_test('', myinput)
-        self.assertTrue(test.auth_username == myinput['auth_username'])
-        self.assertTrue(test.auth_password == myinput['auth_password'])
-        self.assertTrue(test.expected_status == [200])
+        self.assertEqual('foo', myinput['auth_username'])
+        self.assertEqual('bar', myinput['auth_password'])
+        self.assertEqual(test.expected_status, [200])
 
         # Test that headers propagate
         myinput = {"url": "/ping", "method": "GET",
@@ -111,9 +96,9 @@ class TestsTest(unittest.TestCase):
         expected_headers = {"Accept": "application/json",
                             "Accept-Encoding": "gzip"}
 
-        self.assertTrue(test.url == myinput['url'])
-        self.assertTrue(test.method == 'GET')
-        self.assertTrue(test.expected_status == [200])
+        self.assertEqual(test.url, myinput['url'])
+        self.assertEqual(test.method, 'GET')
+        self.assertEqual(test.expected_status, [200])
         self.assertTrue(isinstance(test.headers, dict))
 
         # Test no header mappings differ
@@ -124,8 +109,8 @@ class TestsTest(unittest.TestCase):
         myinput = [{"url": "/ping"}, {"name": "cheese"},
                  {"expected_status": ["200", 204, "202"]}]
         test = Test.parse_test('', myinput)
-        self.assertTrue(test.name == "cheese")
-        self.assertTrue(test.expected_status == [200, 204, 202])
+        self.assertEqual(test.name, "cheese")
+        self.assertEqual(test.expected_status, [200, 204, 202])
         self.assertFalse(test.is_context_modifier())
 
     def test_parse_nonstandard_http_method(self):
@@ -173,13 +158,17 @@ class TestsTest(unittest.TestCase):
         except ValueError:
             pass
 
+    @unittest.skipIf(PYTHON_MAJOR_VERSION > 2,
+        reason="In python 3 we can't override the setopt method this way or by setattr, so mocks fail")
     def test_use_custom_curl(self):
         """ Test that test method really does configure correctly """
         test = Test()
         test.curl_options = {'FOLLOWLOCATION': True, 'MAXREDIRS': 5}
         mock_handle = pycurl.Curl()
+
         mock_handle.setopt = mock.MagicMock(return_value=True)
         test.configure_curl(curl_handle=mock_handle)
+
         # print mock_handle.setopt.call_args_list  # Debugging
         mock_handle.setopt.assert_any_call(mock_handle.FOLLOWLOCATION, True)
         mock_handle.setopt.assert_any_call(mock_handle.MAXREDIRS, 5)

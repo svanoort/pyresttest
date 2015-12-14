@@ -7,6 +7,11 @@ from binding import Context
 class ValidatorsTest(unittest.TestCase):
     """ Testing for validators and extract functions """
 
+    def test_failure_obj(self):
+        """ Tests the basic boolean override here """
+        myfailure = validators.Failure()
+        self.assertFalse(myfailure)
+
     def test_contains_operators(self):
         """ Tests the contains / contained_by """
         cont_func = validators.COMPARATORS['contains']
@@ -269,7 +274,11 @@ class ValidatorsTest(unittest.TestCase):
         self.assertTrue(extractor.is_body_extractor)
         self.assertFalse(extractor.is_header_extractor)
 
-        bod = 'j1j21io312j3'
+        bod = u'j1j21io312j3'
+        val = extractor.extract(body=bod, headers='')
+        self.assertEqual(bod, val)
+
+        bod = b'j1j21io312j3'
         val = extractor.extract(body=bod, headers='')
         self.assertEqual(bod, val)
 
@@ -357,7 +366,11 @@ class ValidatorsTest(unittest.TestCase):
             'expected': 3
         }
         extractor = validators._get_extractor(config)
-        myjson = '{"key": {"val": 3}}'
+        myjson = u'{"key": {"val": 3}}'
+        extracted = extractor.extract(body=myjson)
+        self.assertEqual(3, extracted)
+
+        myjson = b'{"key": {"val": 3}}'
         extracted = extractor.extract(body=myjson)
         self.assertEqual(3, extracted)
 

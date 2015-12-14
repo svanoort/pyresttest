@@ -20,10 +20,14 @@ except:
     except ImportError:
         from io import BytesIO as MyIO
 
+ESCAPE_DECODING = 'string-escape'
 # Python 3 compatibility
-if sys.version_info[0] == 3:
+if sys.version_info[0] > 2:
     from past.builtins import basestring
     from builtins import range as xrange
+    ESCAPE_DECODING = 'unicode_escape'
+
+from six import text_type
 
 # Pyresttest internals
 from binding import Context
@@ -327,7 +331,7 @@ def run_test(mytest, test_config=TestConfig(), context=None):
     # Retrieve values
     result.body = body.getvalue()
     body.close()
-    result.response_headers = headers.getvalue()
+    result.response_headers = text_type(headers.getvalue(), 'ISO-8859-1')  # Per RFC 2616
     headers.close()
 
     response_code = curl.getinfo(pycurl.RESPONSE_CODE)
@@ -390,7 +394,7 @@ def run_test(mytest, test_config=TestConfig(), context=None):
     if test_config.print_bodies or not result.passed:
         if test_config.interactive:
             print("RESPONSE:")
-        print(result.body.decode("string-escape"))
+        print(result.body.decode(ESCAPE_DECODING))
 
     if test_config.print_headers or not result.passed:
         if test_config.interactive:

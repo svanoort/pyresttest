@@ -14,6 +14,10 @@ from binding import Context
 import resttest
 import validators
 
+# Python 2/3 compat shims
+from six import text_type
+from six import binary_type
+
 # Django testing settings, initial configuration
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "testapp.settings")
 djangopath = os.path.join(os.path.dirname(
@@ -230,8 +234,13 @@ class RestTestCase(unittest.TestCase):
         test2.url = self.prefix + '/api/person/?login=theadmiral'
         test_response2 = resttest.run_test(test2)
         self.assertTrue(test_response2.passed)
-        obj = json.loads(str(test_response2.body))
-        print(json.dumps(obj))
+
+        # Test JSON load/dump round trip on body
+        bod = test_response2.body
+        if isinstance(bod, binary_type):
+            bod = text_type(bod, 'utf-8')
+        print(json.dumps(json.loads(bod)))
+
 
     def test_delete(self):
         """ Try removing an item """

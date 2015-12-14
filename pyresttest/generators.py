@@ -8,9 +8,9 @@ from parsing import flatten_dictionaries, lowercase_keys, safe_to_bool
 import parsing
 
 # Python 3 compatibility
-if sys.version_info[0] == 3:
+if sys.version_info[0] > 2:
     from builtins import range as xrange
-from six import string_types
+    from past.builtins import basestring
 
 """ Collection of generators to be used in templating for test data
 
@@ -206,7 +206,7 @@ def register_generator(typename, parse_function):
         typename is the new generator type name (must not already exist)
         parse_function will parse a configuration object (dict)
     """
-    if not isinstance(typename, string_types):
+    if not isinstance(typename, basestring):
         raise TypeError(
             'Generator type name {0} is invalid, must be a string'.format(typename))
     if typename in GENERATOR_TYPES:

@@ -18,15 +18,18 @@ except:
         from io import BytesIO as MyIO
 
 # Python 2/3 switches
-if sys.version_info[0] > 2:
+PYTHON_MAJOR_VERSION = sys.version_info[0]
+if PYTHON_MAJOR_VERSION > 2:
     import urllib.parse as urlparse
+    from past.builtins import basestring
 else:
     import urlparse
 
 # Python 3 compatibility shims
 from six import binary_type
 from six import text_type
-from six import string_types
+from six import iteritems
+from six.moves import filter as ifilter
 
 """
 Pull out the Test objects and logic associated with them
@@ -67,11 +70,12 @@ def coerce_string_to_ascii(val):
         raise TypeError("Input {0} is not a string, string expected".format(val))
 
 def coerce_http_method(val):
-    try:
-        assert isinstance(val, string_types) and len(val) > 0
-    except AssertionError:
+    myval = val
+    if not isinstance(myval, basestring) or len(val) == 0:
         raise TypeError("Invalid HTTP method name: input {0} is not a string or has 0 length".format(val))
-    return text_type(val, 'UTF-8').upper()
+    if isinstance(myval, binary_type):
+        myval = myval.decode('utf-8')
+    return myval.upper()
 
 def coerce_list_of_ints(val):
     """ If single value, try to parse as integer, else try to parse as list of integer """
@@ -147,7 +151,7 @@ class Test(object):
         """ Read body from file, applying template if pertinent """
         if self._body is None:
             return None
-        elif isinstance(self._body, string_types):
+        elif isinstance(self._body, basestring):
             return self._body
         else:
             return self._body.get_content(context=context)
@@ -348,7 +352,8 @@ class Test(object):
         # Set custom curl options, which are KEY:VALUE pairs matching the pycurl option names
         # And the key/value pairs are set
         if self.curl_options:
-            for (key, value) in filter(lambda x: x[0] is not None and x[1] is not None, self.curl_options.items()):
+            filterfunc = lambda x: x[0] is not None and x[1] is not None  # Must have key and value
+            for (key, value) in ifilter(filterfunc, self.curl_options.items()):
                 # getattr to look up constant for variable name
                 curl.setopt(getattr(curl, key), value)
         return curl
@@ -427,11 +432,11 @@ class Test(object):
                 if isinstance(configvalue, dict):
                     # Template is used for URL
                     val = lowercase_keys(configvalue)[u'template']
-                    assert isinstance(val, string_types) or isinstance(val, int)
+                    assert isinstance(val, basestring) or isinstance(val, int)
                     url = urlparse.urljoin(base_url, coerce_to_string(val))
                     mytest.set_url(url, isTemplate=True)
                 else:
-                    assert isinstance(configvalue, string_types) or isinstance(
+                    assert isinstance(configvalue, basestring) or isinstance(
                         configvalue, int)
                     mytest.url = urlparse.urljoin(base_url, coerce_to_string(configvalue))
             elif configelement == u'extract_binds':
@@ -448,10 +453,11 @@ class Test(object):
                     if len(extractor) > 1:
                         raise ValueError(
                             "Cannot define multiple extractors for given variable name")
-                    extractor_type, extractor_config = extractor.items()[0]
-                    extractor = validators.parse_extractor(
-                        extractor_type, extractor_config)
-                    mytest.extract_binds[variable_name] = extractor
+
+                    # Safe because length can only be 1
+                    for extractor_type, extractor_config in extractor.items():
+                        mytest.extract_binds[variable_name] = validators.parse_extractor(extractor_type, extractor_config)
+
 
             elif configelement == u'validators':
                 # Add a list of validators
@@ -476,8 +482,8 @@ class Test(object):
                 configvalue = flatten_dictionaries(configvalue)
 
                 if isinstance(configvalue, dict):
-                    templates = filter(lambda x: str(
-                        x[0]).lower() == 'template', configvalue.items())
+                    filterfunc  = lambda x: str(x[0]).lower() == 'template'  # Templated items
+                    templates = [x for x in ifilter(filterfunc, configvalue.items())]
                 else:
                     templates = None
 

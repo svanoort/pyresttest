@@ -4,8 +4,11 @@ import string
 # Python 3 compatibility shims
 from six import binary_type
 from six import text_type
-from six import string_types
+
+# Python 2/3 switches
 PYTHON_MAJOR_VERSION = sys.version_info[0]
+if PYTHON_MAJOR_VERSION > 2:
+    from past.builtins import basestring
 
 """
 Parsing utilities, pulled out so they can be used in multiple modules
@@ -15,7 +18,7 @@ def encode_unicode_bytes(my_string):
     """ Shim function, converts Unicode to UTF-8 encoded bytes regardless of the source format
         Intended for python 3 compatibility mode, and b/c PyCurl only takes raw bytes
     """
-    if not isinstance(my_string, string_types):
+    if not isinstance(my_string, basestring):
         my_string = repr(my_string)
 
     # TODO refactor this to use six types
@@ -86,9 +89,9 @@ def safe_to_bool(input):
       If it's not a boolean or string that matches 'false' or 'true' when ignoring case, throws an exception """
     if isinstance(input, bool):
         return input
-    elif isinstance(input, string_types) and input.lower() == u'false':
+    elif isinstance(input, basestring) and input.lower() == u'false':
         return False
-    elif isinstance(input, string_types) and input.lower() == u'true':
+    elif isinstance(input, basestring) and input.lower() == u'true':
         return True
     else:
         raise TypeError(
