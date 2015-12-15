@@ -393,7 +393,7 @@ sudo yum install rpm-build
 # FAQ
 
 ## Why not pure-python tests?
-- This is written for an environment where Python is not the sole or primary langauge
+- This is written for an environment where Python is not the sole or primary language
 - **You totally can do pure-Python tests if you want!**  
     - [Extensions](extensions.md) provide a stable API for adding more complex functionality in python
     - All modules can be imported and used as libraries
