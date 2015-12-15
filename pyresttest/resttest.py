@@ -687,11 +687,11 @@ def run_testsets(testsets):
         failures = group_failure_counts[group]
         total_failures = total_failures + failures
         if (failures > 0):
-            print(u'Test Group ' + group + u' FAILED: ' + str((test_count -
-                                                               failures)) + '/' + str(test_count) + u' Tests Passed!')
+            print('\033[91m' + u'Test Group ' + group + u' FAILED: ' +
+                  str((test_count - failures)) + '/' + str(test_count) + u' Tests Passed!' + '\033[0m')
         else:
-            print(u'Test Group ' + group + u' SUCCEEDED: ' + str((test_count -
-                                                                  failures)) + '/' + str(test_count) + u' Tests Passed!')
+            print('\033[92m' + u'Test Group ' + group + u' SUCCEEDED: ' +
+                  str((test_count - failures)) + '/' + str(test_count) + u' Tests Passed!' + '\033[0m')
 
     return total_failures
 
