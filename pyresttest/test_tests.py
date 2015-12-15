@@ -158,10 +158,15 @@ class TestsTest(unittest.TestCase):
         except ValueError:
             pass
 
-    @unittest.skipIf(PYTHON_MAJOR_VERSION > 2,
-        reason="In python 3 we can't override the setopt method this way or by setattr, so mocks fail")
+    # We can't use version specific skipIf decorator b/c python 2.6 unittest lacks it
     def test_use_custom_curl(self):
         """ Test that test method really does configure correctly """
+        if PYTHON_MAJOR_VERSION > 2:
+            # In python 3, use of mocks for the curl setopt version (or via setattr)
+            # Will not modify the actual curl object... so test fails
+            print("Skipping test of CURL configuration for redirects because the mocks fail")
+            return
+
         test = Test()
         test.curl_options = {'FOLLOWLOCATION': True, 'MAXREDIRS': 5}
         mock_handle = pycurl.Curl()
