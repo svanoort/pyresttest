@@ -8,9 +8,9 @@ from parsing import flatten_dictionaries, lowercase_keys, safe_to_bool
 import parsing
 
 # Python 3 compatibility
-if sys.version_info[0] == 3:
-    from past.builtins import basestring
+if sys.version_info[0] > 2:
     from builtins import range as xrange
+    from past.builtins import basestring
 
 """ Collection of generators to be used in templating for test data
 

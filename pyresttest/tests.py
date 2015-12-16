@@ -10,16 +10,26 @@ from parsing import *
 
 # Find the best implementation available on this platform
 try:
-    from cStringIO import StringIO
+    from cStringIO import StringIO as MyIO
 except:
     try:
-        from StringIO import StringIO
+        from StringIO import StringIO as MyIO
     except ImportError:
-        from io import StringIO
+        from io import BytesIO as MyIO
 
-# Python 3 compatibility
-if sys.version_info[0] == 3:
+# Python 2/3 switches
+PYTHON_MAJOR_VERSION = sys.version_info[0]
+if PYTHON_MAJOR_VERSION > 2:
+    import urllib.parse as urlparse
     from past.builtins import basestring
+else:
+    import urlparse
+
+# Python 3 compatibility shims
+from six import binary_type
+from six import text_type
+from six import iteritems
+from six.moves import filter as ifilter
 
 """
 Pull out the Test objects and logic associated with them
@@ -40,6 +50,39 @@ HTTP_METHODS = {u'GET': pycurl.HTTPGET,
                 u'POST': pycurl.POST,
                 u'DELETE': 'DELETE'}
 
+# Parsing helper functions
+def coerce_to_string(val):
+    if isinstance(val, text_type):
+        return val
+    elif isinstance(val, int):
+        return text_type(val)
+    elif isinstance(val, binary_type):
+        return val.decode('utf-8')
+    else:
+        raise TypeError("Input {0} is not a string or integer, and it needs to be!".format(val))
+
+def coerce_string_to_ascii(val):
+    if isinstance(val, text_type):
+        return val.encode('ascii')
+    elif isinstance(val, binary_type):
+        return val
+    else:
+        raise TypeError("Input {0} is not a string, string expected".format(val))
+
+def coerce_http_method(val):
+    myval = val
+    if not isinstance(myval, basestring) or len(val) == 0:
+        raise TypeError("Invalid HTTP method name: input {0} is not a string or has 0 length".format(val))
+    if isinstance(myval, binary_type):
+        myval = myval.decode('utf-8')
+    return myval.upper()
+
+def coerce_list_of_ints(val):
+    """ If single value, try to parse as integer, else try to parse as list of integer """
+    if isinstance(val, list):
+        return [int(x) for x in val]
+    else:
+        return [int(val)]
 
 class Test(object):
     """ Describes a REST test """
@@ -249,11 +292,15 @@ class Test(object):
         curl.setopt(curl.URL, str(self.url))
         curl.setopt(curl.TIMEOUT, timeout)
 
+        is_unicoded = False
         bod = self.body
+        if isinstance(bod, text_type):  # Encode unicode
+            bod = bod.encode('UTF-8')
+            is_unicoded = True
 
         # Set read function for post/put bodies
         if bod and len(bod) > 0:
-            curl.setopt(curl.READFUNCTION, StringIO(bod).read)
+            curl.setopt(curl.READFUNCTION, MyIO(bod).read)
 
         if self.auth_username and self.auth_password:
             curl.setopt(pycurl.USERPWD, '%s:%s' %
@@ -280,8 +327,18 @@ class Test(object):
         elif self.method and self.method.upper() != 'GET':  # Support PATCH/HEAD/ETC
             curl.setopt(curl.CUSTOMREQUEST, self.method.upper())
 
+        # Template headers as needed and convert headers dictionary to list of header entries
         head = self.get_headers(context=context)
-        if head:  # Convert headers dictionary to list of header entries, tested and working
+        head = copy.copy(head)  # We're going to mutate it, need to copy
+
+        # Set charset if doing unicode conversion and not set explicitly
+        # TESTME
+        if is_unicoded and u'content-type' in head.keys():
+            content = head[u'content-type']
+            if u'charset' not in content:
+                head[u'content-type'] = content + u' ; charset=UTF-8'
+
+        if head:
             headers = [str(headername) + ':' + str(headervalue)
                        for headername, headervalue in head.items()]
         else:
@@ -295,7 +352,8 @@ class Test(object):
         # Set custom curl options, which are KEY:VALUE pairs matching the pycurl option names
         # And the key/value pairs are set
         if self.curl_options:
-            for (key, value) in filter(lambda x: x[0] is not None and x[1] is not None, self.curl_options.items()):
+            filterfunc = lambda x: x[0] is not None and x[1] is not None  # Must have key and value
+            for (key, value) in ifilter(filterfunc, self.curl_options.items()):
                 # getattr to look up constant for variable name
                 curl.setopt(getattr(curl, key), value)
         return curl
@@ -321,8 +379,53 @@ class Test(object):
         # Clean up for easy parsing
         node = lowercase_keys(flatten_dictionaries(node))
 
+
+
+        # Simple table of variable name, coerce function, and optionally special store function
+        CONFIG_ELEMENTS = {
+            # Simple variables
+            u'auth_username': [coerce_string_to_ascii],
+            u'auth_password': [coerce_string_to_ascii],
+            u'method': [coerce_http_method], # HTTP METHOD
+            u'delay': [lambda x: int(x)], # Delay before running
+            u'group': [coerce_to_string], # Test group name
+            u'name': [coerce_to_string],  # Test name
+            u'expected_status': [coerce_list_of_ints],
+            u'delay': [lambda x: int(x)],
+            u'stop_on_failure': [safe_to_bool],
+
+            # Templated / special handling
+            #u'url': [coerce_templatable, set_templated),  # TODO: special handling for templated content, sigh
+            u'body': [ContentHandler.parse_content]
+            #u'headers': [],
+
+            # COMPLEX PARSE OPTIONS
+            #u'extract_binds':[],  # Context variable-to-extractor output binding
+            #u'variable_binds': [],  # Context variable to value binding
+            #u'generator_binds': [],  # Context variable to generator output binding
+            #u'validators': [],  # Validation functions to run
+        }
+
+        def use_config_parser(configobject, configelement, configvalue):
+            """ Try to use parser bindings to find an option for parsing and storing config element
+                :configobject: Object to store configuration
+                :configelement: Configuratione element name
+                :configvalue: Value to use to set configuration
+                :returns: True if found match for config element, False if didn't
+            """
+
+            myparsing = CONFIG_ELEMENTS.get(configelement)
+            if myparsing:
+                converted = myparsing[0](configvalue)
+                setattr(configobject, configelement, converted)
+                return True
+            return False
+
         # Copy/convert input elements into appropriate form for a test object
         for configelement, configvalue in node.items():
+            if use_config_parser(mytest, configelement, configvalue):
+                continue
+
             # Configure test using configuration elements
             if configelement == u'url':
                 temp = configvalue
@@ -330,34 +433,12 @@ class Test(object):
                     # Template is used for URL
                     val = lowercase_keys(configvalue)[u'template']
                     assert isinstance(val, basestring) or isinstance(val, int)
-                    url = base_url + \
-                        unicode(val, 'UTF-8').encode('ascii', 'ignore')
+                    url = urlparse.urljoin(base_url, coerce_to_string(val))
                     mytest.set_url(url, isTemplate=True)
                 else:
                     assert isinstance(configvalue, basestring) or isinstance(
                         configvalue, int)
-                    mytest.url = base_url + \
-                        unicode(configvalue, 'UTF-8').encode('ascii', 'ignore')
-            elif configelement == u'auth_username':
-                assert isinstance(configvalue, basestring)
-                mytest.auth_username = unicode(
-                    configvalue, 'UTF-8').encode('ascii', 'ignore')
-            elif configelement == u'auth_password':
-                assert isinstance(configvalue, basestring)
-                mytest.auth_password = unicode(
-                    configvalue, 'UTF-8').encode('ascii', 'ignore')
-            elif configelement == u'method':  # Http method, converted to uppercase string
-                var = unicode(configvalue, 'UTF-8').upper()
-                assert isinstance(var, basestring) and len(var) > 0
-                mytest.method = var
-            elif configelement == u'group':  # Test group
-                assert isinstance(configvalue, basestring) or isinstance(
-                    configvalue, int)
-                mytest.group = unicode(configvalue, 'UTF-8')
-            elif configelement == u'name':  # Test name
-                assert isinstance(configvalue, basestring) or isinstance(
-                    configvalue, int)
-                mytest.name = unicode(configvalue, 'UTF-8')
+                    mytest.url = urlparse.urljoin(base_url, coerce_to_string(configvalue))
             elif configelement == u'extract_binds':
                 # Add a list of extractors, of format:
                 # {variable_name: {extractor_type: extractor_config}, ... }
@@ -372,10 +453,11 @@ class Test(object):
                     if len(extractor) > 1:
                         raise ValueError(
                             "Cannot define multiple extractors for given variable name")
-                    extractor_type, extractor_config = extractor.items()[0]
-                    extractor = validators.parse_extractor(
-                        extractor_type, extractor_config)
-                    mytest.extract_binds[variable_name] = extractor
+
+                    # Safe because length can only be 1
+                    for extractor_type, extractor_config in extractor.items():
+                        mytest.extract_binds[variable_name] = validators.parse_extractor(extractor_type, extractor_config)
+
 
             elif configelement == u'validators':
                 # Add a list of validators
@@ -395,16 +477,13 @@ class Test(object):
                             validator_type, validator_config)
                         mytest.validators.append(validator)
 
-            elif configelement == u'body':  # Read request body, as a ContentHandler
-                # Note: os.path.expandirs removed
-                mytest.body = ContentHandler.parse_content(configvalue)
             elif configelement == 'headers':  # HTTP headers to use, flattened to a single string-string dictionary
                 mytest.headers
                 configvalue = flatten_dictionaries(configvalue)
 
                 if isinstance(configvalue, dict):
-                    templates = filter(lambda x: str(
-                        x[0]).lower() == 'template', configvalue.items())
+                    filterfunc  = lambda x: str(x[0]).lower() == 'template'  # Templated items
+                    templates = [x for x in ifilter(filterfunc, configvalue.items())]
                 else:
                     templates = None
 
@@ -416,18 +495,6 @@ class Test(object):
                 else:
                     raise TypeError(
                         "Illegal header type: headers must be a dictionary or list of dictionary keys")
-
-            elif configelement == 'expected_status':  # List of accepted HTTP response codes, as integers
-                expected = list()
-                # If item is a single item, convert to integer and make a list of 1
-                # Otherwise, assume item is a list and convert to a list of
-                # integers
-                if isinstance(configvalue, list):
-                    for item in configvalue:
-                        expected.append(int(item))
-                else:
-                    expected.append(int(configvalue))
-                mytest.expected_status = expected
             elif configelement == 'variable_binds':
                 mytest.variable_binds = flatten_dictionaries(configvalue)
             elif configelement == 'generator_binds':
@@ -436,10 +503,6 @@ class Test(object):
                 for key, value in output.items():
                     output2[str(key)] = str(value)
                 mytest.generator_binds = output2
-            elif configelement == 'stop_on_failure':
-                mytest.stop_on_failure = safe_to_bool(configvalue)
-            elif configelement == 'delay':
-                mytest.delay = int(configvalue)
             elif configelement.startswith('curl_option_'):
                 curlopt = configelement.lstrip('curl_option_').upper()
                 if hasattr(BASECURL, curlopt):
@@ -449,9 +512,6 @@ class Test(object):
                 else:
                     raise ValueError(
                         "Illegal curl option: {0}".format(curlopt))
-
-        # tempcurl, we adjust defaults to be reasonable, if the user does not
-        # specify them
 
         # For non-GET requests, accept additional response codes indicating success
         # (but only if not expected statuses are not explicitly specified)

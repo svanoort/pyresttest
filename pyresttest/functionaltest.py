@@ -14,6 +14,10 @@ from binding import Context
 import resttest
 import validators
 
+# Python 2/3 compat shims
+from six import text_type
+from six import binary_type
+
 # Django testing settings, initial configuration
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "testapp.settings")
 djangopath = os.path.join(os.path.dirname(
@@ -209,9 +213,9 @@ class RestTestCase(unittest.TestCase):
         test_response2 = resttest.run_test(test2)
         self.assertTrue(test_response2.passed)
         self.assertTrue(
-            u'"last_name": "Adama"' in test_response2.unicode_body())
+            u'"last_name": "Adama"' in test_response2.body.decode('UTF-8'))
         self.assertTrue(
-            u'"login": "theadmiral"' in test_response2.unicode_body())
+            u'"login": "theadmiral"' in test_response2.body.decode('UTF-8'))
 
     def test_post(self):
         """ Test POST to create an item """
@@ -230,8 +234,13 @@ class RestTestCase(unittest.TestCase):
         test2.url = self.prefix + '/api/person/?login=theadmiral'
         test_response2 = resttest.run_test(test2)
         self.assertTrue(test_response2.passed)
-        obj = json.loads(str(test_response2.body))
-        print(json.dumps(obj))
+
+        # Test JSON load/dump round trip on body
+        bod = test_response2.body
+        if isinstance(bod, binary_type):
+            bod = text_type(bod, 'utf-8')
+        print(json.dumps(json.loads(bod)))
+
 
     def test_delete(self):
         """ Try removing an item """
@@ -255,7 +264,7 @@ class RestTestCase(unittest.TestCase):
         test2.url = self.prefix + '/api/person/?first_name__contains=Gaius'
         test_response2 = resttest.run_test(test2)
         self.assertTrue(test_response2.passed)
-        self.assertTrue(u'"objects": []' in test_response2.unicode_body())
+        self.assertTrue(u'"objects": []' in test_response2.body.decode('UTF-8'))
 
     def test_full_context_use(self):
         """ Read and execute test set  with context use, from file """
@@ -263,6 +272,19 @@ class RestTestCase(unittest.TestCase):
         # Get absolute path to test file, in the same folder as this test
         path = os.path.join(os.path.dirname(
             os.path.realpath(__file__)), 'content-test.yaml')
+        print(path)
+        tests = resttest.parse_testsets('http://localhost:8000', resttest.read_test_file(
+            path), working_directory=os.path.dirname(os.path.realpath(__file__)))
+        failures = resttest.run_testsets(tests)
+        self.assertTrue(
+            failures == 0, 'Simple tests failed where success expected')
+
+    def test_unicode_use(self):
+        """ Read and execute test set  with context use, from file """
+
+        # Get absolute path to test file, in the same folder as this test
+        path = os.path.join(os.path.dirname(
+            os.path.realpath(__file__)), 'unicode-test.yaml')
         print(path)
         tests = resttest.parse_testsets('http://localhost:8000', resttest.read_test_file(
             path), working_directory=os.path.dirname(os.path.realpath(__file__)))

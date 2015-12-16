@@ -1,4 +1,11 @@
+import sys
 from distutils.core import setup
+
+dependencies = ['pyyaml', 'pycurl']
+
+# Add additional compatibility shims
+if sys.version_info[0] > 2:
+  dependencies.append('future')
 
 setup(name='pyresttest',
       version='1.6.1.dev',
@@ -20,9 +27,9 @@ setup(name='pyresttest',
       ],
       py_modules=['pyresttest.resttest', 'pyresttest.generators', 'pyresttest.binding',
                   'pyresttest.parsing', 'pyresttest.validators', 'pyresttest.contenthandling',
-                  'pyresttest.benchmarks', 'pyresttest.tests', 'pyresttest.ext.validator_jsonschema'],
+                  'pyresttest.benchmarks', 'pyresttest.tests', 'pyresttest.ext.validator_jsonschema', 'pyresttest.six'],
       license='Apache License, Version 2.0',
-      install_requires=['pyyaml', 'pycurl'],
+      install_requires=dependencies,
       # Make this executable from command line when installed
       scripts=['util/pyresttest', 'util/resttest.py'],
       provides=['pyresttest']

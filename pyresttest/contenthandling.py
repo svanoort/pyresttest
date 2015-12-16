@@ -1,11 +1,12 @@
-import string
 import os
 import sys
 from parsing import *
 
-# Python 3 compatibility
-if sys.version_info[0] == 3:
+# Python 2/3 switches
+PYTHON_MAJOR_VERSION = sys.version_info[0]
+if PYTHON_MAJOR_VERSION > 2:
     from past.builtins import basestring
+
 
 """
 Encapsulates contend handling logic, for pulling file content into tests
@@ -53,7 +54,7 @@ class ContentHandler:
                 return data
         else:
             if self.is_template_content and context:
-                return string.Template(self.content).safe_substitute(context.get_values())
+                return safe_substitute_unicode_template(self.content, context.get_values())
             else:
                 return self.content
 

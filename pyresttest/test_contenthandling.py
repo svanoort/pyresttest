@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import unittest
 import string
 import os
@@ -12,6 +13,7 @@ class ContentHandlerTest(unittest.TestCase):
         """ Test content and templating of it """
         handler = ContentHandler()
         body = '$variable value'
+        templated_body = 'bar value'
         context = Context()
         context.bind_variable('variable', 'bar')
 
@@ -23,6 +25,33 @@ class ContentHandlerTest(unittest.TestCase):
         # Templating
         handler.setup(body, is_template_content=True)
         self.assertEqual(body, handler.get_content())
+        self.assertEqual(templated_body, handler.get_content(context))
+
+    def test_unicode_templating(self):
+        """ A couple combination of templating using Unicode data """
+        handler = ContentHandler()
+        context = Context()
+
+        # ASCII body, unicode data
+        body = '$variable value'
+        context.bind_variable('variable', u'😽')
+        handler.setup(body, is_template_content=True)
+        self.assertEqual(body, handler.get_content())
+        self.assertEqual(u'😽 value', handler.get_content(context))
+
+        # Unicode body, ASCII data
+        context.bind_variable('variable', u'string')
+        body = u'$variable 😽 value'
+        handler.setup(body, is_template_content=True)
+        self.assertEqual(u'$variable 😽 value', handler.get_content())
+        self.assertEqual(u'string 😽 value', handler.get_content(context))
+
+        # All the Unicodes, all the times!
+        context.bind_variable('variable', u'😽')
+        body = u'$variable 😽 value'
+        handler.setup(body, is_template_content=True)
+        self.assertEqual(u'😽 😽 value', handler.get_content(context))
+
 
     def test_content_file_template(self):
         """ Test file read and templating of read files in this directory """
@@ -125,6 +154,14 @@ class ContentHandlerTest(unittest.TestCase):
         self.assertFalse(handler.is_file)
         self.assertFalse(handler.is_template_path)
         self.assertTrue(handler.is_template_content)
+
+    def test_parse_content_template_unicode(self):
+        """ Unicode parsing tests """
+        node = {'template': u'myval 😽 $var'}
+        handler = ContentHandler.parse_content(node)
+        context = Context()
+        context.bind_variable('var', 'cheese')
+        self.assertEqual(u'myval 😽 cheese', handler.get_content(context))
 
     def test_parse_content_templated_file_path(self):
         """ Test parsing of templated file path """

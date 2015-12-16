@@ -4,16 +4,20 @@ from pyresttest.binding import Context
 import sys
 
 # Python 3 compatibility
-if sys.version_info[0] == 3:
+if sys.version_info[0] > 2:
     from past.builtins import basestring
-
+from pyresttest.six import text_type
+from pyresttest.six import binary_type
 
 class ContainsValidator(validators.AbstractValidator):
     # Sample validator that verifies a string is contained in the request body
     contains_string = None
 
     def validate(self, body=None, headers=None, context=None):
-        result = self.contains_string in body
+        if isinstance(body, binary_type) and isinstance(self.contains_string, text_type):
+            result = self.contains_string.encode('utf-8') in body
+        else:
+            result = self.contains_string in body
         if result:
             return True
         else:  # Return failure object with additional information

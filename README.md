@@ -44,11 +44,12 @@ Apache License, Version 2.0
 
 [![Join the chat at https://gitter.im/svanoort/pyresttest](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/svanoort/pyresttest?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-* [Changelog](CHANGELOG.md)
+[Changelog](CHANGELOG.md) shows the past and present, [milestones](https://github.com/svanoort/pyresttest/milestones) show the future roadmap.
+
+* The changelog will also show features/fixes currently merged to the master branch but not released to pip yet (pending installation tests across platforms). 
 
 # System Requirements
-- Linux or Mac OS X with python 2.6+ or 2.7 installed and pycurl working. See [Installation](#how-do-i-get-it)
-- Python 3 support is *coming* (alpha-quality support in the next release)
+- Linux or Mac OS X with python 2.6/2.7 or 3.3+ (alpha level support) and pycurl working. See [Installation](#how-do-i-get-it)
 - Do not use a virtualenv, this is currently unsupported due to issues with libcurl (PRs with tests welcome!)
 
 # Sample Test

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import unittest
 import validators
 from binding import Context
@@ -5,6 +6,11 @@ from binding import Context
 
 class ValidatorsTest(unittest.TestCase):
     """ Testing for validators and extract functions """
+
+    def test_failure_obj(self):
+        """ Tests the basic boolean override here """
+        myfailure = validators.Failure()
+        self.assertFalse(myfailure)
 
     def test_contains_operators(self):
         """ Tests the contains / contained_by """
@@ -168,6 +174,15 @@ class ValidatorsTest(unittest.TestCase):
         val = validators.MiniJsonExtractor.query_dictionary(query, mydict)
         self.assertEqual('val', val)
 
+    def test_jsonpathmini_unicode(self):
+        myjson = u'{"myVals": [0, 1.0, "😽"], "my😽":"value"}'
+
+        query_normal = validators.MiniJsonExtractor.parse('myVals.2')
+        self.assertEqual(u'😽', query_normal.extract(body=myjson))
+
+        query_unicode = validators.MiniJsonExtractor.parse(u'my😽')
+        self.assertEqual('value', query_unicode.extract(body=myjson))
+
     def test_jsonpathmini_wholeobject(self):
         """ Verify that the whole Json object can be returned by delimiter queries """
 
@@ -179,7 +194,7 @@ class ValidatorsTest(unittest.TestCase):
         myobj = [{'key': 'val'}, 3.0, {1: 'val'}]
         val = validators.MiniJsonExtractor.query_dictionary(query, myobj)
         self.assertEqual(myobj, val)
-        
+
         query = '.'
         val = validators.MiniJsonExtractor.query_dictionary(query, myobj)
         self.assertEqual(myobj, val)
@@ -187,7 +202,7 @@ class ValidatorsTest(unittest.TestCase):
         query = '..'
         val = validators.MiniJsonExtractor.query_dictionary(query, myobj)
         self.assertEqual(myobj, val)
-                
+
 
     def test_parse_extractor_minijson(self):
         config = 'key.val'
@@ -259,7 +274,11 @@ class ValidatorsTest(unittest.TestCase):
         self.assertTrue(extractor.is_body_extractor)
         self.assertFalse(extractor.is_header_extractor)
 
-        bod = 'j1j21io312j3'
+        bod = u'j1j21io312j3'
+        val = extractor.extract(body=bod, headers='')
+        self.assertEqual(bod, val)
+
+        bod = b'j1j21io312j3'
         val = extractor.extract(body=bod, headers='')
         self.assertEqual(bod, val)
 
@@ -347,7 +366,11 @@ class ValidatorsTest(unittest.TestCase):
             'expected': 3
         }
         extractor = validators._get_extractor(config)
-        myjson = '{"key": {"val": 3}}'
+        myjson = u'{"key": {"val": 3}}'
+        extracted = extractor.extract(body=myjson)
+        self.assertEqual(3, extracted)
+
+        myjson = b'{"key": {"val": 3}}'
         extracted = extractor.extract(body=myjson)
         self.assertEqual(3, extracted)
 

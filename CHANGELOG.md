@@ -1,8 +1,17 @@
 # Changelog
 
-## 1.7.0 Unreleased but on master branch (tentative Pip release in December)
+## 1.7.0 Unreleased but on master branch (tentative Pip release in December/Jan)
 **Features:**
+* ALPHA: Python 3 support - all tests now pass!
 * JsonPath_Mini extractor supports ability to return the root response object now with the "." syntax -- thanks for the PR! https://github.com/svanoort/pyresttest/pull/106
+* Allow for smarter URL creation from fragments: https://github.com/svanoort/pyresttest/issues/118
+* Unicode support epic: fix handling of request body and a whole raft of smaller fixes + more tests: https://github.com/svanoort/pyresttest/issues/104
+
+**Bugfixes:**
+* Whole raft of bugfixes around Unicode handling and request/response bodies
+
+**Known Issues / Back-Compatibility:**
+* Headers are returned from tests as unicode key, value pairs now
 
 ## 1.6.0 Mon Oct 12 07:30:00 2015 -0400
 **Features:**

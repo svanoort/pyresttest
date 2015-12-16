@@ -1,0 +1,49 @@
+---
+- config:
+    - testset: "Test Unicode handling within tests"
+    - variable_binds: {'firstname': '指事字'}
+    - variable_binds: {'firstname2': 'my指事字name'}
+- test: # Inline body, template URL and body
+    - name: "Create/update a person with unicode in it"
+    - url: {"template":"/api/person/100/"}
+    - method: "PUT"
+    - headers: {'Content-Type': 'application/json'}
+    - body: '{"first_name": "指事字","id": "100","last_name": "Baltar","login": "指字"}'
+- test:
+    - name: "See if we can retrieve and validate unicode bodies"
+    - url: {template: "/api/person/100/"}
+    - validators:
+        - compare: {'jsonpath_mini':'first_name', 'comparator':'contains', 'expected':'指事字'}
+- test: # Inline body, template URL and body
+    - name: "Create/update a person with templated Unicode bodu"
+    - url: {"template":"/api/person/101/"}
+    - method: "PUT"
+    - headers: {'Content-Type': 'application/json'}
+    - body: {template: '{"first_name": "$firstname2","id": "101","last_name": "Baltar","login": "2指字3"}'}
+- test:
+    - name: "Test retrieval of user with templated unicode body, and templated query"
+    - url: {template: "/api/person/101/"}
+    - validators:
+        - compare: {'jsonpath_mini':'first_name', 'comparator':'eq', 'expected':'my指事字name'}
+        - compare: {'jsonpath_mini':'first_name', 'comparator':'eq', 'expected':{template: "$firstname2"}}
+# Below needs RFC3986 IRI to URI conversion support to work (there are libraries for this)
+# See: http://www.ietf.org/rfc/rfc3986.txt
+#- test:
+#    - name: "Let's try using unicode URL"
+#    - url: '/api/person/?login=指字'
+#    - validators:
+#        - assertTrue: {'jsonpath_mini':'objects.0', 'test':'exists'}
+#        - compare: {'jsonpath_mini':'objects.0.first_name', 'expected':'指事字'}
+#- test:
+#    - name: "Using a unicode template for the url"
+#    - variable_binds: {'myname': '指字'}
+#    - url: {template: '/api/person/?login=$myname'}
+#    - validators:
+#        - assertTrue: {'jsonpath_mini':'objects.0', 'test':'exists'}
+#        - compare: {'jsonpath_mini':'objects.0.first_name', 'expected':'指事字'}
+#- test:
+#    - name: "Unicode template for the expected value"
+#    - url: {template: '/api/person/?login=指字'}
+#    - validators:
+#        - assertTrue: {'jsonpath_mini':'objects.0', 'test':'exists'}
+#        - compare: {'jsonpath_mini':'objects.0.first_name', 'expected': {template: '$firstname'}}
