@@ -36,8 +36,9 @@ node {
     'python pyresttest/functionaltest.py',
     'bash test_use_extension.sh')
 
-  stage 'Unit Test debian-wheezy using python-3.4.3'
+  /*stage 'Unit Test debian-wheezy using python-3.4.3'
   doTest(testEnvPy3, "python3 -m unittest discover -s pyresttest -p 'test_*.py'",
     'python3 pyresttest/functionaltest.py',
     'bash test_use_extension.sh')
+  */
 }
