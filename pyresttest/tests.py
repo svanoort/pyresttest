@@ -47,6 +47,7 @@ DEFAULT_TIMEOUT = 10  # Seconds
 # Kind of obnoxious that it works this way...
 HTTP_METHODS = {u'GET': pycurl.HTTPGET,
                 u'PUT': pycurl.UPLOAD,
+                u'PATCH': pycurl.POSTFIELDS,
                 u'POST': pycurl.POST,
                 u'DELETE': 'DELETE'}
 
@@ -322,9 +323,17 @@ class Test(object):
                 curl.setopt(pycurl.INFILESIZE, len(bod))
             else:
                 curl.setopt(pycurl.INFILESIZE, 0)
+        elif self.method == u'PATCH':
+            curl.setopt(curl.POSTFIELDS, bod)
+            curl.setopt(curl.CUSTOMREQUEST, 'PATCH')
+            # Required for some servers
+            if bod is not None:
+                curl.setopt(pycurl.INFILESIZE, len(bod))
+            else:
+                curl.setopt(pycurl.INFILESIZE, 0)
         elif self.method == u'DELETE':
             curl.setopt(curl.CUSTOMREQUEST, 'DELETE')
-        elif self.method and self.method.upper() != 'GET':  # Support PATCH/HEAD/ETC
+        elif self.method and self.method.upper() != 'GET':  # Support HEAD/ETC
             curl.setopt(curl.CUSTOMREQUEST, self.method.upper())
 
         # Template headers as needed and convert headers dictionary to list of header entries
