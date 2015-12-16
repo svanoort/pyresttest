@@ -63,7 +63,7 @@ class RestTestCase(unittest.TestCase):
         test.body = '{"login":"special"}'
         test.headers = {u'Content-Type': u'application/json',
                         u'X-HTTP-Method-Override': u'PATCH'}
-        test.expected_status = [202, 400]  # Django issues give a 400, sigh
+        test.expected_status = [202]  # Django returns 202
         test_response = resttest.run_test(test)
         self.assertTrue(test_response.passed)
         #self.assertEqual(202, test_response.response_code)

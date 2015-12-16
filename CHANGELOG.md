@@ -6,9 +6,14 @@
 * JsonPath_Mini extractor supports ability to return the root response object now with the "." syntax -- thanks for the PR! https://github.com/svanoort/pyresttest/pull/106
 * Allow for smarter URL creation from fragments: https://github.com/svanoort/pyresttest/issues/118
 * Unicode support epic: fix handling of request body and a whole raft of smaller fixes + more tests: https://github.com/svanoort/pyresttest/issues/104
+* Add terminal output coloring for pass/pail
+  - Thanks to @lerrua for his PR!  https://github.com/svanoort/pyresttest/pull/125
 
 **Bugfixes:**
 * Whole raft of bugfixes around Unicode handling and request/response bodies
+* Fix HTTP PATCH method configuration - many thanks to @lerrua for his PR!
+  - Noted in https://github.com/svanoort/pyresttest/issues/117
+  - Fixed in https://github.com/svanoort/pyresttest/pull/129
 
 **Known Issues / Back-Compatibility:**
 * Headers are returned from tests as unicode key, value pairs now
