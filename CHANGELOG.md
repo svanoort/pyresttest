@@ -10,6 +10,9 @@
 **Bugfixes:**
 * Whole raft of bugfixes around Unicode handling and request/response bodies
 
+**Known Issues / Back-Compatibility:**
+* Headers are returned from tests as unicode key, value pairs now
+
 ## 1.6.0 Mon Oct 12 07:30:00 2015 -0400
 **Features:**
 * BETA: Add a type testing comparator to assist with validating request/header bodies

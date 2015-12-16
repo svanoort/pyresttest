@@ -38,6 +38,7 @@ import validators
 from validators import Failure
 from tests import Test, DEFAULT_TIMEOUT
 from benchmarks import Benchmark, AGGREGATES, METRICS, parse_benchmark
+
 """
 Executable class, ties everything together into the framework.
 Module responsibilities:
@@ -47,7 +48,7 @@ Module responsibilities:
 - Collect and report on test/benchmark results
 - Perform analysis on benchmark results
 """
-
+HEADER_ENCODING ='ISO-8859-1' # Per RFC 2616
 LOGGING_LEVELS = {'debug': logging.DEBUG,
                   'info': logging.INFO,
                   'warning': logging.WARNING,
@@ -156,6 +157,8 @@ def parse_headers(header_string):
     """ Parse a header-string into individual headers
         Implementation based on: http://stackoverflow.com/a/5955949/95122
         Note that headers are a list of (key, value) since duplicate headers are allowed
+
+        NEW NOTE: keys & values are unicode strings, but can only contain ISO-8859-1 characters
     """
     # First line is request line, strip it out
     if not header_string:
@@ -163,6 +166,12 @@ def parse_headers(header_string):
     request, headers = header_string.split('\r\n', 1)
     if not headers:
         return list()
+
+    # Python 2.6 message header parsing fails for Unicode strings, 2.7 is fine. Go figure.
+    if sys.version_info < (2,7):
+        header_msg = message_from_string(headers.encode(HEADER_ENCODING))
+        return [(text_type(k.lower(), HEADER_ENCODING), text_type(v, HEADER_ENCODING))
+            for k, v in header_msg.items()]
     else:
         header_msg = message_from_string(headers)
         # Note: HTTP headers are *case-insensitive* per RFC 2616
@@ -331,7 +340,7 @@ def run_test(mytest, test_config=TestConfig(), context=None):
     # Retrieve values
     result.body = body.getvalue()
     body.close()
-    result.response_headers = text_type(headers.getvalue(), 'ISO-8859-1')  # Per RFC 2616
+    result.response_headers = text_type(headers.getvalue(), HEADER_ENCODING)  # Per RFC 2616
     headers.close()
 
     response_code = curl.getinfo(pycurl.RESPONSE_CODE)
