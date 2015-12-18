@@ -55,6 +55,16 @@ class RestTestCase(unittest.TestCase):
         self.assertTrue(test_response.passed)
         self.assertEqual(200, test_response.response_code)
 
+    def test_head(self):
+        """ Calls github API to test the HEAD method, ugly but Django tastypie won't support it """
+        test = Test()
+        test.url = 'https://api.github.com/users/svanoort'
+        test_response = resttest.run_test(test)
+        self.assertTrue(test_response.passed)
+        self.assertEqual(200, test_response.response_code)
+        print("Github API response headers: \n{0}".format(test_response.response_headers))
+        self.assertTrue(test_response.response_headers)
+
     def test_patch(self):
         """ Basic local get test """
         test = Test()
