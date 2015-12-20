@@ -78,7 +78,7 @@ build job: 'build-docker-images-wf', parameters: [[$class: 'StringParameterValue
 //Images with sudo, python and little else, for a bare installation
 String basePy26 = 'sudo-centos:6'
 String basePy27 = 'sudo-ubuntu:14.04'
-//String basePy34 = 'python:3.4.3-wheezy'
+String basePy34 = 'sudo-python3:3.4.3-wheezy'
 
 
 node {
@@ -90,10 +90,13 @@ node {
   }
 
   // Build the py3 sudo image.
-  /*sh 'rm -rf py3-sudo'
+  sh 'rm -rf py3-sudo'
   dir('py3-sudo') {
-    git url:'https://github.com/svanoort/pyresttest.git', branch:'py3-installtest'
-  }*/
+    git url:'https://github.com/svanoort/pyresttest.git', branch:'installation-test-and-fix'
+    sh 'cd docker'
+    sh 'sed -i .orig -e "s#@@MYUSERID@@#`id -u`#g" sudo-*/Dockerfile'
+    sh 'docker build -t sudo-python3:3.4.3-wheezy sudo-python3'
+  }
 
   sh 'rm -rf pyresttest'
   dir('pyresttest') {
@@ -120,12 +123,14 @@ node {
     String testApiDirectPy3 = "python3 pyresttest/resttest.py https://api.github.com examples/github_api_smoketest.yaml"
     String testApiUtil = "resttest.py https://api.github.com examples/github_api_smoketest.yaml"
 
-    def testPy26_clone = [basePy26, [installYumPybase, basicTest1, basicTest2, importTest, apiTest]]
-    def testPy27_clone = [basePy27, [installAptPybase, basicTest1, basicTest2, importTest, apiTest]]
-    def testPy26_directInstall = [basePy26, [installYumPybase, pyr_easyinstall, basicTest1, basicTest2, apiTest]]
-    def testPy27_directInstall = [basePy27, [installAptPybase, pyr_easyinstall, basicTest1, basicTest2, apiTest]]
+    def testPy26_clone = [basePy26, [installYumPybase, testBasic1, testBasic2, testImport, testApiDirect]]
+    def testPy27_clone = [basePy27, [installAptPybase, testBasic1, testBasic2, testImport, testApiDirect]]
+    //def testPy34_clone = [basePy34, [installAptPybase, testBasic1, testBasic2, testImport, testApiDirectPy3]]
+    def testPy26_directInstall = [basePy26, [installYumPybase, pyr_easyinstall, testBasic1, testBasic2, testApiDirect, testApiUtil]]
+    def testPy27_directInstall = [basePy27, [installAptPybase, pyr_easyinstall, testBasic1, testBasic2, testApiDirect, testApiUtil]]
+    //def testPy34_directInstall = [basePy34, [installAptPybase, pyr_easyinstall, testBasic1, testBasic2, testApiDirectPy3]]
 
-    def test_names = ['setup', 'test resttest.py script', 'test pyrestest script', 'import test', 'functional github test']
+    def test_names = ['setup', 'test resttest.py script', 'test pyresttest script', 'import test', 'functional github test']
 
     stage 'Basic Test: Ubuntu 14.04/Python 2.7'
     execute_install_testset(testPy27_clone, test_names)
@@ -135,7 +140,7 @@ node {
     execute_install_testset(testPy26_clone, test_names)
     execute_install_testset(testPy26_directInstall, test_names)
 
-    // TODO python 3 tests
+    //stage 'Basic Test: Debian-Wheezy/Python 3.4'
 
     // TODO Functional test using content-test against a docker container running the Django testapp (with a docker link)
     // TODO TestPyPi install & test
