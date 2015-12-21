@@ -73,16 +73,11 @@ def execute_install_testset(def coreTests, def stepNames=null) {
 
 // Flows
 stage 'Build Images'
-build job: 'build-docker-images-wf', parameters: [[$class: 'StringParameterValue', name: 'branch', value: 'master']]
-
-//Images with sudo, python and little else, for a bare installation
-String basePy26 = 'sudo-centos:6'
-String basePy27 = 'sudo-ubuntu:14.04'
-String basePy34 = 'sudo-python3:3.4.3-wheezy'
-
+//build job: 'build-docker-images-wf', parameters: [[$class: 'StringParameterValue', name: 'branch', value: 'master']]
 
 node {
   // Build the base sudo images
+  stage 'Build the sudo images for installation'
   sh 'rm -rf sudo-images'
   dir('sudo-images') {
     git url:'https://github.com/jenkinsci/packaging.git', branch:'master'
@@ -93,18 +88,23 @@ node {
   sh 'rm -rf py3-sudo'
   dir('py3-sudo') {
     git url:'https://github.com/svanoort/pyresttest.git', branch:'installation-test-and-fix'
-    sh 'cd docker'
-    sh 'sed -i .orig -e "s#@@MYUSERID@@#`id -u`#g" sudo-*/Dockerfile'
-    sh 'docker build -t sudo-python3:3.4.3-wheezy sudo-python3'
+    sh 'sed -i-e "s#@@MYUSERID@@#`id -u`#g" docker/sudo-python3/Dockerfile'
+    sh 'docker build -t sudo-python3:3.4.3-wheezy docker/sudo-python3'
   }
 
   sh 'rm -rf pyresttest'
   dir('pyresttest') {
     git url:'https://github.com/svanoort/pyresttest.git', branch:'master'
 
+    //Images with sudo, python and little else, for a bare installation
+    String basePy26 = 'sudo-centos:6'
+    String basePy27 = 'sudo-ubuntu:14.04'
+    String basePy34 = 'sudo-python3:3.4.3-wheezy'
+
+
     // Base installs, including pycurl since it almost never installs right
     String installAptPybase = 'sudo apt-get update && sudo apt-get install -y python-pip python-pycurl'
-    String installYumPybase = 'sudo yum install -y python-pip python-pycurl'
+    String installYumPybase = 'sudo rpm -ivh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm && sudo yum install -y python-pip python-pycurl'
 
     // Libs for direct run of library
     String install_libs = 'sudo pip install pyyaml'
@@ -121,24 +121,25 @@ node {
     String testImportPy3 = "python3 -c 'from pyresttest import validators'"
     String testApiDirect = "python pyresttest/resttest.py https://api.github.com examples/github_api_smoketest.yaml"
     String testApiDirectPy3 = "python3 pyresttest/resttest.py https://api.github.com examples/github_api_smoketest.yaml"
-    String testApiUtil = "resttest.py https://api.github.com examples/github_api_smoketest.yaml"
+    String testApiUtil = "pyresttest https://api.github.com examples/github_api_smoketest.yaml"
 
-    def testPy26_clone = [basePy26, [installYumPybase, testBasic1, testBasic2, testImport, testApiDirect]]
-    def testPy27_clone = [basePy27, [installAptPybase, testBasic1, testBasic2, testImport, testApiDirect]]
-    //def testPy34_clone = [basePy34, [installAptPybase, testBasic1, testBasic2, testImport, testApiDirectPy3]]
-    def testPy26_directInstall = [basePy26, [installYumPybase, pyr_easyinstall, testBasic1, testBasic2, testApiDirect, testApiUtil]]
-    def testPy27_directInstall = [basePy27, [installAptPybase, pyr_easyinstall, testBasic1, testBasic2, testApiDirect, testApiUtil]]
-    //def testPy34_directInstall = [basePy34, [installAptPybase, pyr_easyinstall, testBasic1, testBasic2, testApiDirectPy3]]
+    def testPy26_clone = [basePy26, [installYumPybase, install_libs, testImport, testApiDirect]]
+    def testPy27_clone = [basePy27, [installAptPybase, install_libs, testImport, testApiDirect]]
+    //def testPy34_clone = [basePy34, [installAptPybasePy3, testBasic1, testBasic2, testImport, testApiDirectPy3]]
+    def testPy26_directInstall = [basePy26, [installYumPybase, pyr_install_direct, testBasic1, testBasic2, testApiDirect, testApiUtil]]
+    def testPy27_directInstall = [basePy27, [installAptPybase, pyr_install_direct, testBasic1, testBasic2, testApiDirect, testApiUtil]]
+    //def testPy34_directInstall = [basePy34, [installAptPybasePy3, pyr_install_direct, testBasic1, testBasic2, testApiDirectPy3]]
 
-    def test_names = ['setup', 'test resttest.py script', 'test pyresttest script', 'import test', 'functional github test']
+    // Test step names
+    def test_clone_names = ['setup', 'install libs', 'import test', 'functional github test']
+    def test_direct_names = ['setup', 'install pyresttest', 'test resttest.py script', 'test pyresttest script', 'import test', 'functional github test', 'installed script test of github API']
 
-    stage 'Basic Test: Ubuntu 14.04/Python 2.7'
-    execute_install_testset(testPy27_clone, test_names)
-    execute_install_testset(testPy27_directInstall, test_names)
+    stage 'Basic Test: running from repo'
+    execute_install_testset([testPy27_clone, testPy26_clone], test_clone_names)
 
-    stage 'Basic Test: CentOS6/Python 2.6'
-    execute_install_testset(testPy26_clone, test_names)
-    execute_install_testset(testPy26_directInstall, test_names)
+    stage 'Basic Test: running from direct install'
+    execute_install_testset([testPy27_directInstall, testPy26_directInstall], test_direct_names)
+
 
     //stage 'Basic Test: Debian-Wheezy/Python 3.4'
 
@@ -147,4 +148,3 @@ node {
     // TODO VirtualEnv test
   }
 }
-
