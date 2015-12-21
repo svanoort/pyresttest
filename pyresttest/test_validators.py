@@ -1,6 +1,7 @@
 import unittest
 import validators
 from binding import Context
+from validators import register_extractor
 
 
 class ValidatorsTest(unittest.TestCase):
@@ -482,8 +483,36 @@ class ValidatorsTest(unittest.TestCase):
         failure = comp.validate(body='{"id": 3, "key": {"val": 4}')
         self.assertTrue(isinstance(failure, validators.Failure))
 
-    def test_parse_validator_extracttest(self):
-        """ Test parsing for extract test """
+    def test_parse_validator_jmespath_extracttest(self):
+        """ Test parsing for jmespath extract test """
+        try:
+           import jmespath
+           from ext.extractor_jmespath import JMESPathExtractor
+   
+           register_extractor('jmespath', JMESPathExtractor.parse)
+           config = {
+               'jmespath': 'key.val',
+               'test': 'exists'
+           }
+           myjson_pass = '{"id": 3, "key": {"val": 3}}'
+           myjson_fail = '{"id": 3, "key": {"valley": "wide"}}'
+           validator = validators.ExtractTestValidator.parse(config)
+   
+           validation_result = validator.validate(body=myjson_pass)
+           self.assertTrue(validation_result)
+   
+           validation_result = validator.validate(body=myjson_fail)
+           self.assertFalse(validation_result)
+   
+           self.assertTrue(isinstance(validation_result, validators.Failure))
+           self.assertEqual(validation_result.message,
+                            "Extract and test validator failed on test: exists(None)")
+        except ImportError:
+           pass  # Doesn't run JMESPath test if can't import library
+
+
+    def test_parse_validator_jsonpath_mini_extracttest(self):
+        """ Test parsing for jsonpath_mini extract test """
         config = {
             'jsonpath_mini': 'key.val',
             'test': 'exists'
