@@ -1,6 +1,8 @@
 import os
 import sys
-from parsing import *
+
+from . import parsing
+from .parsing import *
 
 # Python 2/3 switches
 PYTHON_MAJOR_VERSION = sys.version_info[0]

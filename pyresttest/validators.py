@@ -3,10 +3,12 @@ import json
 import operator
 import traceback
 import string
-import parsing
 import os
 import re
 import sys
+
+# Local module imports
+from . import parsing
 
 # Python 3 compatibility shims
 from six import binary_type

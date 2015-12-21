@@ -139,6 +139,7 @@ node {
     stage 'Basic Test: running from setup.py install'
     execute_install_testset([testPy27_directInstall, testPy26_directInstall, testPy34_directInstall], test_direct_names)
 
+    // TODO Add ability to run all tests before showing failures
     // TODO Functional test using content-test against a docker container running the Django testapp (with a docker link)
     // TODO TestPyPi install & test
     // TODO VirtualEnv test

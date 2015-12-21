@@ -1,9 +1,10 @@
 import unittest
-import generators
 import string
 import os
 import types
 import sys
+
+from . import generators
 
 # Python 3 compatibility
 if sys.version_info[0] == 3:

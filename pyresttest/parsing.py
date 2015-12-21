@@ -1,7 +1,10 @@
+from __future__ import absolute_import
 import sys
 import string
 
+
 # Python 3 compatibility shims
+from . import six
 from six import binary_type
 from six import text_type
 

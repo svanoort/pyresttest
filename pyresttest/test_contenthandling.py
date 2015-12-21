@@ -2,8 +2,10 @@
 import unittest
 import string
 import os
-from contenthandling import ContentHandler
-from binding import Context
+from . import contenthandling
+from .contenthandling import ContentHandler
+from . import binding
+from .binding import Context
 
 
 class ContentHandlerTest(unittest.TestCase):

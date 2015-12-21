@@ -38,7 +38,7 @@ setup(name='pyresttest',
                   'pyresttest.benchmarks', 'pyresttest.tests', 'pyresttest.ext.validator_jsonschema', 'pyresttest.six'],
       license='Apache License, Version 2.0',
       install_requires=dependencies,
-      test_require=test_dependencies,
+      tests_require=test_dependencies,
       extras_require= {
         'JSONPath': {'jsonpath'}
       },

@@ -27,17 +27,22 @@ if sys.version_info[0] > 2:
     from builtins import range as xrange
     ESCAPE_DECODING = 'unicode_escape'
 
-from six import text_type
+from . import six
+from .six import text_type
 
 # Pyresttest internals
-from binding import Context
-import generators
-from generators import parse_generator
-from parsing import flatten_dictionaries, lowercase_keys, safe_to_bool, safe_to_json
-import validators
-from validators import Failure
-from tests import Test, DEFAULT_TIMEOUT
-from benchmarks import Benchmark, AGGREGATES, METRICS, parse_benchmark
+from . import binding
+from .binding import Context
+from . import generators
+from .generators import parse_generator
+from . import parsing
+from .parsing import flatten_dictionaries, lowercase_keys, safe_to_bool, safe_to_json
+from . import validators
+from .validators import Failure
+from . import tests
+from .tests import Test, DEFAULT_TIMEOUT
+from . import benchmarks
+from .benchmarks import Benchmark, AGGREGATES, METRICS, parse_benchmark
 
 """
 Executable class, ties everything together into the framework.

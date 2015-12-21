@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 import unittest
-from parsing import *
+import sys
+
+from . import parsing
+from .parsing import *
 
 PYTHON_MAJOR_VERSION = sys.version_info[0]
 
