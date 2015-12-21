@@ -1,8 +1,13 @@
+<<<<<<< HEAD
 import sys
+from distutils.core import setup
+=======
 try:
     from setuptools import setup
 except ImportError:
     from distutils.core import setup
+
+>>>>>>> 2a22191a92c956082bc29590142e809be131d1dc
 
 dependencies = ['pyyaml', 'pycurl']
 
