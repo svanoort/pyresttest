@@ -29,12 +29,14 @@ class JMESPathExtractor(validators.AbstractExtractor):
         try:
             res = jmespath.search(query, ast.literal_eval( body ) ) 
             tn = str(type(res))
-            if ( tn == "<type 'int'>" or tn == "<type 'float'>" ):
+            if ( res == None ):
+               return None
+            elif ( tn == "<type 'int'>" or tn == "<type 'float'>" ):
                return res
             else: 
                return str(res)
         except Exception as e:
-            raise ValueError("Invalid query: " + str(e))
+            raise ValueError("Invalid query: " + query + " : " + str(e))
 
     @classmethod
     def parse(cls, config):
