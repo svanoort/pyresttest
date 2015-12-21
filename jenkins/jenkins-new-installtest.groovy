@@ -34,7 +34,7 @@ def run_shell_test(String imageName, def shellCommands, def stepNames=null) {
           // Second, the sh workflow step often will use the default posix shell
           // The default posix shell does not support pipefail, so we have to invoke bash to get it
 
-          String argument = 'bash -c \'set -o pipefail; '+cmd+" | tee testresults/$fileName-$name"+'.log'+' \''
+          String argument = 'bash -c \'set -o pipefail; '+cmd+" | tee \"testresults/$fileName-$name"+'.log'+'" \''
           sh argument
         }
       } catch (Exception ex) {
@@ -54,7 +54,8 @@ def run_shell_test(String imageName, def shellCommands, def stepNames=null) {
 def execute_install_testset(def coreTests, def stepNames=null) {
   // Within this node, execute our docker tests
   def parallelTests = [:]
-
+  sh 'rm -rf testresults'
+  sh 'mkdir testresults'
   for (int i=0; i<coreTests.size(); i++) {
     def imgName = coreTests[i][0]
     def tests = coreTests[i][1]
@@ -116,18 +117,18 @@ node {
     // Tests
     String testBasic1 = "resttest.py 2>/dev/null | grep 'Usage' "
     String testBasic2 = "pyresttest 2>/dev/null | grep 'Usage' "
-    String testImport = "python -c 'from pyresttest import validators'"  // Try importing
+    String testImport = 'python -c "from pyresttest import validators"'  // Try importing
     String testApiDirect = "python pyresttest/resttest.py https://api.github.com examples/github_api_smoketest.yaml"
     String testApiUtil = "pyresttest https://api.github.com examples/github_api_smoketest.yaml"
 
     // Preinstall libs and run/use library from repo clone
-    def test_clone_names = ['setup', 'install libs', 'import test', 'functional github test']
+    def test_clone_names = ['setup', 'install-libs', 'import-test', 'functional-gh-test']
     def testPy26_clone = [basePy26, [installYumPybase, install_libs, testImport, testApiDirect]]
     def testPy27_clone = [basePy27, [installAptPybase, install_libs, testImport, testApiDirect]]
     def testPy34_clone = [basePy34, [installAptPybasePy3, install_libs_py3, testImport, testApiDirect]]
 
     // Direct setup.py install
-    def test_direct_names = ['setup', 'install pyresttest', 'test resttest.py script', 'test pyresttest script', 'import test', 'functional github test', 'installed script test of github API']
+    def test_direct_names = ['setup', 'install-pyresttest', 'test-cmdline1', 'test-cmdline2', 'import-test', 'functional-gh-test', 'test-functional-cmdline']
     def testPy26_directInstall = [basePy26, [installYumPybase,    pyr_install_direct, testBasic1, testBasic2, testApiDirect, testApiUtil]]
     def testPy27_directInstall = [basePy27, [installAptPybase,    pyr_install_direct, testBasic1, testBasic2, testApiDirect, testApiUtil]]
     def testPy34_directInstall = [basePy34, [installAptPybasePy3, pyr_install_direct, testBasic1, testBasic2, testApiDirect, testApiUtil]]
