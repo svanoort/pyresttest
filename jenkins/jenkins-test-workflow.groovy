@@ -27,18 +27,17 @@ node {
   def testEnvPy3 = docker.image('pyresttest-build-python3')
 
   stage 'Unit Test ubuntu-python27'
-  doTest(testEnv, "python -m unittest discover -s pyresttest -p 'test_*.py'",
-    'python pyresttest/functionaltest.py',
+  doTest(testEnv, "python -m unittest discover",
+    'python -m unittest pyresttest.functionaltest',
     'bash test_use_extension.sh')
 
   stage 'Unit Test centos6-python26'
-  doTest(testEnv26, "python -m discover -s pyresttest -p 'test_*.py'",
-    'python pyresttest/functionaltest.py',
+  doTest(testEnv26, "python -m unittest discover",
+    'python -m unittest pyresttest.functionaltest',
     'bash test_use_extension.sh')
 
-  /*stage 'Unit Test debian-wheezy using python-3.4.3'
-  doTest(testEnvPy3, "python3 -m unittest discover -s pyresttest -p 'test_*.py'",
-    'python3 pyresttest/functionaltest.py',
+  stage 'Unit Test debian-wheezy using python-3.4.3'
+  doTest(testEnvPy3, "python -m unittest discover",
+    'python -m unittest pyresttest.functionaltest',
     'bash test_use_extension.sh')
-  */
 }
