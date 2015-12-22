@@ -1,5 +1,6 @@
 import unittest
-from benchmarks import *
+from . import benchmarks
+from .benchmarks import *
 
 
 class BenchmarkTest(unittest.TestCase):

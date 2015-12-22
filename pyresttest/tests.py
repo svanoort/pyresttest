@@ -3,10 +3,14 @@ import os
 import copy
 import json
 import pycurl
-from contenthandling import ContentHandler
-import validators
 import sys
-from parsing import *
+
+
+from . import contenthandling
+from .contenthandling import ContentHandler
+from . import validators
+from . import parsing
+from .parsing import *
 
 # Find the best implementation available on this platform
 try:
@@ -26,10 +30,11 @@ else:
     import urlparse
 
 # Python 3 compatibility shims
-from six import binary_type
-from six import text_type
-from six import iteritems
-from six.moves import filter as ifilter
+from . import six
+from .six import binary_type
+from .six import text_type
+from .six import iteritems
+from .six.moves import filter as ifilter
 
 """
 Pull out the Test objects and logic associated with them

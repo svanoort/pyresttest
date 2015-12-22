@@ -43,3 +43,8 @@ fi
 docker tag -f pyresttest-build-python3:$PYTHON3_VERSION-SNAPSHOT pyresttest-build-python3:0.2
 docker tag -f pyresttest-build-python3:$PYTHON3_VERSION-SNAPSHOT pyresttest-build-python3:latest
 docker rmi pyresttest-build-python3:$PYTHON3_VERSION-SNAPSHOT
+
+# Build the sudo images for custom testing
+cd "$(dirname "$0")"
+sed -i .orig -e "s#@@MYUSERID@@#`id -u`#g" sudo-*/Dockerfile
+docker build -t sudo-python3:3.4.3-wheezy sudo-python3

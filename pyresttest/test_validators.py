@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 import unittest
-import validators
-from binding import Context
 
+from . import validators
+from . import binding
+from .binding import Context
 
 class ValidatorsTest(unittest.TestCase):
     """ Testing for validators and extract functions """

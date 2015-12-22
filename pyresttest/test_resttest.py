@@ -2,10 +2,10 @@ import json
 import math
 import string
 import yaml
-
-import resttest
 import unittest
-from resttest import *
+
+from . import resttest
+from .resttest import *
 
 
 class TestRestTest(unittest.TestCase):

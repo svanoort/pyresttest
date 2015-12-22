@@ -2,10 +2,14 @@
 
 import unittest
 import string
-from tests import *
-from binding import Context
-from contenthandling import ContentHandler
-import generators
+
+from . import tests
+from .tests import *
+from . import binding
+from .binding import Context
+from . import contenthandling
+from .contenthandling import ContentHandler
+from . import generators
 
 PYTHON_MAJOR_VERSION = sys.version_info[0]
 if PYTHON_MAJOR_VERSION > 2:
@@ -14,8 +18,9 @@ else:
     import mock
 
 # Python 3 compatibility shims
-from six import binary_type
-from six import text_type
+from . import six
+from .six import binary_type
+from .six import text_type
 
 class TestsTest(unittest.TestCase):
     """ Testing for basic REST test methods, how meta! """

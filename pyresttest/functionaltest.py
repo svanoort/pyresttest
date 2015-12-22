@@ -9,14 +9,17 @@ from multiprocessing import Process
 
 from django.core.management import call_command
 
-from tests import Test
-from binding import Context
-import resttest
-import validators
+from . import tests
+from .tests import Test
+from . import binding
+from .binding import Context
+from . import resttest
+from . import validators
 
 # Python 2/3 compat shims
-from six import text_type
-from six import binary_type
+from . import six
+from .six import text_type
+from .six import binary_type
 
 # Django testing settings, initial configuration
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "testapp.settings")

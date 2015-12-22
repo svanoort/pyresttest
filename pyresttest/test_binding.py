@@ -1,5 +1,6 @@
 import unittest
-from binding import Context
+from . import binding
+from .binding import Context
 
 
 def count_gen():  # Generator that counts up from 1

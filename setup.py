@@ -1,18 +1,25 @@
 import sys
-from distutils.core import setup
+try:
+    from setuptools import setup
+except ImportError:
+    from distutils.core import setup
 
 dependencies = ['pyyaml', 'pycurl']
+test_dependencies = ['django==1.6.5','django-tastypie']
 
 # Add additional compatibility shims
 if sys.version_info[0] > 2:
   dependencies.append('future')
+else:
+  test_dependencies.append('mock')
+  test_dependencies.append('discover')
 
 setup(name='pyresttest',
-      version='1.6.1.dev',
+      version='1.7.0.dev',
       description='Python RESTful API Testing & Microbenchmarking Tool',
       long_description='Python RESTful API Testing & Microbenchmarking Tool \n Documentation at https://github.com/svanoort/pyresttest',
-      maintainer='Sam Van Oort',
-      maintainer_email='samvanoort@gmail.com',
+      author='Sam Van Oort',
+      author_email='samvanoort@gmail.com',
       url='https://github.com/svanoort/pyresttest',
       keywords=['rest', 'web', 'http', 'testing'],
       classifiers=[
@@ -21,6 +28,7 @@ setup(name='pyresttest',
           'Natural Language :: English',
           'Programming Language :: Python :: 2.6',
           'Programming Language :: Python :: 2.7',
+          'Programming Language :: Python :: 3.4',
           'Topic :: Software Development :: Testing',
           'Topic :: Software Development :: Quality Assurance',
           'Topic :: Utilities'
@@ -30,6 +38,10 @@ setup(name='pyresttest',
                   'pyresttest.benchmarks', 'pyresttest.tests', 'pyresttest.ext.validator_jsonschema', 'pyresttest.six'],
       license='Apache License, Version 2.0',
       install_requires=dependencies,
+      tests_require=test_dependencies,
+      extras_require= {
+        'JSONPath': ['jsonpath']
+      },
       # Make this executable from command line when installed
       scripts=['util/pyresttest', 'util/resttest.py'],
       provides=['pyresttest']

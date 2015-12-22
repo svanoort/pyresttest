@@ -1,18 +1,21 @@
 import math
 import json
 import pycurl
-from tests import Test
-import tests
 import sys
-from parsing import *
+
+from . import tests
+from .tests import Test
+from . import parsing
+from .parsing import *
 
 # Python 2/3 switches
 if sys.version_info[0] > 2:
     from past.builtins import basestring
 
 # Python 3 compatibility shims
-from six import binary_type
-from six import text_type
+from . import six
+from .six import binary_type
+from .six import text_type
 
 """
 Encapsulates logic related to benchmarking
