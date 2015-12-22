@@ -93,7 +93,11 @@ node {
     sh 'docker build -t sudo-python3:3.4.3-wheezy docker/sudo-python3'
   }
 
-  sh 'rm -rf pyresttest'
+  // Removing the PyRestTest directory has to be done inside a container with sudo
+  // Because otherwise sudo use might leave remnants that Jenkins can't remove
+  docker.image('sudo-python3:3.4.3-wheezy').inside() {
+    sh 'sudo rm -rf pyresttest'
+  }
   dir('pyresttest') {
     git url:'https://github.com/svanoort/pyresttest.git', branch:branch
 
