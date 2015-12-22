@@ -94,6 +94,11 @@ void do_build_docker(String packagingBranch='master', String py3SudoBranch='mast
   }
 }
 
+
+
+  //  sh "python pyresttest/testapp/manage.py testserver pyresttest/testapp/test_data.json &"
+  //  sh "pyresttest http://localhost:8000 pyresttest/content-test.yaml"
+
 // Test running the installation via cloning
 void do_clone_run(String pyresttestBranch='master'){
   //Images with sudo, python and little else, for a bare installation
@@ -111,20 +116,17 @@ void do_clone_run(String pyresttestBranch='master'){
   String install_libs_py3 = 'sudo pip install pycurl pyyaml future'
   String install_django_libs = 'sudo pip install "django==1.6.5" django-tastypie'
 
-  String run_testapp = 'python pyresttest/testapp/manage.py testserver pyresttest/testapp/test_data.json &'
-
   // Tests
   String testBasic1 = "resttest.py --help | grep 'Usage' "
   String testBasic2 = "pyresttest --help | grep 'Usage' "
   String testImport = 'python -c "from pyresttest import validators"'  // Try importing
   String testApiDirect = "python pyresttest/resttest.py https://api.github.com examples/github_api_smoketest.yaml"
   String testApiUtil = "pyresttest https://api.github.com examples/github_api_smoketest.yaml"
-  String testTestApp = 'python pyresttest/resttest.py http://localhost:8000 pyresttest/content-test.yaml'
 
-  def test_clone_names = ['setup', 'install-libs', 'import-test', 'functional-gh-test', 'install-django', 'start-testapp', 'functional-testapp']
-  def testPy26_clone = [basePy26, [installYumPybase, install_libs, testImport, testApiDirect, install_django_libs, run_testapp, testTestApp]]
-  def testPy27_clone = [basePy27, [installAptPybase, install_libs, testImport, testApiDirect, install_django_libs, run_testapp, testTestApp]]
-  def testPy34_clone = [basePy34, [installAptPybasePy3, install_libs_py3, testImport, testApiDirect, install_django_libs, run_testapp, testTestApp]]
+  def test_clone_names = ['setup', 'install-libs', 'import-test', 'functional-gh-test']
+  def testPy26_clone = [basePy26, [installYumPybase, install_libs, testImport, testApiDirect]]
+  def testPy27_clone = [basePy27, [installAptPybase, install_libs, testImport, testApiDirect]]
+  def testPy34_clone = [basePy34, [installAptPybasePy3, install_libs_py3, testImport, testApiDirect]]
 
   docker.image('sudo-python3:3.4.3-wheezy').inside() {
     sh 'sudo rm -rf pyresttest'
@@ -153,23 +155,20 @@ void do_directinstall_test(String pyresttestBranch='master') {
   String install_libs_py3 = 'sudo pip install pycurl pyyaml future'
   String install_django_libs = 'sudo pip install "django==1.6.5" django-tastypie'
 
-  String run_testapp = 'python pyresttest/testapp/manage.py testserver pyresttest/testapp/test_data.json &'
-
   // Tests
   String testBasic1 = "resttest.py --help | grep 'Usage' "
   String testBasic2 = "pyresttest --help | grep 'Usage' "
   String testImport = 'python -c "from pyresttest import validators"'  // Try importing
   String testApiDirect = "python pyresttest/resttest.py https://api.github.com examples/github_api_smoketest.yaml"
   String testApiUtil = "pyresttest https://api.github.com examples/github_api_smoketest.yaml"
-  String testTestApp = 'pyresttest http://localhost:8000 pyresttest/content-test.yaml'
 
   // Direct setup.py install
   String pyr_install_direct = 'sudo python setup.py install'
-  def test_direct_names = ['setup', 'install-pyresttest', 'test-cmdline1', 'test-cmdline2', 'import-test', 'functional-gh-test', 'test-functional-cmdline', 'install-django', 'start-testapp', 'functional-testapp']
+  def test_direct_names = ['setup', 'install-pyresttest', 'test-cmdline1', 'test-cmdline2', 'import-test', 'functional-gh-test', 'test-functional-cmdline']
 
-  def testPy26_directInstall = [basePy26, [installYumPybase,    pyr_install_direct, testBasic1, testBasic2, testApiDirect, testApiUtil, install_django_libs, run_testapp, testTestApp]]
-  def testPy27_directInstall = [basePy27, [installAptPybase,    pyr_install_direct, testBasic1, testBasic2, testApiDirect, testApiUtil, install_django_libs, run_testapp, testTestApp]]
-  def testPy34_directInstall = [basePy34, [installAptPybasePy3, pyr_install_direct, testBasic1, testBasic2, testApiDirect, testApiUtil, install_django_libs, run_testapp, testTestApp]]
+  def testPy26_directInstall = [basePy26, [installYumPybase,    pyr_install_direct, testBasic1, testBasic2, testApiDirect, testApiUtil]]
+  def testPy27_directInstall = [basePy27, [installAptPybase,    pyr_install_direct, testBasic1, testBasic2, testApiDirect, testApiUtil]]
+  def testPy34_directInstall = [basePy34, [installAptPybasePy3, pyr_install_direct, testBasic1, testBasic2, testApiDirect, testApiUtil]]
 
   docker.image('sudo-python3:3.4.3-wheezy').inside() {
     sh 'sudo rm -rf pyresttest'
@@ -198,23 +197,20 @@ void do_pip_develop_tests(String pyresttestBranch='master') {
   String install_libs_py3 = 'sudo pip install pycurl pyyaml future'
   String install_django_libs = 'sudo pip install "django==1.6.5" django-tastypie'
 
-  String run_testapp = 'python pyresttest/testapp/manage.py testserver pyresttest/testapp/test_data.json &'
-
   // Tests
   String testBasic1 = "resttest.py --help | grep 'Usage' "
   String testBasic2 = "pyresttest --help | grep 'Usage' "
   String testImport = 'python -c "from pyresttest import validators"'  // Try importing
   String testApiDirect = "python pyresttest/resttest.py https://api.github.com examples/github_api_smoketest.yaml"
   String testApiUtil = "pyresttest https://api.github.com examples/github_api_smoketest.yaml"
-  String testTestApp = 'pyresttest http://localhost:8000 pyresttest/content-test.yaml'
 
   String pyr_install_pip_develop = 'sudo pip install -e .'
 
-  def test_pip_develop_names = ['setup', 'install-pyresttest-pip-develop', 'test-cmdline1', 'test-cmdline2', 'import-test', 'functional-gh-test', 'test-functional-cmdline', 'install-django', 'start-testapp', 'functional-testapp']
+  def test_pip_develop_names = ['setup', 'install-pyresttest-pip-develop', 'test-cmdline1', 'test-cmdline2', 'import-test', 'functional-gh-test', 'test-functional-cmdline']
 
-  def testPy26_pip_develop = [basePy26, [installYumPybase,    pyr_install_pip_develop, testBasic1, testBasic2, testApiDirect, testApiUtil, install_django_libs, run_testapp, testTestApp]]
-  def testPy27_pip_develop = [basePy27, [installAptPybase,    pyr_install_pip_develop, testBasic1, testBasic2, testApiDirect, testApiUtil, install_django_libs, run_testapp, testTestApp]]
-  def testPy34_pip_develop = [basePy34, [installAptPybasePy3, pyr_install_pip_develop, testBasic1, testBasic2, testApiDirect, testApiUtil, install_django_libs, run_testapp, testTestApp]]
+  def testPy26_pip_develop = [basePy26, [installYumPybase,    pyr_install_pip_develop, testBasic1, testBasic2, testApiDirect, testApiUtil]]
+  def testPy27_pip_develop = [basePy27, [installAptPybase,    pyr_install_pip_develop, testBasic1, testBasic2, testApiDirect, testApiUtil]]
+  def testPy34_pip_develop = [basePy34, [installAptPybasePy3, pyr_install_pip_develop, testBasic1, testBasic2, testApiDirect, testApiUtil]]
 
   docker.image('sudo-python3:3.4.3-wheezy').inside() {
     sh 'sudo rm -rf pyresttest'
@@ -237,9 +233,6 @@ void do_pypi_tests(String pyresttestBranch='master', String pypiServer='https://
   String installAptPybase = 'sudo apt-get install -y python-pip python-pycurl'
   String installAptPybasePy3 = 'sudo apt-get install -y python-pip'  // Should come with it, but just in case!
   String installYumPybase = 'sudo rpm -ivh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm && sudo yum install -y python-pip python-pycurl'
-  String install_django_libs = 'sudo pip install "django==1.6.5" django-tastypie'
-
-  String run_testapp = 'python pyresttest/testapp/manage.py testserver pyresttest/testapp/test_data.json &'
 
   // Tests
   String testBasic1 = "resttest.py --help | grep 'Usage' "
@@ -247,15 +240,14 @@ void do_pypi_tests(String pyresttestBranch='master', String pypiServer='https://
   String testImport = 'python -c "from pyresttest import validators"'  // Try importing
   String testApiDirect = "python pyresttest/resttest.py https://api.github.com examples/github_api_smoketest.yaml"
   String testApiUtil = "pyresttest https://api.github.com examples/github_api_smoketest.yaml"
-  String testTestApp = 'pyresttest http://localhost:8000 pyresttest/content-test.yaml'
 
   String pyr_install_pypi = "sudo pip install -i $pypiServer"
 
-  def test_pypi_names = ['setup', 'install-from-pypi', 'test-cmdline1', 'test-cmdline2', 'import-test', 'functional-gh-test', 'test-functional-cmdline', 'install-django', 'start-testapp', 'functional-testapp']
+  def test_pypi_names = ['setup', 'install-from-pypi', 'test-cmdline1', 'test-cmdline2', 'import-test', 'functional-gh-test', 'test-functional-cmdline']
 
-  def testPy26_pypi = [basePy26, [installYumPybase,    pyr_install_pypi, testBasic1, testBasic2, testApiDirect, testApiUtil, install_django_libs, run_testapp, testTestApp]]
-  def testPy27_pypi = [basePy27, [installAptPybase,    pyr_install_pypi, testBasic1, testBasic2, testApiDirect, testApiUtil, install_django_libs, run_testapp, testTestApp]]
-  def testPy34_pypi = [basePy34, [installAptPybasePy3, pyr_install_pypi, testBasic1, testBasic2, testApiDirect, testApiUtil, install_django_libs, run_testapp, testTestApp]]
+  def testPy26_pypi = [basePy26, [installYumPybase,    pyr_install_pypi, testBasic1, testBasic2, testApiDirect, testApiUtil]]
+  def testPy27_pypi = [basePy27, [installAptPybase,    pyr_install_pypi, testBasic1, testBasic2, testApiDirect, testApiUtil]]
+  def testPy34_pypi = [basePy34, [installAptPybasePy3, pyr_install_pypi, testBasic1, testBasic2, testApiDirect, testApiUtil]]
 
   docker.image('sudo-python3:3.4.3-wheezy').inside() {
     sh 'sudo rm -rf pyresttest-pypi'
