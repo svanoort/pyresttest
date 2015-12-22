@@ -14,8 +14,8 @@ if sys.version_info[0] > 2:
 
 # Python 3 compatibility shims
 from . import six
-from six import binary_type
-from six import text_type
+from .six import binary_type
+from .six import text_type
 
 """
 Encapsulates logic related to benchmarking
