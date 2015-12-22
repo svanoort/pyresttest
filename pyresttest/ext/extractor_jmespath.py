@@ -27,14 +27,14 @@ class JMESPathExtractor(validators.AbstractExtractor):
 
     def extract_internal(self, query=None, args=None, body=None, headers=None):
         try:
-            res = jmespath.search(query, ast.literal_eval( body ) ) 
+            res = jmespath.search(query, json.loads(body)) # Better way
             tn = str(type(res))
             if ( res == None ):
                return None
             elif ( tn == "<type 'int'>" or tn == "<type 'float'>" ):
                return res
             else: 
-               return str(res)
+               return str(res).replace( "[u'", "['").replace(", u'", ", '")
         except Exception as e:
             raise ValueError("Invalid query: " + query + " : " + str(e))
 
