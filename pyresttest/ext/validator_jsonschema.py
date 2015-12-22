@@ -6,10 +6,10 @@ import jsonschema
 
 # TODO see if there's a clever way to avoid this nastiness
 try:
-    import validators
-    import binding
-    import parsing
-    import contenthandling
+    from .. import validators
+    from .. import binding
+    from .. import parsing
+    from .. import contenthandling
 except ImportError:
     from pyresttest import validators
     from pyresttest import binding

@@ -27,22 +27,38 @@ if sys.version_info[0] > 2:
     from builtins import range as xrange
     ESCAPE_DECODING = 'unicode_escape'
 
-from . import six
-from .six import text_type
+# Dirty hack to allow for running this as a script :-/
+if __name__ == '__main__':
+    sys.path.append(os.path.dirname(os.path.dirname(
+    os.path.realpath(__file__))))
+    from pyresttest.six import text_type
+    from pyresttest.binding import Context
+    from pyresttest import generators
+    from pyresttest import validators
+    from pyresttest import tests
+    from pyresttest.generators import parse_generator
+    from pyresttest.parsing import flatten_dictionaries, lowercase_keys, safe_to_bool, safe_to_json
 
-# Pyresttest internals
-from . import binding
-from .binding import Context
-from . import generators
-from .generators import parse_generator
-from . import parsing
-from .parsing import flatten_dictionaries, lowercase_keys, safe_to_bool, safe_to_json
-from . import validators
-from .validators import Failure
-from . import tests
-from .tests import Test, DEFAULT_TIMEOUT
-from . import benchmarks
-from .benchmarks import Benchmark, AGGREGATES, METRICS, parse_benchmark
+    from pyresttest.validators import Failure
+    from pyresttest.tests import Test, DEFAULT_TIMEOUT
+    from pyresttest.benchmarks import Benchmark, AGGREGATES, METRICS, parse_benchmark
+else:  # Normal imports
+    from . import six
+    from .six import text_type
+
+    # Pyresttest internals
+    from . import binding
+    from .binding import Context
+    from . import generators
+    from .generators import parse_generator
+    from . import parsing
+    from .parsing import flatten_dictionaries, lowercase_keys, safe_to_bool, safe_to_json
+    from . import validators
+    from .validators import Failure
+    from . import tests
+    from .tests import Test, DEFAULT_TIMEOUT
+    from . import benchmarks
+    from .benchmarks import Benchmark, AGGREGATES, METRICS, parse_benchmark
 
 """
 Executable class, ties everything together into the framework.
@@ -750,7 +766,7 @@ def register_extensions(modules):
 # everything else is loaded
 try:
     import jsonschema
-    register_extensions('ext.validator_jsonschema')
+    register_extensions('pyresttest.ext.validator_jsonschema')
 except ImportError as ie:
     logging.debug(
         "Failed to load jsonschema validator, make sure the jsonschema module is installed if you wish to use schema validators.")
