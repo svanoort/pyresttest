@@ -107,8 +107,8 @@ node {
     String basePy34 = 'sudo-python3:3.4.3-wheezy'
 
     // Base installs, including pycurl since it almost never installs right
-    String installAptPybase = 'sudo apt-get update && sudo apt-get install -y python-pip python-pycurl'
-    String installAptPybasePy3 = 'sudo apt-get update'  // Comes with python 3, pip using it
+    String installAptPybase = 'sudo apt-get install -y python-pip python-pycurl'
+    String installAptPybasePy3 = 'sudo apt-get install -y python-pip'  // Should come with it, but just in case!
     String installYumPybase = 'sudo rpm -ivh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm && sudo yum install -y python-pip python-pycurl'
 
     // Libs for direct run of library
@@ -117,6 +117,7 @@ node {
 
     // Install pyresttest directly from repo
     String pyr_install_direct = 'sudo python setup.py install'
+    String pyr_install_pip_develop = 'sudo pip install -e .'
 
     // Tests
     String testBasic1 = "resttest.py --help | grep 'Usage' "
@@ -124,6 +125,8 @@ node {
     String testImport = 'python -c "from pyresttest import validators"'  // Try importing
     String testApiDirect = "python pyresttest/resttest.py https://api.github.com examples/github_api_smoketest.yaml"
     String testApiUtil = "pyresttest https://api.github.com examples/github_api_smoketest.yaml"
+
+    // Install and start Django for Django tests
 
     // Preinstall libs and run/use library from repo clone
     def test_clone_names = ['setup', 'install-libs', 'import-test', 'functional-gh-test']
@@ -137,16 +140,24 @@ node {
     def testPy27_directInstall = [basePy27, [installAptPybase,    pyr_install_direct, testBasic1, testBasic2, testApiDirect, testApiUtil]]
     def testPy34_directInstall = [basePy34, [installAptPybasePy3, pyr_install_direct, testBasic1, testBasic2, testApiDirect, testApiUtil]]
 
+    // Development mode install via pip -e mode
+    def test_pip_develop_names = ['setup', 'install-pyresttest-pip-develop', 'test-cmdline1', 'test-cmdline2', 'import-test', 'functional-gh-test', 'test-functional-cmdline']
+    def testPy26_pip_develop = [basePy26, [installYumPybase,    pyr_install_pip_develop, testBasic1, testBasic2, testApiDirect, testApiUtil]]
+    def testPy27_pip_develop = [basePy27, [installAptPybase,    pyr_install_pip_develop, testBasic1, testBasic2, testApiDirect, testApiUtil]]
+    def testPy34_pip_develop = [basePy34, [installAptPybasePy3, pyr_install_pip_develop, testBasic1, testBasic2, testApiDirect, testApiUtil]]
+
+
     stage 'Basic Test: running from repo with preinstalled libs'
     execute_install_testset([testPy27_clone, testPy26_clone, testPy34_clone], test_clone_names)
 
     stage 'Basic Test: running from setup.py install'
     execute_install_testset([testPy27_directInstall, testPy26_directInstall, testPy34_directInstall], test_direct_names)
 
+    stage 'Basic Test: pip develop mode install'
+    execute_install_testset([testPy27_pip_develop, testPy26_pip_develop, testPy34_pip_develop], test_pip_develop_names)
+
     // TODO Add ability to run all tests before showing failures
     // TODO Functional test using content-test against a docker container running the Django testapp (with a docker link)
     // TODO TestPyPi install & test
-    // TODO VirtualEnv test
-    // TODO pip install -e mode, perhaps???
   }
 }
