@@ -119,8 +119,8 @@ node {
     String pyr_install_direct = 'sudo python setup.py install'
 
     // Tests
-    String testBasic1 = "resttest.py 2>/dev/null | grep 'Usage' "
-    String testBasic2 = "pyresttest 2>/dev/null | grep 'Usage' "
+    String testBasic1 = "resttest.py --help | grep 'Usage' "
+    String testBasic2 = "pyresttest --help | grep 'Usage' "
     String testImport = 'python -c "from pyresttest import validators"'  // Try importing
     String testApiDirect = "python pyresttest/resttest.py https://api.github.com examples/github_api_smoketest.yaml"
     String testApiUtil = "pyresttest https://api.github.com examples/github_api_smoketest.yaml"
