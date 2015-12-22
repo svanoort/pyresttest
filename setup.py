@@ -40,7 +40,7 @@ setup(name='pyresttest',
       install_requires=dependencies,
       tests_require=test_dependencies,
       extras_require= {
-        'JSONPath': {'jsonpath'}
+        'JSONPath': ['jsonpath']
       },
       # Make this executable from command line when installed
       scripts=['util/pyresttest', 'util/resttest.py'],
