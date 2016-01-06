@@ -518,7 +518,7 @@ class Test(object):
                     output2[str(key)] = str(value)
                 mytest.generator_binds = output2
             elif configelement.startswith('curl_option_'):
-                curlopt = configelement.lstrip('curl_option_').upper()
+                curlopt = configelement[12:].upper()
                 if hasattr(BASECURL, curlopt):
                     if not mytest.curl_options:
                         mytest.curl_options = dict()

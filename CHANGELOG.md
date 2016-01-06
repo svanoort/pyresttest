@@ -11,6 +11,8 @@
 
 **Bugfixes:**
 * Whole raft of bugfixes around Unicode handling and request/response bodies
+* Fix bug in parsing of the curl_option argument - thanks to @jcelliot for noticing this
+  - Noted in https://github.com/svanoort/pyresttest/issues/138
 * Fix HTTP PATCH method configuration - many thanks to @lerrua for his PR!
   - Noted in https://github.com/svanoort/pyresttest/issues/117
   - Fixed in https://github.com/svanoort/pyresttest/pull/129
