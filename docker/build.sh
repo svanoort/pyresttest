@@ -5,9 +5,9 @@ set -x
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd $DIR
 
-UBUNTU_14_VERSION=0.3
-CENTOS6_VERSION=0.3
-PYTHON3_VERSION=0.4
+UBUNTU_14_VERSION=0.4
+CENTOS6_VERSION=0.4
+PYTHON3_VERSION=0.5
 
 docker build -t pyresttest-build-ubuntu-14:$UBUNTU_14_VERSION-SNAPSHOT ./ubuntu14-py27
 docker build -t pyresttest-build-centos6:$CENTOS6_VERSION-SNAPSHOT ./centos6-py26

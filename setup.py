@@ -5,7 +5,7 @@ except ImportError:
     from distutils.core import setup
 
 dependencies = ['pyyaml', 'pycurl']
-test_dependencies = ['django==1.6.5','django-tastypie']
+test_dependencies = ['django==1.6.5','django-tastypie==0.12.1']
 
 # Add additional compatibility shims
 if sys.version_info[0] > 2:

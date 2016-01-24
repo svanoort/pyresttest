@@ -25,7 +25,7 @@ git clone https://github.com/svanoort/pyresttest.git
 
 Then we'll **install the necessary dependencies** to run it (Django and Django Tastypie):
 ```shell
-sudo pip install 'django >=1.6, <1.7' django-tastypie
+sudo pip install 'django >=1.6, <1.7' django-tastypie==0.12.1
 ```
 Now **we start a test server in one terminal** (on default port 8000) with some preloaded data, and we will test in a second terminal:
 ```shell
@@ -45,7 +45,7 @@ Traceback (most recent call last):
 This is easy enough to fix though by installing a compatible Django version:
 ```shell
 sudo pip uninstall -y django django-tastypie
-sudo pip install 'django >=1.6, <1.7' django-tastypie
+sudo pip install 'django >=1.6, <1.7' django-tastypie==0.12.1
 ```
 **Before going deeper, let's make sure that server works okay... in our second terminal, we run this:**
 ```shell

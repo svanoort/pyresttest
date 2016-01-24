@@ -16,7 +16,7 @@ There are two options for how to work with code
     + pyyaml
     + mock
     + django==1.6.5 (for functional testing server)
-    + django-tastypie (for functional testing server)
+    + django-tastypie==0.12.1 (for functional testing server)
     + discover (if on a python 2.6 system)
   - Avoid a virtualenv unless you *very carefully* set it up for pycurl use (it may not find libcurl)
 

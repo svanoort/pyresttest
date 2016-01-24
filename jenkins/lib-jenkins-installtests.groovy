@@ -114,7 +114,7 @@ void do_clone_run(String pyresttestBranch='master'){
   // Libs needed to run pyresttest
   String install_libs = 'sudo pip install pyyaml'
   String install_libs_py3 = 'sudo pip install pycurl pyyaml future'
-  String install_django_libs = 'sudo pip install "django==1.6.5" django-tastypie'
+  String install_django_libs = 'sudo pip install "django==1.6.5" django-tastypie==0.12.1'
 
   // Tests
   String testBasic1 = "resttest.py --help | grep 'Usage' "
@@ -153,7 +153,7 @@ void do_directinstall_test(String pyresttestBranch='master') {
   // Libs needed to run pyresttest
   String install_libs = 'sudo pip install pyyaml'
   String install_libs_py3 = 'sudo pip install pycurl pyyaml future'
-  String install_django_libs = 'sudo pip install "django==1.6.5" django-tastypie'
+  String install_django_libs = 'sudo pip install "django==1.6.5" django-tastypie==0.12.1'
 
   // Tests
   String testBasic1 = "resttest.py --help | grep 'Usage' "
@@ -195,7 +195,7 @@ void do_pip_develop_tests(String pyresttestBranch='master') {
   // Libs needed to run pyresttest
   String install_libs = 'sudo pip install pyyaml'
   String install_libs_py3 = 'sudo pip install pycurl pyyaml future'
-  String install_django_libs = 'sudo pip install "django==1.6.5" django-tastypie'
+  String install_django_libs = 'sudo pip install "django==1.6.5" django-tastypie==0.12.1'
 
   // Tests
   String testBasic1 = "resttest.py --help | grep 'Usage' "
