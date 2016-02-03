@@ -176,7 +176,8 @@ pyresttest https://api.github.com examples/github_api_test.yaml
 ## Interactive Mode
 Same as the other test but running in interactive mode.
 
-```pyresttest https://api.github.com examples/github_api_test.yaml --interactive true --print-bodies true
+```shell
+pyresttest https://api.github.com examples/github_api_test.yaml --interactive true --print-bodies true
 ```
 
 ## Verbose Output
