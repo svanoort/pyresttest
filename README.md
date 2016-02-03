@@ -55,7 +55,8 @@ PyRestTest works on Linux or Mac with Python 2.6, 2.7, or 3.3+ (alpha status, no
 * Ubuntu/Debian: (sudo) `apt-get install python-pycurl`
 * CentOS/RHEL: (sudo) `yum install python-pycurl`
 * Mac: *don't worry about it*
-*This is needed because the pycurl dependency may fail to install by pip.*
+* Other platforms: *unsupported.*  You *may* get it to work by installing pycurl & pyyaml manually. No guarantees though.
+*This is needed because the pycurl dependency may fail to install by pip.  In *very rare* cases you may need to intall python-pyyaml if pip cannot install it correctly.*
 
 **It is easy to install the latest release by pip:**
 (sudo) `pip install pyresttest`
@@ -87,6 +88,7 @@ Almost all installation issues are due to problems with PyCurl and PyCurl's nati
 `python -c 'import pycurl'`
 
 If this returns correctly, pycurl is installed, if you see an ImportError or similar, it isn't.
+You may also verify the pyyaml installation as well, since that can fail to install by pip in rare circumstances.
 
 ### Error installing by pip
 `__main__.ConfigurationError: Could not run curl-config: [Errno 2] No such file or directory`
