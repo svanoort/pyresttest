@@ -719,20 +719,16 @@ def run_testsets(testsets):
         failures = group_failure_counts[group]
         total_failures = total_failures + failures
 
-        if (failures > 0):
-            if myconfig.skip_term_colors:
-                print(u'Test Group ' + group + u' FAILED: ' +
-                      str((test_count - failures)) + '/' + str(test_count) + u' Tests Passed!')
-            else:
-                print('\033[91m' + u'Test Group ' + group + u' FAILED: ' +
-                      str((test_count - failures)) + '/' + str(test_count) + u' Tests Passed!' + '\033[0m')
+        passfail = {True: u'SUCCEEDED: ', False: u'FAILED: '}
+        output_string = "Test Group {0} {1}: {2}/{3} Tests Passed!".format(group, passfail[failures == 0], str(test_count - failures), str(test_count)) 
+        
+        if myconfig.skip_term_colors:
+            print(output_string)    
         else:
-            if myconfig.skip_term_colors:
-                print(u'Test Group ' + group + u' SUCCEEDED: ' +
-                      str((test_count - failures)) + '/' + str(test_count) + u' Tests Passed!')
+            if failures > 0:
+                print('\033[91m' + output_string + '\033[0m')
             else:
-                print('\033[92m' + u'Test Group ' + group + u' SUCCEEDED: ' +
-                      str((test_count - failures)) + '/' + str(test_count) + u' Tests Passed!' + '\033[0m')
+                print('\033[92m' + output_string + '\033[0m')
 
     return total_failures
 
