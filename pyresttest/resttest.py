@@ -107,6 +107,7 @@ class TestConfig:
     interactive = False
     verbose = False
     ssl_insecure = False
+    skip_term_colors = False  # Turn off output term colors
 
     # Binding and creation of generators
     variable_binds = None
@@ -717,12 +718,17 @@ def run_testsets(testsets):
         test_count = len(group_results[group])
         failures = group_failure_counts[group]
         total_failures = total_failures + failures
-        if (failures > 0):
-            print('\033[91m' + u'Test Group ' + group + u' FAILED: ' +
-                  str((test_count - failures)) + '/' + str(test_count) + u' Tests Passed!' + '\033[0m')
+
+        passfail = {True: u'SUCCEEDED: ', False: u'FAILED: '}
+        output_string = "Test Group {0} {1}: {2}/{3} Tests Passed!".format(group, passfail[failures == 0], str(test_count - failures), str(test_count)) 
+        
+        if myconfig.skip_term_colors:
+            print(output_string)    
         else:
-            print('\033[92m' + u'Test Group ' + group + u' SUCCEEDED: ' +
-                  str((test_count - failures)) + '/' + str(test_count) + u' Tests Passed!' + '\033[0m')
+            if failures > 0:
+                print('\033[91m' + output_string + '\033[0m')
+            else:
+                print('\033[92m' + output_string + '\033[0m')
 
     return total_failures
 
@@ -784,6 +790,7 @@ def main(args):
         log           - OPTIONAL - set logging level {debug,info,warning,error,critical} (default=warning)
         interactive   - OPTIONAL - mode that prints info before and after test exectuion and pauses for user input for each test
         absolute_urls - OPTIONAL - mode that treats URLs in tests as absolute/full URLs instead of relative URLs
+        skip_term_colors - OPTIONAL - mode that turn off the output term colors
     """
 
     if 'log' in args and args['log'] is not None:
@@ -834,6 +841,9 @@ def main(args):
         if 'ssl_insecure' in args and args['ssl_insecure'] is not None:
             t.config.ssl_insecure = safe_to_bool(args['ssl_insecure'])
 
+        if 'skip_term_colors' in args and args['skip_term_colors'] is not None:
+            t.config.skip_term_colors = safe_to_bool(args['skip_term_colors'])
+
     # Execute all testsets
     failures = run_testsets(tests)
 
@@ -866,6 +876,8 @@ def parse_command_line_args(args_in):
                       action='store_true', default=False, dest="ssl_insecure")
     parser.add_option(u'--absolute-urls', help='Enable absolute URLs in tests instead of relative paths',
                       action="store_true", dest="absolute_urls")
+    parser.add_option(u'--skip_term_colors', help='Turn off the output term colors',
+                      action='store_true', default=False, dest="skip_term_colors")
 
     (args, unparsed_args) = parser.parse_args(args_in)
     args = vars(args)
