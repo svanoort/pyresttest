@@ -309,8 +309,9 @@ class Test(object):
             curl.setopt(curl.READFUNCTION, MyIO(bod).read)
 
         if self.auth_username and self.auth_password:
-            curl.setopt(pycurl.USERPWD, '%s:%s' %
-                        (self.auth_username, self.auth_password))
+            curl.setopt(pycurl.USERPWD, 
+                parsing.encode_unicode_bytes(self.auth_username) + b':' + 
+                parsing.encode_unicode_bytes(self.auth_password))
             if self.auth_type:
                 curl.setopt(pycurl.HTTPAUTH, self.auth_type)
 
