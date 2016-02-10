@@ -202,6 +202,26 @@ class TestsTest(unittest.TestCase):
         mock_handle.setopt.assert_any_call(mock_handle.MAXREDIRS, 5)
         mock_handle.close()
 
+    def test_basic_auth(self):
+        """ Test that basic auth configures correctly """
+        if PYTHON_MAJOR_VERSION > 2:
+            # In python 3, use of mocks for the curl setopt version (or via setattr)
+            # Will not modify the actual curl object... so test fails
+            print("Skipping test of CURL configuration for basic auth because the mocks fail in Py3")
+            return
+
+        test = Test()
+        test.auth_username = u'bobbyg'
+        test.auth_password = 'password'
+        mock_handle = pycurl.Curl()
+
+        mock_handle.setopt = mock.MagicMock(return_value=True)
+        test.configure_curl(curl_handle=mock_handle)
+
+        # print mock_handle.setopt.call_args_list  # Debugging
+        mock_handle.setopt.assert_any_call(mock_handle.USERPWD, b'bobbyg:password')
+        mock_handle.close()
+
     def test_parse_test_templated_headers(self):
         """ Test parsing with templated headers """
 
