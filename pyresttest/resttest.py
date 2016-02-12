@@ -777,6 +777,12 @@ except ImportError as ie:
     logging.debug(
         "Failed to load jsonschema validator, make sure the jsonschema module is installed if you wish to use schema validators.")
 
+try:
+    import jmespath
+    register_extensions('ext.extractor_jmespath')
+except ImportError as ie:
+    logging.debug(
+        "Failed to load jmespath extractor, make sure the jmespath module is installed if you wish to use jmespath extractor.")
 
 def main(args):
     """
