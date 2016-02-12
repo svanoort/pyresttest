@@ -5,7 +5,7 @@ except ImportError:
     from distutils.core import setup
 
 dependencies = ['pyyaml', 'pycurl']
-test_dependencies = ['django==1.6.5','django-tastypie==0.12.1']
+test_dependencies = ['django==1.6.5','django-tastypie==0.12.1','jsonpath','jmespath']
 
 # Add additional compatibility shims
 if sys.version_info[0] > 2:
@@ -35,12 +35,15 @@ setup(name='pyresttest',
       ],
       py_modules=['pyresttest.resttest', 'pyresttest.generators', 'pyresttest.binding',
                   'pyresttest.parsing', 'pyresttest.validators', 'pyresttest.contenthandling',
-                  'pyresttest.benchmarks', 'pyresttest.tests', 'pyresttest.ext.validator_jsonschema', 'pyresttest.six'],
+                  'pyresttest.benchmarks', 'pyresttest.tests', 
+                  'pyresttest.ext.validator_jsonschema','pyresttest.ext.extractor_jmespath' 
+                  'pyresttest.six'],
       license='Apache License, Version 2.0',
       install_requires=dependencies,
       tests_require=test_dependencies,
       extras_require= {
-        'JSONPath': ['jsonpath']
+        'JSONPath': ['jsonpath'],
+        'JMESPath': ['jmespath']
       },
       # Make this executable from command line when installed
       scripts=['util/pyresttest', 'util/resttest.py'],
