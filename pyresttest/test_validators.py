@@ -512,8 +512,8 @@ class ValidatorsTest(unittest.TestCase):
         try:
            import jmespath
            from ext.extractor_jmespath import JMESPathExtractor
-   
-           register_extractor('jmespath', JMESPathExtractor.parse)
+           if not validators.EXTRACTORS.get('jmespath'):
+               register_extractor('jmespath', JMESPathExtractor.parse)
            config = {
                'jmespath': 'key.val',
                'test': 'exists'
