@@ -375,7 +375,11 @@ class ComparatorValidator(AbstractValidator):
         else:
             expected_val = self.expected
 
+        # Handle a bytes-based body and a unicode expected value seamlessly
+        if isinstance(extracted_val, binary_type) and isinstance(expected_val, text_type):
+            expected_val = expected_val.encode('utf-8')
         comparison = self.comparator(extracted_val, expected_val)
+
         if not comparison:
             failure = Failure(validator=self)
             failure.message = "Comparison failed, evaluating {0}({1}, {2}) returned False".format(

@@ -240,6 +240,7 @@ Optionally, validators can return a Failure which evaluates to False, but suppli
 ### Extract And Compare:
 - **Name:** 'comparator' or 'compare' or 'assertEqual'
 - **Description:** run an extractor and compare results to expected value
+    + **Special note about encodings:** when testing raw binary bodies and strings for expected values, the expected value string is automatically encoded as UTF-8 bytes to allow for comparison. Use a !!bytes YAML if this is a problem, to avoid implicit encoding.
 - **Arguments:**
     + (extractor): an extractor definition, see above, named by extractor type
     + comparator: a comparator function to apply, which returns true or false (see list below)
