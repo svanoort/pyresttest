@@ -378,6 +378,24 @@ TYPES = {
 }
 ```
 
+### JSONSchema Validator (Optional)
+**Note:** this requires the 'jsonschema' python module to be installed. If not installed, you will be unable to use this validator, and an error message will be printed when tests are run (at "warn" log level).
+
+- **Name:** json_schema
+- **Description:** This validator lets you validate a request against a [JSON Schema - FIX LINK](Link here), which can be in the test body or an external file (as per the request body).
+- **Arguments:** 
+   + schema - the JSON schema to use in validating the request body
+- **Examples:**
+
+Validate against a schema in file 'miniapp-schema.json'
+```yaml
+---
+- test:
+    - url: /api/person/1/
+    - validators:
+        - json_schema: {schema: {file: 'miniapp-schema.json'}}
+```
+
 # Lifecycles Of Different Operations
 ## TestSet Execution Lifecycle
 1. Parse command line arguments
