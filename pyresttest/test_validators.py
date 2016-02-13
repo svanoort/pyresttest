@@ -417,6 +417,30 @@ class ValidatorsTest(unittest.TestCase):
         self.assertTrue(comp_validator.validate(body=myjson_pass))
         self.assertFalse(comp_validator.validate(body=myjson_fail))
 
+    def test_validator_unicode_comparison(self):
+        """ Checks for implicit unicode -> byte conversion in testing """
+        config = {
+            'raw_body': '.',
+            'comparator': 'contains',
+            'expected': u'stuff'
+        }
+        comp_validator = validators.ComparatorValidator.parse(config)
+        myjson_pass = b'i contain stuff because win'
+        myjson_fail = b'i fail without it'
+        self.assertTrue(comp_validator.validate(body=myjson_pass))
+        self.assertFalse(comp_validator.validate(body=myjson_fail))
+
+        # Let's try this with unicode characters just for poops and giggles
+        config = {
+            'raw_body': '.',
+            'comparator': 'contains',
+            'expected': u'cat😽stuff'
+        }
+        myjson_pass = u'i contain cat😽stuff'.encode('utf-8')
+        myjson_pass_unicode = u'i contain encoded cat😽stuff'
+        self.assertTrue(comp_validator.validate(body=myjson_pass))
+        self.assertTrue(comp_validator.validate(body=myjson_pass_unicode))
+
     def test_validator_compare_ne(self):
         """ Basic test of the inequality validator"""
         config = {
