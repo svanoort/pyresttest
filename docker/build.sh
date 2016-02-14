@@ -42,7 +42,7 @@ if [ $? -ne 0 ]; then  # Test failed, remove the built image and exit with error
 fi
 docker tag -f pyresttest-build-python3:$PYTHON3_VERSION-SNAPSHOT pyresttest-build-python3:$PYTHON3_VERSION
 docker tag -f pyresttest-build-python3:$PYTHON3_VERSION-SNAPSHOT pyresttest-build-python3:latest
-docker rmi pyresttest-build-python3:$PYTHON3_VERSION-SNAPSHOT
+docker rmi pyresttest-build-python3:$PYTHON3_VERSION-SNAPSHOT || true
 
 # Build the sudo images for custom testing
 cd "$(dirname "$0")"
