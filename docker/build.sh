@@ -5,9 +5,9 @@ set -x
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd $DIR
 
-UBUNTU_14_VERSION=0.4
-CENTOS6_VERSION=0.4
-PYTHON3_VERSION=0.5
+UBUNTU_14_VERSION=0.5
+CENTOS6_VERSION=0.5
+PYTHON3_VERSION=0.6
 
 docker build -t pyresttest-build-ubuntu-14:$UBUNTU_14_VERSION-SNAPSHOT ./ubuntu14-py27
 docker build -t pyresttest-build-centos6:$CENTOS6_VERSION-SNAPSHOT ./centos6-py26
@@ -40,7 +40,7 @@ if [ $? -ne 0 ]; then  # Test failed, remove the built image and exit with error
     echo 'Debian-wheezy build with python 3.4.3 failed'
     exit 1
 fi
-docker tag -f pyresttest-build-python3:$PYTHON3_VERSION-SNAPSHOT pyresttest-build-python3:0.2
+docker tag -f pyresttest-build-python3:$PYTHON3_VERSION-SNAPSHOT pyresttest-build-python3:$PYTHON3_VERSION
 docker tag -f pyresttest-build-python3:$PYTHON3_VERSION-SNAPSHOT pyresttest-build-python3:latest
 docker rmi pyresttest-build-python3:$PYTHON3_VERSION-SNAPSHOT
 
