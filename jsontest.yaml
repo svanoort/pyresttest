@@ -1,0 +1,13 @@
+---
+- config:
+    - testset: 'Testing free api'
+    - timeout: 60
+    - curl_option_SSL_CIPHER_LIST: 'rsa_rc4_128_sha'
+
+- test:
+    - group: "Quickstart"
+    - name: "Get data"
+    - url: '/posts/1'
+    - method: 'GET'
+    - validators:
+         - compare: {jsonpath_mini: 'userId', comparator: 'gt', expected: 0}
