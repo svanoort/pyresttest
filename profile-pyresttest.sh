@@ -14,3 +14,6 @@ DJANGO_PROCESS=$!
 sleep 5
 python -m cProfile -s cumtime pyresttest/resttest.py http://localhost:8000 pyresttest/content-test.yaml > contenttest-cum.txt
 kill -9 $DJANGO_PROCESS
+
+# Full profiler dump
+# python -m cProfile -o github_api_dump.out pyresttest/resttest.py https://api.github.com examples/github_api_smoketest.yaml
