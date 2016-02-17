@@ -1,0 +1,8 @@
+# Runs all the miniapp tests at once, to simulate a complex testset
+- import: 'examples/miniapp-benchmark-overhead-generators.yaml'
+- import: 'examples/miniapp-benchmark-overhead.yaml'
+- import: 'examples/miniapp-benchmark.yaml'
+- import: 'examples/miniapp-binding.yaml'
+- import: 'examples/miniapp-extract-validate.yaml'
+- import: 'examples/miniapp-schema.json'
+- import: 'examples/miniapp-test.yaml'
