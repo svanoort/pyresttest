@@ -264,7 +264,7 @@ def parse_benchmark(base_url, node):
                         raise TypeError(
                             "Invalid aggregate input: non-string aggregate name")
                     benchmark.add_metric(tests.coerce_to_string(metricname),
-                        test.coerce_to_string(aggregate))
+                        tests.coerce_to_string(aggregate))
             else:
                 raise TypeError(
                     "Invalid benchmark metric datatype: " + str(value))
