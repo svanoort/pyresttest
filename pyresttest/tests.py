@@ -291,6 +291,16 @@ class Test(object):
 
         if curl_handle:
             curl = curl_handle
+
+            try:  # Check the curl handle isn't closed, and reuse it if possible
+                curl.getinfo(curl.HTTP_CODE)                
+                # Below clears the cookies & curl options for clean run
+                # But retains the DNS cache and connection pool
+                curl.reset()
+                curl.setopt(curl.COOKIELIST, "ALL")
+            except pycurl.error:
+                curl = pycurl.Curl()
+            
         else:
             curl = pycurl.Curl()
 
