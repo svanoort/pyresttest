@@ -243,13 +243,11 @@ For example, to follow redirects up to 5 times (CURLOPT_FOLLOWLOCATION and CURLO
 Note that while option names are validated, *no validation* is done on their values.
 
 ## Syntax Limitations
-Whenever possible, I've tried to make reading configuration Be Smart And Do The Right Thing.  That means type conversions are handled wherever possible,
-and fail early if configuration is nonsensical.
-
-We're all responsible adults: don't try to give a boolean or list where an integer is expected and it'll play nice.
-
-One caveat: *if you define the same element (example, URL) twice in the same enclosing element, the last value will be used.*  In order to preserve sanity, I use last-value wins.
-
+* Whenever possible, the YAML configuration handler tries to convert variable types as needed.  We're all responsible adults, don't do anything crazy and it will play nicely.
+* Only a handful of elements can use dynamic variables (URLs, headers, request bodies, validators) - there are plans to change this in the next few releases.
+* The templating is quite limited (it's doing simple string subsitution). There are plans to improve this in the next few releases, but it isn't there yet.
+* One caveat: *if you define the same element (example, URL) twice in the same enclosing element, the last value will be used.*  In order to preserve sanity, I use last-value wins.
+* No support for "for-each" on requests/responses natively - this can be done via custom extensions, and may be available in the *distant* future but it's a while out.
 
 # Benchmarking?
 Oh, yes please! PyRestTest allows you to collect low-level network performance metrics from Curl itself.
@@ -423,5 +421,4 @@ Bear in mind that this is largely a one-man, outside-of-working-hours effort at 
 - But some form might come eventually!
 
 ## Why do you use PyCurl and not requests?
-- PyRestTest *needs* the low-level networking features that PyCurl exposes, benchmarking is 100% dependent for this
-- As a wrapper for LibCurl, PyCurl tends to offer a mature and featureful system
+- Maybe eventually.  PyRestTest needs the low-level features of PyCurl for benchmarking, and benefits from its performance.  However we may eventually abstract some of the core testing features away to allow for pure-python execution
