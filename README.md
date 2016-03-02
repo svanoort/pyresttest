@@ -17,7 +17,7 @@ pyresttest
 - [Other Goodies](#other-goodies)
 - [Basic Test Set Syntax](#basic-test-syntax)
 	- [Import example](#import-example)
-	- [Url Test](#url-test)
+	- [Url Test](#url-test-with-timeout)
 	- [Custom HTTP Options (special curl settings)](#custom-http-options-special-curl-settings)
 	- [Syntax Limitations](#syntax-limitations)
 - [Benchmarking?](#benchmarking)
@@ -216,12 +216,15 @@ There are 5 top level test syntax elements:
 - import: examples/miniapp-test.yaml
 ```
 
-## Url Test
-A simple URL test is equivalent to a basic GET test with that URL
+## Url Test With Timeout
+A simple URL test is equivalent to a basic GET test with that URL.
+Also shows how to use the timeout option in testset config to descrease the default timeout from 10 seconds to 1. 
+
 ```yaml
 ---
 - config:
     - testset: "Basic tests"
+    - timeout: 1
 - url: "/api/person/"  # This is a simple test
 - test: 
     - url: "/api/person/"  # This does the same thing
