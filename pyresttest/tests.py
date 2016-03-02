@@ -343,6 +343,7 @@ class Test(object):
             curl.setopt(curl.POSTFIELDS, bod)
             curl.setopt(curl.CUSTOMREQUEST, 'PATCH')
             # Required for some servers
+            # I wonder: how compatible will this be?  It worked with Django but feels iffy.
             if bod is not None:
                 curl.setopt(pycurl.INFILESIZE, len(bod))
             else:
@@ -358,7 +359,8 @@ class Test(object):
         elif self.method and self.method.upper() != 'GET':  # Alternate HTTP methods
             curl.setopt(curl.CUSTOMREQUEST, self.method.upper())
             if bod is not None:
-                curl.setopt(pycurl.INFILESIZE, len(bod))
+                curl.setopt(pycurl.POSTFIELDS, bod)
+                curl.setopt(pycurl.POSTFIELDSIZE, len(bod))
 
         # Template headers as needed and convert headers dictionary to list of header entries
         head = self.get_headers(context=context)
