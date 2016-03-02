@@ -349,6 +349,9 @@ class Test(object):
                 curl.setopt(pycurl.INFILESIZE, 0)
         elif self.method == u'DELETE':
             curl.setopt(curl.CUSTOMREQUEST, 'DELETE')
+        elif self.method == u'HEAD':
+            curl.setopt(curl.NOBODY, 1)
+            curl.setopt(curl.CUSTOMREQUEST, 'HEAD')
         elif self.method and self.method.upper() != 'GET':  # Support HEAD/ETC
             curl.setopt(curl.CUSTOMREQUEST, self.method.upper())
 
