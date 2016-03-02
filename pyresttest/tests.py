@@ -350,7 +350,8 @@ class Test(object):
         elif self.method == u'DELETE':
             curl.setopt(curl.CUSTOMREQUEST, 'DELETE')
             if bod is not None:
-                curl.setopt(pycurl.INFILESIZE, len(bod))
+                curl.setopt(pycurl.POSTFIELDS, bod)
+                curl.setopt(pycurl.POSTFIELDSIZE, len(bod))
         elif self.method == u'HEAD':
             curl.setopt(curl.NOBODY, 1)
             curl.setopt(curl.CUSTOMREQUEST, 'HEAD')
