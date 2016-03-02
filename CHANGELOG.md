@@ -2,10 +2,12 @@
 
 ## 1.7.0 Unreleased but on master branch (tentative Pip release in December/Jan)
 **Features:**
+* Unicode support epic: fix handling of request body and a whole raft of smaller fixes + more tests: https://github.com/svanoort/pyresttest/issues/104
 * ALPHA: Python 3 support - all tests now pass!
+  - 
 * JsonPath_Mini extractor supports ability to return the root response object now with the "." syntax -- thanks for the PR! https://github.com/svanoort/pyresttest/pull/106
 * Allow for smarter URL creation from fragments: https://github.com/svanoort/pyresttest/issues/118
-* Unicode support epic: fix handling of request body and a whole raft of smaller fixes + more tests: https://github.com/svanoort/pyresttest/issues/104
+
 * Add terminal output coloring for pass/pail (able to turn off via cmdline)
   - Thanks to @lerrua for his PRs  https://github.com/svanoort/pyresttest/pull/125 https://github.com/svanoort/pyresttest/pull/141
 
@@ -16,6 +18,10 @@
 * Fix HTTP PATCH method configuration - many thanks to @lerrua for his PR!
   - Noted in https://github.com/svanoort/pyresttest/issues/117
   - Fixed in https://github.com/svanoort/pyresttest/pull/129
+* Fix the HTTP DELETE use with a body, which could not be tested
+  - Thanks to @spradeepv for the pull request: https://github.com/svanoort/pyresttest/pull/165
+* Fix HTTP HEAD method configuration 
+  - Thanks to @ksramchandani for reporting issues that triggered an investigation (different root cause) in https://github.com/svanoort/pyresttest/issues/117
 
 **Known Issues / Back-Compatibility:**
 * Headers are returned from tests as unicode key, value pairs now

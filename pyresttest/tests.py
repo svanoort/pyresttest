@@ -349,8 +349,16 @@ class Test(object):
                 curl.setopt(pycurl.INFILESIZE, 0)
         elif self.method == u'DELETE':
             curl.setopt(curl.CUSTOMREQUEST, 'DELETE')
-        elif self.method and self.method.upper() != 'GET':  # Support HEAD/ETC
+            if bod is not None:
+                curl.setopt(pycurl.POSTFIELDS, bod)
+                curl.setopt(pycurl.POSTFIELDSIZE, len(bod))
+        elif self.method == u'HEAD':
+            curl.setopt(curl.NOBODY, 1)
+            curl.setopt(curl.CUSTOMREQUEST, 'HEAD')
+        elif self.method and self.method.upper() != 'GET':  # Alternate HTTP methods
             curl.setopt(curl.CUSTOMREQUEST, self.method.upper())
+            if bod is not None:
+                curl.setopt(pycurl.INFILESIZE, len(bod))
 
         # Template headers as needed and convert headers dictionary to list of header entries
         head = self.get_headers(context=context)
