@@ -5,7 +5,7 @@ except ImportError:
     from distutils.core import setup
 
 # Future is needed for pip distribution for python 3 support
-dependencies = ['pyyaml', 'pycurl', 'future']
+dependencies = ['pyyaml', 'pycurl']
 test_dependencies = ['django==1.6.5','django-tastypie==0.12.1','jsonpath','jmespath']
 
 # Add additional compatibility shims

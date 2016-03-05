@@ -175,7 +175,7 @@ void do_directinstall_test(String pyresttestBranch='master') {
   }
   dir('pyresttest') {
     git url:'https://github.com/svanoort/pyresttest.git', branch:pyresttestBranch
-    stage 'Test Instant: setup.py install'
+    stage 'Test Install: setup.py install'
     execute_install_testset([testPy27_directInstall, testPy26_directInstall, testPy34_directInstall], test_direct_names)
   }
 }
@@ -247,7 +247,7 @@ void do_pypi_tests(String pyresttestBranch='master', String pypiServer='https://
 
   def testPy26_pypi = [basePy26, [installYumPybase,    pyr_install_pypi, testBasic1, testBasic2, testApiDirect, testApiUtil]]
   def testPy27_pypi = [basePy27, [installAptPybase,    pyr_install_pypi, testBasic1, testBasic2, testApiDirect, testApiUtil]]
-  def testPy34_pypi = [basePy34, [installAptPybasePy3, 'sudo pip install pyyaml', pyr_install_pypi, testBasic1, testBasic2, testApiDirect, testApiUtil]]
+  def testPy34_pypi = [basePy34, [installAptPybasePy3, 'sudo pip install pyyaml future', pyr_install_pypi, testBasic1, testBasic2, testApiDirect, testApiUtil]]
 
   docker.image('sudo-python3:3.4.3-wheezy').inside() {
     sh 'sudo rm -rf pyresttest-pypi'

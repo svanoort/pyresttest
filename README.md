@@ -31,7 +31,7 @@ pyresttest
 # What Is It?
 - A REST testing and API microbenchmarking tool
 - Tests are defined in basic YAML or JSON config files, no code needed
-- Minimal dependencies (pycurl, pyyaml, future), making it easy to deploy on-server for smoketests/healthchecks
+- Minimal dependencies (pycurl, pyyaml, optionally future), making it easy to deploy on-server for smoketests/healthchecks
 - Supports [generate/extract/validate](advanced_guide.md) mechanisms to create full test scenarios
 - Returns exit codes on failure, to slot into automated configuration management/orchestration tools (also supplies parseable logs)
 - Logic is written and [extensible](extensions.md) in Python
@@ -49,7 +49,7 @@ Apache License, Version 2.0
 * The changelog will also show features/fixes currently merged to the master branch but not released to PyPi yet (pending installation tests across platforms). 
 
 # Installation
-PyRestTest works on Linux or Mac with Python 2.6, 2.7, or 3.3+. 
+PyRestTest works on Linux or Mac with Python 2.6, 2.7, or 3.3+ (with module 'future' installed)
 
 **First we need to install package python-pycurl:**
 * Ubuntu/Debian: (sudo) `apt-get install python-pycurl`
@@ -59,7 +59,7 @@ PyRestTest works on Linux or Mac with Python 2.6, 2.7, or 3.3+.
 *This is needed because the pycurl dependency may fail to install by pip.  In *very rare* cases you may need to intall python-pyyaml if pip cannot install it correctly.*
 
 **It is easy to install the latest release by pip:**
-(sudo) `pip install pyresttest`
+(sudo) `pip install pyresttest`  (also install 'future' if on Python 3)
 
 **If pip isn't installed, we'll want to install it first:**
 If that is not installed, we'll need to install it first:
