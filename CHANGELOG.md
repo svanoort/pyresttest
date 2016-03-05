@@ -4,12 +4,16 @@
 **Features:**
 * Unicode support epic: fix handling of request body and a whole raft of smaller fixes + more tests: https://github.com/svanoort/pyresttest/issues/104
 * ALPHA: Python 3 support - all tests now pass!
-  - 
+* JMESPath extractor: a proper JSON query syntax to use in validation
+  - Thanks to @marklz for his contribution (significant effort), tracked in https://github.com/svanoort/pyresttest/pull/156
 * JsonPath_Mini extractor supports ability to return the root response object now with the "." syntax -- thanks for the PR! https://github.com/svanoort/pyresttest/pull/106
 * Allow for smarter URL creation from fragments: https://github.com/svanoort/pyresttest/issues/118
-
+* Reuse Curl handles in tests, which improves test performance with connection reuse and DNS caching:
+  - https://github.com/svanoort/pyresttest/pull/160
 * Add terminal output coloring for pass/pail (able to turn off via cmdline)
   - Thanks to @lerrua for his PRs  https://github.com/svanoort/pyresttest/pull/125 https://github.com/svanoort/pyresttest/pull/141
+* Switch from legacy distutils for install to setuptools:
+  - Thanks @lerrua for the PR - https://github.com/svanoort/pyresttest/pull/122
 
 **Bugfixes:**
 * Whole raft of bugfixes around Unicode handling and request/response bodies
@@ -22,6 +26,8 @@
   - Thanks to @spradeepv for the pull request: https://github.com/svanoort/pyresttest/pull/165
 * Fix HTTP HEAD method configuration 
   - Thanks to @ksramchandani for reporting issues that triggered an investigation (different root cause) in https://github.com/svanoort/pyresttest/issues/117
+* Fix Django testing breakage by locking to a functioning version
+  - e39d156b56962e86a0054ba11304eb37f8a3b46d and e731ebaee6f4926e7c42fb551af8ff4930a7127b
 
 **Known Issues / Back-Compatibility:**
 * Headers are returned from tests as unicode key, value pairs now
