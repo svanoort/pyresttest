@@ -15,7 +15,7 @@ else:
   test_dependencies.append('discover')
 
 setup(name='pyresttest',
-      version='1.7.0.dev',
+      version='1.7.0',
       description='Python RESTful API Testing & Microbenchmarking Tool',
       long_description='Python RESTful API Testing & Microbenchmarking Tool \n Documentation at https://github.com/svanoort/pyresttest',
       author='Sam Van Oort',

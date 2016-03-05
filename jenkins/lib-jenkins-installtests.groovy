@@ -238,7 +238,7 @@ void do_pypi_tests(String pyresttestBranch='master', String pypiServer='https://
   String testBasic1 = "resttest.py --help | grep 'Usage' "
   String testBasic2 = "pyresttest --help | grep 'Usage' "
   String testImport = 'python -c "from pyresttest import validators"'  // Try importing
-  String testApiDirect = "python pyresttest/resttest.py https://api.github.com examples/github_api_smoketest.yaml"
+  String testApiDirect = "resttest.py https://api.github.com examples/github_api_smoketest.yaml"
   String testApiUtil = "pyresttest https://api.github.com examples/github_api_smoketest.yaml"
 
   String pyr_install_pypi = "sudo pip install -i $pypiServer pyresttest"
