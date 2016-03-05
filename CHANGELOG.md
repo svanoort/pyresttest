@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.7.0 Unreleased but on master branch (tentative Pip release in December/Jan)
+## 1.7.0 Sat Mar 06 14:30:00 2016 -0400
 **Features:**
 * Unicode support epic: fix handling of request body and a whole raft of smaller fixes + more tests: https://github.com/svanoort/pyresttest/issues/104
 * ALPHA: Python 3 support - all tests now pass!
