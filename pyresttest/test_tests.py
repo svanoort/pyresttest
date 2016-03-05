@@ -188,7 +188,7 @@ class TestsTest(unittest.TestCase):
             # In python 3, use of mocks for the curl setopt version (or via setattr)
             # Will not modify the actual curl object... so test fails
             print("Skipping test of CURL configuration for redirects because the mocks fail")
-            return
+            raise unittest.SkipTest("Skipping test of CURL configuration for redirects because the mocks fail")
 
         test = Test()
         test.curl_options = {'FOLLOWLOCATION': True, 'MAXREDIRS': 5}

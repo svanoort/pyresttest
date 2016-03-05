@@ -94,6 +94,21 @@ class TestRestTest(unittest.TestCase):
         self.assertEqual(('accept', 'text/html'), headers[1])
         self.assertEqual(('accept', 'application/json'), headers[2])
 
+    def test_jmespath_import(self):
+        """ Verify that JMESPath extractor loads if class present """
+
+        importable = False
+        try:
+            import jmespath
+            importable = True            
+        except ImportError:
+            print("Skipping jmespath import test because library absent")
+            raise unittest.SkipTest("JMESPath module absent")
+
+        from . import validators
+        self.assertTrue('jmespath' in validators.EXTRACTORS)
+        jmespathext = validators.EXTRACTORS['jmespath']('test1.a')
+
     def test_cmdline_args_parsing_basic(self):
         cmdline = [
             'my_url', 'my_test_filename',

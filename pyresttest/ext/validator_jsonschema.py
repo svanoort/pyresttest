@@ -4,18 +4,16 @@ import json
 import yaml
 import jsonschema
 
-# TODO see if there's a clever way to avoid this nastiness
-try:
+try:  # First try to load pyresttest from global namespace
+    from pyresttest import validators
+    from pyresttest import binding
+    from pyresttest import parsing
+    from pyresttest import contenthandling    
+except ImportError:  # Then try a relative import if possible
     from .. import validators
     from .. import binding
     from .. import parsing
     from .. import contenthandling
-except ImportError:
-    from pyresttest import validators
-    from pyresttest import binding
-    from pyresttest import parsing
-    from pyresttest import contenthandling
-
 
 class JsonSchemaValidator(validators.AbstractValidator):
     """ Json schema validator using the jsonschema library """

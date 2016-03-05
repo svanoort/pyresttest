@@ -318,6 +318,12 @@ class RestTestCase(unittest.TestCase):
             benchmark_result.results['total_time']))
 
     def test_get_validators_jmespath_fail(self):
+        try:
+            import jmespath            
+        except ImportError:
+            print("Skipping jmespath import test because library absent")
+            raise unittest.SkipTest("JMESPath module absent")   
+
         """ Test validators that should fail """
         test = Test()
         test.url = self.prefix + '/api/person/'
