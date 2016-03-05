@@ -241,7 +241,7 @@ void do_pypi_tests(String pyresttestBranch='master', String pypiServer='https://
   String testApiDirect = "python pyresttest/resttest.py https://api.github.com examples/github_api_smoketest.yaml"
   String testApiUtil = "pyresttest https://api.github.com examples/github_api_smoketest.yaml"
 
-  String pyr_install_pypi = "sudo pip install -i $pypiServer"
+  String pyr_install_pypi = "sudo pip install -i $pypiServer pyresttest"
 
   def test_pypi_names = ['setup', 'install-from-pypi', 'test-cmdline1', 'test-cmdline2', 'import-test', 'functional-gh-test', 'test-functional-cmdline']
 
@@ -254,6 +254,7 @@ void do_pypi_tests(String pyresttestBranch='master', String pypiServer='https://
   }
   dir('pyresttest-pypi') {
     git url:'https://github.com/svanoort/pyresttest.git', branch:pyresttestBranch
+    sh 'rm -rf pyresttest'
     stage 'Basic Test: pip develop mode install'
     execute_install_testset([testPy27_pypi, testPy26_pypi, testPy34_pypi], test_pypi_names)
   }
