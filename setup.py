@@ -4,12 +4,13 @@ try:
 except ImportError:
     from distutils.core import setup
 
-dependencies = ['pyyaml', 'pycurl']
+# Future is needed for pip distribution for python 3 support
+dependencies = ['pyyaml', 'pycurl', 'future']
 test_dependencies = ['django==1.6.5','django-tastypie==0.12.1','jsonpath','jmespath']
 
 # Add additional compatibility shims
 if sys.version_info[0] > 2:
-  dependencies.append('future')
+  dependencies.append('future')  # Only works with direct local installs, not via pip
 else:
   test_dependencies.append('mock')
   test_dependencies.append('discover')
