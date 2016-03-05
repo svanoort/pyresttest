@@ -1,5 +1,7 @@
 import traceback
 import json
+import sys
+PYTHON_MAJOR_VERSION = sys.version_info[0]
 
 import yaml
 import ast
@@ -24,15 +26,14 @@ class JMESPathExtractor(validators.AbstractExtractor):
     is_body_extractor = True
 
     def extract_internal(self, query=None, args=None, body=None, headers=None):
+        mybody = body
+        if PYTHON_MAJOR_VERSION > 2:
+            if isinstance(mybody, bytes):
+                mybody = str(mybody, 'utf-8')
+
         try:
-            res = jmespath.search(query, json.loads(body)) # Better way
-            tn = str(type(res))
-            if ( res == None ):
-               return None
-            elif ( tn == "<type 'int'>" or tn == "<type 'float'>" ):
-               return res
-            else: 
-               return str(res).replace( "[u'", "['").replace(", u'", ", '")
+            res = jmespath.search(query, json.loads(mybody)) # Better way
+            return res
         except Exception as e:
             raise ValueError("Invalid query: " + query + " : " + str(e))
 
