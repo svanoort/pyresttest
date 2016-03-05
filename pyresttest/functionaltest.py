@@ -317,5 +317,67 @@ class RestTestCase(unittest.TestCase):
         self.assertTrue(benchmark_config.benchmark_runs, len(
             benchmark_result.results['total_time']))
 
+    def test_get_validators_jmespath_fail(self):
+        try:
+            import jmespath            
+        except ImportError:
+            print("Skipping jmespath import test because library absent")
+            raise unittest.SkipTest("JMESPath module absent")   
+
+        """ Test validators that should fail """
+        test = Test()
+        test.url = self.prefix + '/api/person/'
+        test.validators = list()
+        cfg_exists = {'jmespath': 'objects[500]', 'test': 'exists'}
+        test.validators.append(
+            validators.parse_validator('extract_test', cfg_exists))
+        cfg_not_exists = {'jmespath': "objects[1]", 'test': 'not_exists'}
+        test.validators.append(validators.parse_validator(
+            'extract_test', cfg_not_exists))
+        cfg_compare = {'jmespath': "objects[1].last_name",
+                       'expected': 'NotJenkins'}
+        test.validators.append(
+            validators.parse_validator('compare', cfg_compare))
+        test_response = resttest.run_test(test)
+        self.assertFalse(test_response.passed)
+        self.assertTrue(test_response.failures)
+        self.assertEqual(3, len(test_response.failures))
+
+    def test_get_validators_jmespath(self):
+        """ Test that validators work correctly """
+        test = Test()
+        test.url = self.prefix + '/api/person/'
+
+        # Validators need library calls to configure them
+        test.validators = list()
+        cfg_exists = {'jmespath': "objects[0]", 'test': 'exists'}
+        test.validators.append(
+            validators.parse_validator('extract_test', cfg_exists))
+        cfg_exists_0 = {'jmespath': "meta.offset", 'test': 'exists'}
+        test.validators.append(validators.parse_validator(
+            'extract_test', cfg_exists_0))
+        cfg_not_exists = {'jmespath': "objects[100]", 'test': 'not_exists'}
+        test.validators.append(validators.parse_validator(
+            'extract_test', cfg_not_exists))
+        cfg_compare_login = {
+            'jmespath': 'objects[0].login', 'expected': 'gbaltar'}
+        test.validators.append(validators.parse_validator(
+            'compare', cfg_compare_login))
+        cfg_compare_id = {'jmespath': 'objects[1].id',
+                          'comparator': 'gt', 'expected': -1}
+        test.validators.append(
+            validators.parse_validator('compare', cfg_compare_id))
+
+        test_response = resttest.run_test(test)
+        for failure in test_response.failures:
+            print("REAL FAILURE")
+            print("Test Failure, failure type: {0}, Reason: {1}".format(
+                failure.failure_type, failure.message))
+            if failure.details:
+                print("Validator/Error details: " + str(failure.details))
+        self.assertFalse(test_response.failures)
+        self.assertTrue(test_response.passed)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -1,0 +1,31 @@
+---
+- config:
+    - testset: "Basic tests"
+
+- test: 
+    - name: "test-all"
+    - url: "/jmespath-test-all"
+    - expected_status: [200]
+    - validators:
+        - compare: {jmespath: 'test1.a', comparator: 'eq', expected: 'foo' }
+        - compare: {jmespath: 'test1.b', comparator: 'eq', expected: 'bar' }
+        - compare: {jmespath: 'test1.c', comparator: 'eq', expected: 'baz' }
+        - compare: {jmespath: 'test2.a.b.c.d', comparator: 'eq', expected: 'value' }
+        - compare: {jmespath: 'test3[1]', comparator: 'eq', expected: 'b' }
+        - compare: {jmespath: 'test4.a.b.c[0].d[1][0]', comparator: 'eq', expected: 1 }
+        - compare: {jmespath: 'length(test5[0:5])', comparator: 'eq', expected: 5 }
+        - compare: {jmespath: 'test5[1:3]', comparator: 'eq', expected: '[1, 2]' }
+        - compare: {jmespath: 'test5[::2]', comparator: 'eq', expected: '[0, 2, 4, 6, 8]' }
+        - compare: {jmespath: 'test5[5:0:-1]', comparator: 'eq', expected: '[5, 4, 3, 2, 1]' }
+        - compare: {jmespath: 'test6.people[*].first', comparator: 'eq', expected: "['James', 'Jacob', 'Jayden']" }
+        - compare: {jmespath: 'test6.people[:2].first', comparator: 'eq', expected: "['James', 'Jacob']" }
+        - compare: {jmespath: 'test6.people[*].first | [0]', comparator: 'eq', expected: 'James' }
+        - compare: {jmespath: 'test7.ops.*.numArgs', comparator: 'eq', expected: '[2, 3]' }
+        - compare: {jmespath: 'test8.reservations[*].instances[*].state', comparator: 'eq', expected: "[['running', 'stopped'], ['terminated', 'runnning']]" } 
+        - compare: {jmespath: 'test9[]', comparator: 'eq', expected: '[0, 1, 2, 3, 4, 5, [6, 7]]' }
+        - compare: {jmespath: "test10.machines[?state=='running'].name", comparator: 'eq', expected: "['a', 'c']" }
+        - compare: {jmespath: "test10.machines[?state!='running'][name, state] | [0]", comparator: 'eq', expected: "['b', 'stopped']" }
+        - compare: {jmespath: 'length(test11.people)', comparator: 'eq', expected: 3 }
+        - compare: {jmespath: 'max_by(test11.people, &age).name', comparator: 'eq', expected: 'a' }
+        - compare: {jmespath: "test12.myarray[?contains(@, 'foo') == `true`]", comparator: 'eq', expected: "['foo', 'foobar', 'barfoo', 'barfoobaz']" }
+

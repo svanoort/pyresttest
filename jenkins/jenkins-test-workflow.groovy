@@ -24,7 +24,7 @@ node {
   sh 'docker/build.sh'
   def testEnv = docker.image('pyresttest-build-ubuntu-14:latest')
   def testEnv26 = docker.image('pyresttest-build-centos6:latest')
-  def testEnvPy3 = docker.image('pyresttest-build-python3')
+  def testEnvPy3 = docker.image('pyresttest-build-python3:latest')
 
   stage 'Unit Test ubuntu-python27'
   doTest(testEnv, "python -m unittest discover",

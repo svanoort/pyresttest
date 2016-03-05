@@ -1,0 +1,46 @@
+{ 
+   "test1" : {"a": "foo", "b": "bar", "c": "baz"},
+   "test2" : {"a": {"b": {"c": {"d": "value"}}}},
+   "test3" : ["a", "b", "c", "d", "e", "f"],
+   "test4" : {
+      "a": {
+        "b": {
+          "c": [
+            {"d": [0, [1, 2]]},
+            {"d": [3, 4]}
+          ]
+        }
+      } },
+   "test5" : [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+   "test6" : {
+      "people": [
+         {"first": "James", "last": "d"},
+         {"first": "Jacob", "last": "e"},
+         {"first": "Jayden", "last": "f"},
+         {"missing": "different"}
+      ],
+      "foo": {"bar": "baz"}
+   },
+   "test7" : {
+      "ops": {
+         "functionA": {"numArgs": 2},
+         "functionB": {"numArgs": 3},
+         "functionC": {"variadic": 4}
+      }
+   },
+   "test8" : {
+      "reservations": [
+         { "instances": [ {"state": "running"}, {"state": "stopped"} ] },
+         { "instances": [ {"state": "terminated"}, {"state": "runnning"} ] }
+      ]
+   },
+   "test9" : [ [0, 1], 2, [3], 4, [5, [6, 7]] ],
+   "test10" : { "machines": [ {"name": "a", "state": "running"}, {"name": "b", "state": "stopped"}, {"name": "c", "state": "running"} ] },
+   "test11" : { 
+      "people": [ 
+         { "name": "b", "age": 30, "state": {"hired": "ooo"} }, 
+         { "name": "a", "age": 50, "state": {"fired": "ooo"} }, 
+         { "name": "c", "age": 40, "state": {"hired": "atwork"} } ] 
+   } ,
+   "test12" : { "myarray": [ "foo", "foobar", "barfoo", "bar", "baz", "barbaz", "barfoobaz" ] }
+}
