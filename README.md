@@ -37,6 +37,9 @@ pyresttest
 - Logic is written and [extensible](extensions.md) in Python
 
 # Status
+
+**NEW: Full Python 3 Support in Alpha** - download it, 'pip install future' and give it a try!
+ 
 Apache License, Version 2.0
 
 ![Status Badge](http://52.4.228.82:8080/jenkins/buildStatus/icon?job=set-main-build-status) [![PyPI version](https://badge.fury.io/py/pyresttest.svg)](https://badge.fury.io/py/pyresttest) 
