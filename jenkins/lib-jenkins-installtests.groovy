@@ -108,7 +108,7 @@ void do_clone_run(String pyresttestBranch='master'){
 
   // Base installs, including pycurl since it almost never installs right
   String installAptPybase = 'sudo apt-get install -y python-pip python-pycurl'
-  String installAptPybasePy3 = 'sudo apt-get install -y python-pip'  // Should come with it, but just in case!
+  String installAptPybasePy3 = 'sudo apt-get install -y python3-pip'  // Should come with it, but just in case!
   String installYumPybase = 'sudo rpm -ivh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm && sudo yum install -y python-pip python-pycurl'
 
   // Libs needed to run pyresttest
@@ -147,7 +147,7 @@ void do_directinstall_test(String pyresttestBranch='master') {
 
   // Base installs, including pycurl since it almost never installs right
   String installAptPybase = 'sudo apt-get install -y python-pip python-pycurl'
-  String installAptPybasePy3 = 'sudo apt-get install -y python-pip'  // Should come with it, but just in case!
+  String installAptPybasePy3 = 'sudo apt-get install -y python3-pip'  // Should come with it, but just in case!
   String installYumPybase = 'sudo rpm -ivh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm && sudo yum install -y python-pip python-pycurl'
 
   // Libs needed to run pyresttest
@@ -189,7 +189,7 @@ void do_pip_develop_tests(String pyresttestBranch='master') {
 
   // Base installs, including pycurl since it almost never installs right
   String installAptPybase = 'sudo apt-get install -y python-pip python-pycurl'
-  String installAptPybasePy3 = 'sudo apt-get install -y python-pip'  // Should come with it, but just in case!
+  String installAptPybasePy3 = 'sudo apt-get install -y python3-pip'  // Should come with it, but just in case!
   String installYumPybase = 'sudo rpm -ivh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm && sudo yum install -y python-pip python-pycurl'
 
   // Libs needed to run pyresttest
@@ -231,7 +231,7 @@ void do_pypi_tests(String pyresttestBranch='master', String pypiServer='https://
 
   // Base installs, including pycurl since it almost never installs right
   String installAptPybase = 'sudo apt-get install -y python-pip python-pycurl'
-  String installAptPybasePy3 = 'sudo apt-get install -y python-pip'  // Should come with it, but just in case!
+  String installAptPybasePy3 = 'sudo apt-get install -y python3-pip'  // Should come with it, but just in case!
   String installYumPybase = 'sudo rpm -ivh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm && sudo yum install -y python-pip python-pycurl'
 
   // Tests
