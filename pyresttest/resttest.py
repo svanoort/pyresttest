@@ -8,8 +8,6 @@ import pycurl
 import json
 import csv
 import logging
-from optparse import OptionParser
-from email import message_from_string  # For headers handling
 import time
 
 try:
@@ -36,12 +34,12 @@ if __name__ == '__main__':
     from pyresttest import generators
     from pyresttest import validators
     from pyresttest import tests
-    from pyresttest.generators import parse_generator
-    from pyresttest.parsing import flatten_dictionaries, lowercase_keys, safe_to_bool, safe_to_json
+    from pyresttest.parsing import *
 
     from pyresttest.validators import Failure
     from pyresttest.tests import Test, DEFAULT_TIMEOUT
     from pyresttest.benchmarks import Benchmark, AGGREGATES, METRICS, parse_benchmark
+    from pyresttest.macros import *
 else:  # Normal imports
     from . import six
     from .six import text_type
@@ -50,15 +48,16 @@ else:  # Normal imports
     from . import binding
     from .binding import Context
     from . import generators
-    from .generators import parse_generator
     from . import parsing
-    from .parsing import flatten_dictionaries, lowercase_keys, safe_to_bool, safe_to_json
+    from .parsing import *
     from . import validators
     from .validators import Failure
     from . import tests
     from .tests import Test, DEFAULT_TIMEOUT
     from . import benchmarks
     from .benchmarks import Benchmark, AGGREGATES, METRICS, parse_benchmark
+    from . import macros
+    from .macros import *
 
 """
 Executable class, ties everything together into the framework.
@@ -96,108 +95,12 @@ class cd:
         if self.newPath:  # Don't CD to nothingness
             os.chdir(self.savedPath)
 
-
-class TestConfig:
-    """ Configuration for a test run """
-    timeout = DEFAULT_TIMEOUT  # timeout of tests, in seconds
-    print_bodies = False  # Print response bodies in all cases
-    print_headers = False  # Print response bodies in all cases
-    retries = 0  # Retries on failures
-    test_parallel = False  # Allow parallel execution of tests in a test set, for speed?
-    interactive = False
-    verbose = False
-    ssl_insecure = False
-    skip_term_colors = False  # Turn off output term colors
-
-    # Binding and creation of generators
-    variable_binds = None
-    generators = None  # Map of generator name to generator function
-
-    def __str__(self):
-        return json.dumps(self, default=safe_to_json)
-
-
-class TestSet:
-    """ Encapsulates a set of tests and test configuration for them """
-    tests = list()
-    benchmarks = list()
-    config = TestConfig()
-
-    def __init__(self):
-        self.config = TestConfig()
-        self.tests = list()
-        self.benchmarks = list()
-
-    def __str__(self):
-        return json.dumps(self, default=safe_to_json)
-
-
-class BenchmarkResult:
-    """ Stores results from a benchmark for reporting use """
-    group = None
-    name = u'unnamed'
-
-    results = dict()  # Benchmark output, map the metric to the result array for that metric
-    aggregates = list()  # List of aggregates, as tuples of (metricname, aggregate, result)
-    failures = 0  # Track call count that failed
-
-    def __init__(self):
-        self.aggregates = list()
-        self.results = list()
-
-    def __str__(self):
-        return json.dumps(self, default=safe_to_json)
-
-
-class TestResponse:
-    """ Encapsulates everything about a test response """
-    test = None  # Test run
-    response_code = None
-
-    body = None  # Response body, if tracked
-
-    passed = False
-    response_headers = None
-    failures = None
-
-    def __init__(self):
-        self.failures = list()
-
-    def __str__(self):
-        return json.dumps(self, default=safe_to_json)
-
-
 def read_test_file(path):
     """ Read test file at 'path' in YAML """
     # TODO allow use of safe_load_all to handle multiple test sets in a given
     # doc
     teststruct = yaml.safe_load(read_file(path))
     return teststruct
-
-
-def parse_headers(header_string):
-    """ Parse a header-string into individual headers
-        Implementation based on: http://stackoverflow.com/a/5955949/95122
-        Note that headers are a list of (key, value) since duplicate headers are allowed
-
-        NEW NOTE: keys & values are unicode strings, but can only contain ISO-8859-1 characters
-    """
-    # First line is request line, strip it out
-    if not header_string:
-        return list()
-    request, headers = header_string.split('\r\n', 1)
-    if not headers:
-        return list()
-
-    # Python 2.6 message header parsing fails for Unicode strings, 2.7 is fine. Go figure.
-    if sys.version_info < (2,7):
-        header_msg = message_from_string(headers.encode(HEADER_ENCODING))
-        return [(text_type(k.lower(), HEADER_ENCODING), text_type(v, HEADER_ENCODING))
-            for k, v in header_msg.items()]
-    else:
-        header_msg = message_from_string(headers)
-        # Note: HTTP headers are *case-insensitive* per RFC 2616
-        return [(k.lower(), v) for k, v in header_msg.items()]
 
 
 def parse_testsets(base_url, test_structure, test_files=set(), working_directory=None, vars=None):
@@ -263,37 +166,6 @@ def parse_testsets(base_url, test_structure, test_files=set(), working_directory
     testset.benchmarks = benchmarks
     testsets.append(testset)
     return testsets
-
-
-def parse_configuration(node, base_config=None):
-    """ Parse input config to configuration information """
-    test_config = base_config
-    if not test_config:
-        test_config = TestConfig()
-
-    node = lowercase_keys(flatten_dictionaries(node))  # Make it usable
-
-    for key, value in node.items():
-        if key == u'timeout':
-            test_config.timeout = int(value)
-        elif key == u'print_bodies':
-            test_config.print_bodies = safe_to_bool(value)
-        elif key == u'retries':
-            test_config.retries = int(value)
-        elif key == u'variable_binds':
-            if not test_config.variable_binds:
-                test_config.variable_binds = dict()
-            test_config.variable_binds.update(flatten_dictionaries(value))
-        elif key == u'generators':
-            flat = flatten_dictionaries(value)
-            gen_map = dict()
-            for generator_name, generator_config in flat.items():
-                gen = parse_generator(generator_config)
-                gen_map[str(generator_name)] = gen
-            test_config.generators = gen_map
-
-    return test_config
-
 
 def read_file(path):
     """ Read an input into a file, doing necessary conversions around relative path handling """
@@ -853,57 +725,6 @@ def main(args):
     failures = run_testsets(tests)
 
     sys.exit(failures)
-
-
-def parse_command_line_args(args_in):
-    """ Runs everything needed to execute from the command line, so main method is callable without arg parsing """
-    parser = OptionParser(
-        usage="usage: %prog base_url test_filename.yaml [options] ")
-    parser.add_option(u"--print-bodies", help="Print all response bodies",
-                      action="store", type="string", dest="print_bodies")
-    parser.add_option(u"--print-headers", help="Print all response headers",
-                      action="store", type="string", dest="print_headers")
-    parser.add_option(u"--log", help="Logging level",
-                      action="store", type="string")
-    parser.add_option(u"--interactive", help="Interactive mode",
-                      action="store", type="string")
-    parser.add_option(
-        u"--url", help="Base URL to run tests against", action="store", type="string")
-    parser.add_option(u"--test", help="Test file to use",
-                      action="store", type="string")
-    parser.add_option(u'--import_extensions',
-                      help='Extensions to import, separated by semicolons', action="store", type="string")
-    parser.add_option(
-        u'--vars', help='Variables to set, as a YAML dictionary', action="store", type="string")
-    parser.add_option(u'--verbose', help='Put cURL into verbose mode for extra debugging power',
-                      action='store_true', default=False, dest="verbose")
-    parser.add_option(u'--ssl-insecure', help='Disable cURL host and peer cert verification',
-                      action='store_true', default=False, dest="ssl_insecure")
-    parser.add_option(u'--absolute-urls', help='Enable absolute URLs in tests instead of relative paths',
-                      action="store_true", dest="absolute_urls")
-    parser.add_option(u'--skip_term_colors', help='Turn off the output term colors',
-                      action='store_true', default=False, dest="skip_term_colors")
-
-    (args, unparsed_args) = parser.parse_args(args_in)
-    args = vars(args)
-
-    # Handle url/test as named, or, failing that, positional arguments
-    if not args['url'] or not args['test']:
-        if len(unparsed_args) == 2:
-            args[u'url'] = unparsed_args[0]
-            args[u'test'] = unparsed_args[1]
-        elif len(unparsed_args) == 1 and args['url']:
-            args['test'] = unparsed_args[0]
-        elif len(unparsed_args) == 1 and args['test']:
-            args['url'] = unparsed_args[0]
-        else:
-            parser.print_help()
-            parser.error(
-                "wrong number of arguments, need both url and test filename, either as 1st and 2nd parameters or via --url and --test")
-
-    # So modules can be loaded from current folder
-    args['cwd'] = os.path.realpath(os.path.abspath(os.getcwd()))
-    return args
 
 
 def command_line_run(args_in):
