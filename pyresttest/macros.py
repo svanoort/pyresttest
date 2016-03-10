@@ -11,7 +11,9 @@ from .parsing import *
 
 # This is all our general execution framework stuff + HTTP request stuff
 
+ESCAPE_DECODING = 'string-escape'
 DEFAULT_TIMEOUT = 10  # Seconds, FIXME remove from the tests class and move to here
+HEADER_ENCODING ='ISO-8859-1' # Per RFC 2616
 
 def resolve_option(name, object_self, test_config, cmdline_args):
     """ Look for a specific field name in a set of objects
@@ -22,7 +24,15 @@ def resolve_option(name, object_self, test_config, cmdline_args):
             return v
     return None
 
-class TestConfig:
+class MacroCallbacks(object):
+    """ Callbacks bundle to handle reporting """
+    def start_macro(self, input): lambda x: None
+    def end_macro(self, input): lambda x: None
+    def pre_request(self, input): lambda x: None
+    def post_request(self, input): lambda x: None
+    def log_intermediate(self, input): lambda x: None
+
+class TestConfig(object):
     """ Configuration for a test run """
     timeout = DEFAULT_TIMEOUT  # timeout of tests, in seconds
     print_bodies = False  # Print response bodies in all cases
@@ -41,7 +51,7 @@ class TestConfig:
     def __str__(self):
         return json.dumps(self, default=safe_to_json)
 
-class TestSet:
+class TestSet(object):
     """ Encapsulates a set of tests and test configuration for them """
     tests = list()
     benchmarks = list()
@@ -56,7 +66,7 @@ class TestSet:
         return json.dumps(self, default=safe_to_json)
 
 
-class BenchmarkResult:
+class BenchmarkResult(object):
     """ Stores results from a benchmark for reporting use """
     group = None
     name = u'unnamed'
@@ -73,7 +83,7 @@ class BenchmarkResult:
         return json.dumps(self, default=safe_to_json)
 
 
-class TestResponse:
+class TestResponse(object):
     """ Encapsulates everything about a test response """
     test = None  # Test run
     response_code = None

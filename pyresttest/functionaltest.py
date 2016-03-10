@@ -54,7 +54,7 @@ class RestTestCase(unittest.TestCase):
         """ Basic local get test """
         test = Test()
         test.url = self.prefix + '/api/person/'
-        test_response = resttest.run_test(test)
+        test_response = test.execute_macro()
         self.assertTrue(test_response.passed)
         self.assertEqual(200, test_response.response_code)
 
@@ -62,7 +62,7 @@ class RestTestCase(unittest.TestCase):
         """ Calls github API to test the HEAD method, ugly but Django tastypie won't support it """
         test = Test()
         test.url = 'https://api.github.com/users/svanoort'
-        test_response = resttest.run_test(test)
+        test_response = test.execute_macro()
         self.assertTrue(test_response.passed)
         self.assertEqual(200, test_response.response_code)
         print("Github API response headers: \n{0}".format(test_response.response_headers))
@@ -77,7 +77,7 @@ class RestTestCase(unittest.TestCase):
         test.headers = {u'Content-Type': u'application/json',
                         u'X-HTTP-Method-Override': u'PATCH'}
         test.expected_status = [202]  # Django returns 202
-        test_response = resttest.run_test(test)
+        test_response = test.execute_macro()
         self.assertTrue(test_response.passed)
         #self.assertEqual(202, test_response.response_code)
 
@@ -86,7 +86,7 @@ class RestTestCase(unittest.TestCase):
         test = Test()
         test.curl_options = {'FOLLOWLOCATION': True}
         test.url = self.prefix + '/api/person'
-        test_response = resttest.run_test(test)
+        test_response = test.execute_macro()
         self.assertTrue(test_response.passed)
         self.assertEqual(200, test_response.response_code)
 
@@ -115,7 +115,7 @@ class RestTestCase(unittest.TestCase):
         test.validators.append(
             validators.parse_validator('compare', cfg_compare_id))
 
-        test_response = resttest.run_test(test)
+        test_response = test.execute_macro()
         for failure in test_response.failures:
             print("REAL FAILURE")
             print("Test Failure, failure type: {0}, Reason: {1}".format(
@@ -140,7 +140,7 @@ class RestTestCase(unittest.TestCase):
                        'expected': 'NotJenkins'}
         test.validators.append(
             validators.parse_validator('compare', cfg_compare))
-        test_response = resttest.run_test(test)
+        test_response = test.execute_macro()
         self.assertFalse(test_response.passed)
         self.assertTrue(test_response.failures)
         self.assertEqual(3, len(test_response.failures))
@@ -148,7 +148,7 @@ class RestTestCase(unittest.TestCase):
     def test_detailed_get(self):
         test = Test()
         test.url = self.prefix + '/api/person/1/'
-        test_response = resttest.run_test(test)
+        test_response = test.execute_macro()
         self.assertEqual(True, test_response.passed)
         self.assertEqual(200, test_response.response_code)
 
@@ -164,7 +164,7 @@ class RestTestCase(unittest.TestCase):
             key2: validators.HeaderExtractor.parse('sErVer')
         }
         my_context = Context()
-        test_response = resttest.run_test(test, context=my_context)
+        test_response = test.execute_macro(context=my_context)
         val1 = my_context.get_value(key1)
         val2 = my_context.get_value(key2)
         self.assertEqual(val1, val2)
@@ -182,7 +182,7 @@ class RestTestCase(unittest.TestCase):
         test.validators = list()
         test.validators.append(
             validators.parse_validator('comparator', config))
-        result = resttest.run_test(test)
+        result = test.execute_macro()
 
         if result.failures:
             for fail in result.failures:
@@ -193,7 +193,7 @@ class RestTestCase(unittest.TestCase):
         """ Test GET that should fail """
         test = Test()
         test.url = self.prefix + '/api/person/500/'
-        test_response = resttest.run_test(test)
+        test_response = test.execute_macro()
         self.assertEqual(False, test_response.passed)
         self.assertEqual(404, test_response.response_code)
 
@@ -204,7 +204,7 @@ class RestTestCase(unittest.TestCase):
         test.method = u'PUT'
         test.body = '{"first_name": "Gaius","id": 1,"last_name": "Baltar","login": "gbaltar"}'
         test.headers = {u'Content-Type': u'application/json'}
-        test_response = resttest.run_test(test)
+        test_response = test.execute_macro()
         self.assertEqual(True, test_response.passed)
         self.assertEqual(200, test_response.response_code)
 
@@ -216,14 +216,14 @@ class RestTestCase(unittest.TestCase):
         test.expected_status = [200, 201, 204]
         test.body = '{"first_name": "Willim","last_name": "Adama","login":"theadmiral", "id": 100}'
         test.headers = {u'Content-Type': u'application/json'}
-        test_response = resttest.run_test(test)
+        test_response = test.execute_macro()
         self.assertEqual(True, test_response.passed)
         self.assertEqual(201, test_response.response_code)
 
         # Test it was actually created
         test2 = Test()
         test2.url = test.url
-        test_response2 = resttest.run_test(test2)
+        test_response2 = test2.execute_macro()
         self.assertTrue(test_response2.passed)
         self.assertTrue(
             u'"last_name": "Adama"' in test_response2.body.decode('UTF-8'))
@@ -238,14 +238,14 @@ class RestTestCase(unittest.TestCase):
         test.expected_status = [200, 201, 204]
         test.body = '{"first_name": "Willim","last_name": "Adama","login": "theadmiral"}'
         test.headers = {u'Content-Type': u'application/json'}
-        test_response = resttest.run_test(test)
+        test_response = test.execute_macro()
         self.assertEqual(True, test_response.passed)
         self.assertEqual(201, test_response.response_code)
 
         # Test user was created
         test2 = Test()
         test2.url = self.prefix + '/api/person/?login=theadmiral'
-        test_response2 = resttest.run_test(test2)
+        test_response2 = test2.execute_macro()
         self.assertTrue(test_response2.passed)
 
         # Test JSON load/dump round trip on body
@@ -261,21 +261,21 @@ class RestTestCase(unittest.TestCase):
         test.url = self.prefix + '/api/person/1/'
         test.expected_status = [200, 202, 204]
         test.method = u'DELETE'
-        test_response = resttest.run_test(test)
+        test_response = test.execute_macro()
         self.assertEqual(True, test_response.passed)
         self.assertEqual(204, test_response.response_code)
 
         # Verify it's really gone
         test.method = u'GET'
         test.expected_status = [404]
-        test_response = resttest.run_test(test)
+        test_response = test.execute_macro()
         self.assertEqual(True, test_response.passed)
         self.assertEqual(404, test_response.response_code)
 
         # Check it's gone by name
         test2 = Test()
         test2.url = self.prefix + '/api/person/?first_name__contains=Gaius'
-        test_response2 = resttest.run_test(test2)
+        test_response2 = test2.execute_macro()
         self.assertTrue(test_response2.passed)
         self.assertTrue(u'"objects": []' in test_response2.body.decode('UTF-8'))
 
@@ -338,7 +338,7 @@ class RestTestCase(unittest.TestCase):
                        'expected': 'NotJenkins'}
         test.validators.append(
             validators.parse_validator('compare', cfg_compare))
-        test_response = resttest.run_test(test)
+        test_response = test.execute_macro()
         self.assertFalse(test_response.passed)
         self.assertTrue(test_response.failures)
         self.assertEqual(3, len(test_response.failures))
@@ -368,7 +368,7 @@ class RestTestCase(unittest.TestCase):
         test.validators.append(
             validators.parse_validator('compare', cfg_compare_id))
 
-        test_response = resttest.run_test(test)
+        test_response = test.execute_macro()
         for failure in test_response.failures:
             print("REAL FAILURE")
             print("Test Failure, failure type: {0}, Reason: {1}".format(

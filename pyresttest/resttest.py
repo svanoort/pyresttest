@@ -68,7 +68,6 @@ Module responsibilities:
 - Collect and report on test/benchmark results
 - Perform analysis on benchmark results
 """
-HEADER_ENCODING ='ISO-8859-1' # Per RFC 2616
 LOGGING_LEVELS = {'debug': logging.DEBUG,
                   'info': logging.INFO,
                   'warning': logging.WARNING,
@@ -175,139 +174,7 @@ def read_file(path):
     return string
 
 
-def run_test(mytest, test_config=TestConfig(), context=None, curl_handle=None, *args, **kwargs):
-    """ Put together test pieces: configure & run actual test, return results """
 
-    # Initialize a context if not supplied
-    my_context = context
-    if my_context is None:
-        my_context = Context()
-
-    mytest.update_context_before(my_context)
-    templated_test = mytest.realize(my_context)
-    curl = templated_test.configure_curl(
-        timeout=test_config.timeout, context=my_context, curl_handle=curl_handle)
-    result = TestResponse()
-    result.test = templated_test
-
-    # reset the body, it holds values from previous runs otherwise
-    headers = MyIO()
-    body = MyIO()
-    curl.setopt(pycurl.WRITEFUNCTION, body.write)
-    curl.setopt(pycurl.HEADERFUNCTION, headers.write)
-    if test_config.verbose:
-        curl.setopt(pycurl.VERBOSE, True)
-    if test_config.ssl_insecure:
-        curl.setopt(pycurl.SSL_VERIFYPEER, 0)
-        curl.setopt(pycurl.SSL_VERIFYHOST, 0)
-
-    result.passed = None
-
-    if test_config.interactive:
-        print("===================================")
-        print("%s" % mytest.name)
-        print("-----------------------------------")
-        print("REQUEST:")
-        print("%s %s" % (templated_test.method, templated_test.url))
-        print("HEADERS:")
-        print("%s" % (templated_test.headers))
-        if mytest.body is not None:
-            print("\n%s" % templated_test.body)
-        raw_input("Press ENTER when ready (%d): " % (mytest.delay))
-
-    if mytest.delay > 0:
-        print("Delaying for %ds" % mytest.delay)
-        time.sleep(mytest.delay)
-
-    try:
-        curl.perform()  # Run the actual call
-    except Exception as e:
-        # Curl exception occurred (network error), do not pass go, do not
-        # collect $200
-        trace = traceback.format_exc()
-        result.failures.append(Failure(message="Curl Exception: {0}".format(
-            e), details=trace, failure_type=validators.FAILURE_CURL_EXCEPTION))
-        result.passed = False
-        curl.close()
-        return result
-
-    # Retrieve values
-    result.body = body.getvalue()
-    body.close()
-    result.response_headers = text_type(headers.getvalue(), HEADER_ENCODING)  # Per RFC 2616
-    headers.close()
-
-    response_code = curl.getinfo(pycurl.RESPONSE_CODE)
-    result.response_code = response_code
-
-    logger.debug("Initial Test Result, based on expected response code: " +
-                 str(response_code in mytest.expected_status))
-
-    if response_code in mytest.expected_status:
-        result.passed = True
-    else:
-        # Invalid response code
-        result.passed = False
-        failure_message = "Invalid HTTP response code: response code {0} not in expected codes [{1}]".format(
-            response_code, mytest.expected_status)
-        result.failures.append(Failure(
-            message=failure_message, details=None, failure_type=validators.FAILURE_INVALID_RESPONSE))
-
-    # Parse HTTP headers
-    try:
-        result.response_headers = parse_headers(result.response_headers)
-    except Exception as e:
-        trace = traceback.format_exc()
-        result.failures.append(Failure(message="Header parsing exception: {0}".format(
-            e), details=trace, failure_type=validators.FAILURE_TEST_EXCEPTION))
-        result.passed = False
-        curl.close()
-        return result
-
-    # print str(test_config.print_bodies) + ',' + str(not result.passed) + ' ,
-    # ' + str(test_config.print_bodies or not result.passed)
-
-    head = result.response_headers
-
-    # execute validator on body
-    if result.passed is True:
-        body = result.body
-        if mytest.validators is not None and isinstance(mytest.validators, list):
-            logger.debug("executing this many validators: " +
-                         str(len(mytest.validators)))
-            failures = result.failures
-            for validator in mytest.validators:
-                validate_result = validator.validate(
-                    body=body, headers=head, context=my_context)
-                if not validate_result:
-                    result.passed = False
-                # Proxy for checking if it is a Failure object, because of
-                # import issues with isinstance there
-                if hasattr(validate_result, 'details'):
-                    failures.append(validate_result)
-                # TODO add printing of validation for interactive mode
-        else:
-            logger.debug("no validators found")
-
-        # Only do context updates if test was successful
-        mytest.update_context_after(result.body, head, my_context)
-
-    # Print response body if override is set to print all *OR* if test failed
-    # (to capture maybe a stack trace)
-    if test_config.print_bodies or not result.passed:
-        if test_config.interactive:
-            print("RESPONSE:")
-        print(result.body.decode(ESCAPE_DECODING))
-
-    if test_config.print_headers or not result.passed:
-        if test_config.interactive:
-            print("RESPONSE HEADERS:")
-        print(result.response_headers)
-
-    # TODO add string escape on body output
-    logger.debug(result)
-
-    return result
 
 
 def run_benchmark(benchmark, test_config=TestConfig(), context=None, *args, **kwargs):
@@ -486,6 +353,10 @@ def log_failure(failure, context=None, test_config=TestConfig()):
     if failure.details:
         logger.error("Validator/Error details:" + str(failure.details))
 
+class LoggerCallbacks(MacroCallbacks):
+    """ Uses a standard python logger """
+    def log_intermediate(self, input): 
+        logger.debug(input)
 
 def run_testsets(testsets):
     """ Execute a set of tests, using given TestSet list input """
@@ -494,6 +365,10 @@ def run_testsets(testsets):
     total_failures = 0
     myinteractive = False
     curl_handle = pycurl.Curl()
+    
+    # Invoked during macro execution to report results
+    # FIXME  I need to set up for logging before/after/during requests
+    callbacks = LoggerCallbacks()
 
     for testset in testsets:
         mytests = testset.tests
@@ -523,7 +398,7 @@ def run_testsets(testsets):
                 group_results[test.group] = list()
                 group_failure_counts[test.group] = 0
 
-            result = run_test(test, test_config=myconfig, context=context, curl_handle=curl_handle)
+            result = test.execute_macro(test_config=myconfig, context=context, curl_handle=curl_handle)
             result.body = None  # Remove the body, save some memory!
 
             if not result.passed:  # Print failure, increase failure counts for that test group
