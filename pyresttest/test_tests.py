@@ -294,14 +294,14 @@ class TestsTest(unittest.TestCase):
 
     def test_parse_extractor_bind(self):
         """ Test parsing of extractors """
-        test_config = {
+        testset_config = {
             "url": '/api',
             'extract_binds': {
                 'id': {'jsonpath_mini': 'idfield'},
                 'name': {'jsonpath_mini': 'firstname'}
             }
         }
-        test = Test.parse_test('', test_config)
+        test = Test.parse_test('', testset_config)
         self.assertTrue(test.extract_binds)
         self.assertEqual(2, len(test.extract_binds))
         self.assertTrue('id' in test.extract_binds)
@@ -317,29 +317,29 @@ class TestsTest(unittest.TestCase):
 
     def test_parse_extractor_errors(self):
         """ Test that expected errors are thrown on parsing """
-        test_config = {
+        testset_config = {
             "url": '/api',
             'extract_binds': {'id': {}}
         }
         try:
-            test = Test.parse_test('', test_config)
+            test = Test.parse_test('', testset_config)
             self.fail("Should throw an error when doing empty mapping")
         except TypeError:
             pass
 
-        test_config['extract_binds']['id'] = {
+        testset_config['extract_binds']['id'] = {
             'jsonpath_mini': 'query',
             'test': 'anotherquery'
         }
         try:
-            test = Test.parse_test('', test_config)
+            test = Test.parse_test('', testset_config)
             self.fail("Should throw an error when given multiple extractors")
         except ValueError as te:
             pass
 
     def test_parse_validator_comparator(self):
         """ Test parsing a comparator validator """
-        test_config = {
+        testset_config = {
             'name': 'Default',
             'url': '/api',
             'validators': [
@@ -348,7 +348,7 @@ class TestsTest(unittest.TestCase):
                                 'expected': {'template': '$id'}}}
             ]
         }
-        test = Test.parse_test('', test_config)
+        test = Test.parse_test('', testset_config)
         self.assertTrue(test.validators)
         self.assertEqual(1, len(test.validators))
 
@@ -362,7 +362,7 @@ class TestsTest(unittest.TestCase):
 
     def test_parse_validator_extract_test(self):
         """ Tests parsing extract-test validator """
-        test_config = {
+        testset_config = {
             'name': 'Default',
             'url': '/api',
             'validators': [
@@ -370,7 +370,7 @@ class TestsTest(unittest.TestCase):
                                   'test': 'exists'}}
             ]
         }
-        test = Test.parse_test('', test_config)
+        test = Test.parse_test('', testset_config)
         self.assertTrue(test.validators)
         self.assertEqual(1, len(test.validators))
 

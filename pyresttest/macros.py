@@ -15,10 +15,10 @@ ESCAPE_DECODING = 'string-escape'
 DEFAULT_TIMEOUT = 10  # Seconds, FIXME remove from the tests class and move to here
 HEADER_ENCODING ='ISO-8859-1' # Per RFC 2616
 
-def resolve_option(name, object_self, test_config, cmdline_args):
+def resolve_option(name, object_self, testset_config, cmdline_args):
     """ Look for a specific field name in a set of objects
         return value if found, return none if not found """
-    for i in (object_self, test_config, cmdline_args):
+    for i in (object_self, testset_config, cmdline_args):
         v = gettattr(i, name, None)
         if v is not None:
             return v
@@ -27,15 +27,19 @@ def resolve_option(name, object_self, test_config, cmdline_args):
 class MacroCallbacks(object):  # Possibly call this an execution context?
     """ Callbacks bundle to handle reporting """
 
-    # Logging outputs
+    # Logging outputs, these are part of the lifecycle    
     def start_macro(self, input): lambda x: None
-    def end_macro(self, input): lambda x: None
     def pre_request(self, input): lambda x: None  # Called just before submitting requests
     def post_request(self, input): lambda x: None # Called just after submitting requests
+    def end_macro(self, input): lambda x: None
+    
+    # These can be called at any point, theoretically
+    def log_success(self, input): lambda x: None
+    def log_failure(self, input): lambda x: None
     def log_status(self, input): lambda x: None  # Logs status info
     def log_intermediate(self, input): lambda x: None  # Logs debug results while running
 
-class TestConfig(object):
+class TestSetConfig(object):
     """ Configuration for a test run """
     timeout = DEFAULT_TIMEOUT  # timeout of tests, in seconds
     print_bodies = False  # Print response bodies in all cases
@@ -58,10 +62,10 @@ class TestSet(object):
     """ Encapsulates a set of tests and test configuration for them """
     tests = list()
     benchmarks = list()
-    config = TestConfig()
+    config = TestSetConfig()
 
     def __init__(self):
-        self.config = TestConfig()
+        self.config = TestSetConfig()
         self.tests = list()
         self.benchmarks = list()
 
@@ -129,29 +133,29 @@ def parse_headers(header_string):
 
 def parse_configuration(node, base_config=None):
     """ Parse input config to configuration information """
-    test_config = base_config
-    if not test_config:
-        test_config = TestConfig()
+    testset_config = base_config
+    if not testset_config:
+        testset_config = TestSetConfig()
 
     node = lowercase_keys(flatten_dictionaries(node))  # Make it usable
 
     for key, value in node.items():
         if key == u'timeout':
-            test_config.timeout = int(value)
+            testset_config.timeout = int(value)
         elif key == u'print_bodies':
-            test_config.print_bodies = safe_to_bool(value)
+            testset_config.print_bodies = safe_to_bool(value)
         elif key == u'retries':
-            test_config.retries = int(value)
+            testset_config.retries = int(value)
         elif key == u'variable_binds':
-            if not test_config.variable_binds:
-                test_config.variable_binds = dict()
-            test_config.variable_binds.update(flatten_dictionaries(value))
+            if not testset_config.variable_binds:
+                testset_config.variable_binds = dict()
+            testset_config.variable_binds.update(flatten_dictionaries(value))
         elif key == u'generators':
             flat = flatten_dictionaries(value)
             gen_map = dict()
             for generator_name, generator_config in flat.items():
                 gen = parse_generator(generator_config)
                 gen_map[str(generator_name)] = gen
-            test_config.generators = gen_map
+            testset_config.generators = gen_map
 
-    return test_config
+    return testset_config

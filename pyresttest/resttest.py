@@ -116,7 +116,7 @@ def parse_testsets(base_url, test_structure, test_files=set(), working_directory
     """
 
     tests_out = list()
-    test_config = TestConfig()
+    testset_config = TestSetConfig()
     testsets = list()
     benchmarks = list()
 
@@ -124,7 +124,7 @@ def parse_testsets(base_url, test_structure, test_files=set(), working_directory
         working_directory = os.path.abspath(os.getcwd())
 
     if vars and isinstance(vars, dict):
-        test_config.variable_binds = vars
+        testset_config.variable_binds = vars
 
     # returns a testconfig and collection of tests
     for node in test_structure:  # Iterate through lists of test and configuration elements
@@ -156,11 +156,11 @@ def parse_testsets(base_url, test_structure, test_files=set(), working_directory
                     benchmark = parse_benchmark(base_url, node[key])
                     benchmarks.append(benchmark)
                 elif key == u'config' or key == u'configuration':
-                    test_config = parse_configuration(
-                        node[key], base_config=test_config)
+                    testset_config = parse_configuration(
+                        node[key], base_config=testset_config)
     testset = TestSet()
     testset.tests = tests_out
-    testset.config = test_config
+    testset.config = testset_config
     testset.benchmarks = benchmarks
     testsets.append(testset)
     return testsets
@@ -172,7 +172,7 @@ def read_file(path):
         f.close()
     return string
 
-def log_failure(failure, context=None, test_config=TestConfig()):
+def log_failure(failure, context=None, testset_config=TestSetConfig()):
     """ Log a failure from a test """
     logger.error("Test Failure, failure type: {0}, Reason: {1}".format(
         failure.failure_type, failure.message))
@@ -226,7 +226,7 @@ def run_testsets(testsets):
                 group_results[test.group] = list()
                 group_failure_counts[test.group] = 0
 
-            result = test.execute_macro(test_config=myconfig, context=context, curl_handle=curl_handle)
+            result = test.execute_macro(testset_config=myconfig, context=context, curl_handle=curl_handle)
             result.body = None  # Remove the body, save some memory!
 
             if not result.passed:  # Print failure, increase failure counts for that test group
@@ -238,7 +238,7 @@ def run_testsets(testsets):
                 if result.failures:
                     for failure in result.failures:
                         log_failure(failure, context=context,
-                                    test_config=myconfig)
+                                    testset_config=myconfig)
 
                 # Increment test failure counts for that group (adding an entry
                 # if not present)
@@ -266,7 +266,7 @@ def run_testsets(testsets):
 
             logger.info("Benchmark Starting: " + benchmark.name +
                         " Group: " + benchmark.group)
-            benchmark_result = benchmark.execute_macro(test_config=myconfig, context=context)
+            benchmark_result = benchmark.execute_macro(testset_config=myconfig, context=context)
             print(benchmark_result)
             logger.info("Benchmark Done: " + benchmark.name +
                         " Group: " + benchmark.group)
@@ -279,7 +279,7 @@ def run_testsets(testsets):
                 logger.debug("Benchmark writing to file: " +
                              benchmark.output_file)
                 write_method(my_file, benchmark_result,
-                             benchmark, test_config=myconfig)
+                             benchmark, testset_config=myconfig)
                 my_file.close()
 
     if myinteractive:

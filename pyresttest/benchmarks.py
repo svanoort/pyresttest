@@ -186,7 +186,7 @@ class Benchmark(Test):
     def __str__(self):
         return json.dumps(self, default=safe_to_json)
 
-    def execute_macro(self, context=None, test_config=TestConfig(), cmdline_args=None, callbacks=MacroCallbacks(), *args, **kwargs):
+    def execute_macro(self, context=None, testset_config=TestSetConfig(), cmdline_args=None, callbacks=MacroCallbacks(), *args, **kwargs):
         """ Perform a benchmark, (re)using a given, configured CURL call to do so
             The actual analysis of metrics is performed separately, to allow for testing
         """
@@ -233,7 +233,7 @@ class Benchmark(Test):
             benchmark.update_context_before(my_context)
             templated = benchmark.realize(my_context)
             curl = templated.configure_curl(
-                timeout=test_config.timeout, context=my_context, curl_handle=curl)
+                timeout=testset_config.timeout, context=my_context, curl_handle=curl)
             # Do not store actual response body at all.
             curl.setopt(pycurl.WRITEFUNCTION, lambda x: None)
             curl.perform()
@@ -247,7 +247,7 @@ class Benchmark(Test):
             benchmark.update_context_before(my_context)
             templated = benchmark.realize(my_context)
             curl = templated.configure_curl(
-                timeout=test_config.timeout, context=my_context, curl_handle=curl)
+                timeout=testset_config.timeout, context=my_context, curl_handle=curl)
             # Do not store actual response body at all.
             curl.setopt(pycurl.WRITEFUNCTION, lambda x: None)
 
@@ -419,12 +419,12 @@ def metrics_to_tuples(raw_metrics):
     return output
 
 
-def write_benchmark_json(file_out, benchmark_result, benchmark, test_config=TestConfig()):
+def write_benchmark_json(file_out, benchmark_result, benchmark, testset_config=TestSetConfig()):
     """ Writes benchmark to file as json """
     json.dump(benchmark_result, file_out, default=safe_to_json)
 
 
-def write_benchmark_csv(file_out, benchmark_result, benchmark, test_config=TestConfig()):
+def write_benchmark_csv(file_out, benchmark_result, benchmark, testset_config=TestSetConfig()):
     """ Writes benchmark to file as csv """
     writer = csv.writer(file_out)
     writer.writerow(('Benchmark', benchmark_result.name))

@@ -288,7 +288,7 @@ class Test(object):
     def __str__(self):
         return json.dumps(self, default=safe_to_json)
 
-    def execute_macro(self, test_config=TestConfig(), context=None, cmdline_args=None, callbacks=MacroCallbacks(), curl_handle=None, *args, **kwargs):
+    def execute_macro(self, testset_config=TestSetConfig(), context=None, cmdline_args=None, callbacks=MacroCallbacks(), curl_handle=None, *args, **kwargs):
         """ Put together test pieces: configure & run actual test, return results """
 
         # Initialize a context if not supplied
@@ -301,7 +301,7 @@ class Test(object):
         mytest.update_context_before(my_context)
         templated_test = mytest.realize(my_context)
         curl = templated_test.configure_curl(
-            timeout=test_config.timeout, context=my_context, curl_handle=curl_handle)
+            timeout=testset_config.timeout, context=my_context, curl_handle=curl_handle)
         result = TestResponse()
         result.test = templated_test
 
@@ -310,15 +310,15 @@ class Test(object):
         body = MyIO()
         curl.setopt(pycurl.WRITEFUNCTION, body.write)
         curl.setopt(pycurl.HEADERFUNCTION, headers.write)
-        if test_config.verbose:
+        if testset_config.verbose:
             curl.setopt(pycurl.VERBOSE, True)
-        if test_config.ssl_insecure:
+        if testset_config.ssl_insecure:
             curl.setopt(pycurl.SSL_VERIFYPEER, 0)
             curl.setopt(pycurl.SSL_VERIFYHOST, 0)
 
         result.passed = None
 
-        if test_config.interactive:
+        if testset_config.interactive:
             print("===================================")
             print("%s" % mytest.name)
             print("-----------------------------------")
@@ -379,8 +379,8 @@ class Test(object):
             curl.close()
             return result
 
-        # print str(test_config.print_bodies) + ',' + str(not result.passed) + ' ,
-        # ' + str(test_config.print_bodies or not result.passed)
+        # print str(testset_config.print_bodies) + ',' + str(not result.passed) + ' ,
+        # ' + str(testset_config.print_bodies or not result.passed)
 
         head = result.response_headers
 
@@ -409,13 +409,13 @@ class Test(object):
 
         # Print response body if override is set to print all *OR* if test failed
         # (to capture maybe a stack trace)
-        if test_config.print_bodies or not result.passed:
-            if test_config.interactive:
+        if testset_config.print_bodies or not result.passed:
+            if testset_config.interactive:
                 print("RESPONSE:")
             print(result.body.decode(ESCAPE_DECODING))
 
-        if test_config.print_headers or not result.passed:
-            if test_config.interactive:
+        if testset_config.print_headers or not result.passed:
+            if testset_config.interactive:
                 print("RESPONSE HEADERS:")
             print(result.response_headers)
 

@@ -402,7 +402,7 @@ Validate against a schema in file 'miniapp-schema.json'
 1. Parse command line arguments
 2. Parse YAML, reading top-level imports and building TestSets
 3. Execute TestSets:
-    1. Generate a Context for each test set, populated with generators and variables defined in the TestConfig
+    1. Generate a Context for each test set, populated with generators and variables defined in the TestSetConfig
     2. Run each test in the test set, using the context, per the test lifecycle below
         * Print failures as they occur
     3. Add statistics from that test to information for that test's group
