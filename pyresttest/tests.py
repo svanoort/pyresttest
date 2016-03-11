@@ -2,6 +2,7 @@ import string
 import os
 import copy
 import json
+import traceback
 import pycurl
 import sys
 

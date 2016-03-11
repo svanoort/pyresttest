@@ -2,7 +2,6 @@
 import sys
 import os
 import inspect
-import traceback
 import yaml
 import pycurl
 import logging
