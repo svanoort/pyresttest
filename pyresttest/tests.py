@@ -315,19 +315,19 @@ class Test(Macro):
         result.passed = None
 
         if testset_config.interactive:
-            print("===================================")
-            print("%s" % mytest.name)
-            print("-----------------------------------")
-            print("REQUEST:")
-            print("%s %s" % (templated_test.method, templated_test.url))
-            print("HEADERS:")
-            print("%s" % (templated_test.headers))
+            callbacks.log_status("===================================")
+            callbacks.log_status("%s" % mytest.name)
+            callbacks.log_status("-----------------------------------")
+            callbacks.log_status("REQUEST:")
+            callbacks.log_status("%s %s" % (templated_test.method, templated_test.url))
+            callbacks.log_status("HEADERS:")
+            callbacks.log_status("%s" % (templated_test.headers))
             if mytest.body is not None:
-                print("\n%s" % templated_test.body)
+                callbacks.log_status("\n%s" % templated_test.body)
             raw_input("Press ENTER when ready (%d): " % (mytest.delay))
 
         if mytest.delay > 0:
-            print("Delaying for %ds" % mytest.delay)
+            callbacks.log_status("Delaying for %ds" % mytest.delay)
             time.sleep(mytest.delay)
 
         try:
@@ -407,13 +407,13 @@ class Test(Macro):
         # (to capture maybe a stack trace)
         if testset_config.print_bodies or not result.passed:
             if testset_config.interactive:
-                print("RESPONSE:")
-            print(result.body.decode(ESCAPE_DECODING))
+                callbacks.log_status("RESPONSE:")
+            callbacks.log_status(result.body.decode(ESCAPE_DECODING))
 
         if testset_config.print_headers or not result.passed:
             if testset_config.interactive:
-                print("RESPONSE HEADERS:")
-            print(result.response_headers)
+                callbacks.log_status("RESPONSE HEADERS:")
+            callbacks.log_status(result.response_headers)
 
         # TODO add string escape on body output
         callbacks.log_intermediate(result)

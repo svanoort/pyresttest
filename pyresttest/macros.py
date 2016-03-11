@@ -31,17 +31,21 @@ def resolve_option(name, object_self, testset_config, cmdline_args):
 class MacroCallbacks(object):  # Possibly call this an execution context?
     """ Callbacks bundle to handle reporting """
 
+    def simple_print(self, x):
+        if x: 
+            print(x)
+
     # Logging outputs, these are part of the lifecycle    
-    def start_macro(self, input): lambda x: None
-    def pre_request(self, input): lambda x: None  # Called just before submitting requests
-    def post_request(self, input): lambda x: None # Called just after submitting requests
-    def end_macro(self, input): lambda x: None
+    def start_macro(self, input): lambda x: simple_print(x)
+    def pre_request(self, input): lambda x: simple_print(x)  # Called just before submitting requests
+    def post_request(self, input): lambda x: simple_print(x) # Called just after submitting requests
+    def end_macro(self, input): lambda x: simple_print(x)
     
     # These can be called at any point, theoretically
-    def log_success(self, input): lambda x: None
-    def log_failure(self, input): lambda x: None
-    def log_status(self, input): lambda x: None  # Logs status info
-    def log_intermediate(self, input): lambda x: None  # Logs debug results while running
+    def log_success(self, input): lambda x: simple_print(x)
+    def log_failure(self, input): lambda x: simple_print(x)
+    def log_status(self, input): lambda x: simple_print(x)  # Logs status info
+    def log_intermediate(self, input): lambda x: simple_print(x)  # Logs debug results while running
 
 class TestSetConfig(object):
     """ Configuration shared across all tests in a testset """
