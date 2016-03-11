@@ -5,24 +5,11 @@ import inspect
 import traceback
 import yaml
 import pycurl
-import json
-import csv
 import logging
-import time
-
-try:
-    from cStringIO import StringIO as MyIO
-except:
-    try:
-        from StringIO import StringIO as MyIO
-    except ImportError:
-        from io import BytesIO as MyIO
 
 # Python 3 compatibility
 if sys.version_info[0] > 2:
     from past.builtins import basestring
-    from builtins import range as xrange
-    ESCAPE_DECODING = 'unicode_escape'
 
 # Dirty hack to allow for running this as a script :-/
 if __name__ == '__main__':

@@ -12,6 +12,10 @@ from .parsing import *
 # This is all our general execution framework stuff + HTTP request stuff
 
 ESCAPE_DECODING = 'string-escape'
+# Python 2/3 switches
+if sys.version_info[0] > 2:
+    ESCAPE_DECODING = 'unicode_escape'
+
 DEFAULT_TIMEOUT = 10  # Seconds, FIXME remove from the tests class and move to here
 HEADER_ENCODING ='ISO-8859-1' # Per RFC 2616
 

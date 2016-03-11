@@ -2,6 +2,7 @@ import math
 import json
 import pycurl
 import sys
+import csv
 
 from .binding import Context
 from . import tests
@@ -13,6 +14,7 @@ from .macros import *
 # Python 2/3 switches
 if sys.version_info[0] > 2:
     from past.builtins import basestring
+    from builtins import range as xrange
 
 # Python 3 compatibility shims
 from . import six
