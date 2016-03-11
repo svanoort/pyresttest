@@ -17,7 +17,9 @@ class MockingCallbacks(MacroCallbacks):
         mymocks = None
 
         def __init__(self):
-            origmethods = inspect.getmembers(MacroCallbacks, predicate=inspect.ismethod)
+            # Creates mocks for all methods, In Py2 they're members, in py3, functions
+            origmethods = inspect.getmembers(MacroCallbacks, predicate=
+                lambda x: inspect.ismethod(x) or inspect.isfunction(x))  
             self.mymocks = dict()
             for method in origmethods:
                 newmock = mock.MagicMock(name=method[0], return_value=True)
@@ -25,7 +27,7 @@ class MockingCallbacks(MacroCallbacks):
                 setattr(self, method[0], newmock)
 
         def list_called_methods(self):
-            """ Return all methods that have been invoked """
+            """ Return all methods that have been invoked """            
             return filter(lambda x: self.mymocks[x].called == True, self.mymocks.keys())
 
 class TestMacros(unittest.TestCase):
