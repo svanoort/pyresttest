@@ -26,9 +26,7 @@ class MockingCallbacks(MacroCallbacks):
 
         def list_called_methods(self):
             """ Return all methods that have been invoked """
-            v = filter(lambda x: self.mymocks[x].called == True, self.mymocks.keys())
-            print v
-            return v
+            return filter(lambda x: self.mymocks[x].called == True, self.mymocks.keys())
 
 class TestMacros(unittest.TestCase):
 
