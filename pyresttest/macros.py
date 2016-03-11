@@ -1,15 +1,15 @@
-import sys
-from email import message_from_string  # For headers handling
-
-from .generators import parse_generator
-from .parsing import *
-
 # Contains all the framework-general items for macros
 # This allows it to be separated from resttest.py 
 # This way macros (test/benchmark/etc) can import shared methods
 # Without creating circular import loops
 
 # This is all our general execution framework stuff + HTTP request stuff
+
+import sys
+from email import message_from_string  # For headers handling
+
+from .generators import parse_generator
+from .parsing import *
 
 ESCAPE_DECODING = 'string-escape'
 # Python 2/3 switches
@@ -44,7 +44,7 @@ class MacroCallbacks(object):  # Possibly call this an execution context?
     def log_intermediate(self, input): lambda x: None  # Logs debug results while running
 
 class TestSetConfig(object):
-    """ Configuration for a test run """
+    """ Configuration shared across all tests in a testset """
     timeout = DEFAULT_TIMEOUT  # timeout of tests, in seconds
     print_bodies = False  # Print response bodies in all cases
     print_headers = False  # Print response bodies in all cases
@@ -63,7 +63,9 @@ class TestSetConfig(object):
         return json.dumps(self, default=safe_to_json)
 
 class TestSet(object):
-    """ Encapsulates a set of tests and test configuration for them """
+    """ Encapsulates a set of tests/benchmarks and test configuration for them 
+        This is analogous to a unittest TestSuite
+    """
     tests = list()
     benchmarks = list()
     config = TestSetConfig()
@@ -76,6 +78,36 @@ class TestSet(object):
     def __str__(self):
         return json.dumps(self, default=safe_to_json)
 
+class Macro(object):
+    """ Common functionality used by tests, benchmarks, etc 
+        Maps to a unittest TestCase, but only roughly
+        This is the parent class of a Test/Benchmark/etc
+    """
+
+    name = u'Unnamed'
+    macro_name = None
+
+    def execute_macro(self, testset_config=TestSetConfig(), context=None, cmdline_args=None, callbacks=MacroCallbacks(), curl_handle=None, *args, **kwargs):
+        """ Skeletal execution basis """
+
+        callbacks.start_macro(self.name)
+        callbacks.pre_request('Pre-request: no request to run')
+        callbacks.post_request('Post-request: no request to run')
+        callbacks.log_success('Empty macro always succeeds')
+        callbacks.end_macro(self.name)
+
+    def is_context_modifier(self):
+        """ If a macro does not modify the context, it can be executed in parallel """
+        return False
+
+    def is_dynamic(self):
+        """ Does the test use variables to template fields? If not, it can be executed with no templats """
+        return False
+
+    @staticmethod
+    def parse(config, *args, **kwargs):  # TODO Wire me into testset parsing
+        """ Parses the supplied config object from YAML, using arguments and return configured instance """
+        return None
 
 class BenchmarkResult(object):
     """ Stores results from a benchmark for reporting use """

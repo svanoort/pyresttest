@@ -1,9 +1,48 @@
 import unittest
+import sys 
+import inspect
 
 from . import macros
 from .macros import *
 
+PYTHON_MAJOR_VERSION = sys.version_info[0]
+if PYTHON_MAJOR_VERSION > 2:
+    from unittest import mock
+else:
+    import mock
+
+class MockingCallbacks(MacroCallbacks):
+        """ Mocks out all the callbacks and tracks executions in lifecycle """
+
+        mymocks = None
+
+        def __init__(self):
+            origmethods = inspect.getmembers(MacroCallbacks, predicate=inspect.ismethod)
+            self.mymocks = dict()
+            for method in origmethods:
+                newmock = mock.MagicMock(name=method[0], return_value=True)
+                self.mymocks[method[0]]=newmock
+                setattr(self, method[0], newmock)
+
+        def list_called_methods(self):
+            """ Return all methods that have been invoked """
+            v = filter(lambda x: self.mymocks[x].called == True, self.mymocks.keys())
+            print v
+            return v
+
 class TestMacros(unittest.TestCase):
+
+    def test_empty_macro_callbacks(self):
+        """ Test of basic macro execution path """
+        mymacro = Macro()
+        mymacro.name = 'Sample'
+        
+        mocked_callbacks = MockingCallbacks()
+        mymacro.execute_macro(callbacks=mocked_callbacks)
+        called_list = mocked_callbacks.list_called_methods()
+        self.assertEqual(set(['start_macro','end_macro','post_request', 'log_success','pre_request']), 
+            set(called_list))
+
     def test_parse_headers(self):
         """ Basic header parsing tests """
         headerstring = u'HTTP/1.1 200 OK\r\nDate: Mon, 29 Dec 2014 02:42:33 GMT\r\nExpires: -1\r\nCache-Control: private, max-age=0\r\nContent-Type: text/html; charset=ISO-8859-1\r\nX-XSS-Protection: 1; mode=block\r\nX-Frame-Options: SAMEORIGIN\r\nAlternate-Protocol: 80:quic,p=0.02\r\nTransfer-Encoding: chunked\r\n\r\n'

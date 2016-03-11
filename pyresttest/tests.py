@@ -92,7 +92,7 @@ def coerce_list_of_ints(val):
     else:
         return [int(val)]
 
-class Test(object):
+class Test(Macro):
     """ Describes a REST test """
     _url = None
     expected_status = [200]  # expected HTTP status code or codes
@@ -116,10 +116,6 @@ class Test(object):
     variable_binds = None
     generator_binds = None  # Dict of variable name and then generator name
     extract_binds = None  # Dict of variable name and extract function to run
-
-    @staticmethod
-    def has_contains():
-        return 'contains' in validators.VALIDATORS
 
     def ninja_copy(self):
         """ Optimization: limited copy of test object, for realize() methods

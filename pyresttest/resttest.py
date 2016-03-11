@@ -172,6 +172,10 @@ class LoggerCallbacks(MacroCallbacks):
         logger.info(input)
     def log_intermediate(self, input): 
         logger.debug(input)
+    def log_failure(self, input):
+        logger.error(input)
+    def log_success(self, input):
+        logger.info(input)
 
 def run_testsets(testsets):
     """ Execute a set of tests, using given TestSet list input """
