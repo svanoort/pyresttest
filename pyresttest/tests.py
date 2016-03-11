@@ -498,6 +498,7 @@ class Test(Macro):
                 curl.setopt(pycurl.POSTFIELDSIZE, len(bod))
 
         # Template headers as needed and convert headers dictionary to list of header entries
+        
         head = self.get_headers(context=context)
         head = copy.copy(head)  # We're going to mutate it, need to copy
 
@@ -548,8 +549,6 @@ class Test(Macro):
 
         # Clean up for easy parsing
         node = lowercase_keys(flatten_dictionaries(node))
-
-
 
         # Simple table of variable name, coerce function, and optionally special store function
         CONFIG_ELEMENTS = {

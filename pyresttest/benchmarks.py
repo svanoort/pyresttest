@@ -231,29 +231,48 @@ class Benchmark(Test):
 
         # Benchmark warm-up to allow for caching, JIT compiling, on client
         callbacks.log_status('Warmup: ' + message + ' started')
+
+        old_mod_count = -1
+        templated = benchmark
+
         for x in xrange(0, warmup_runs):
             benchmark.update_context_before(my_context)
-            templated = benchmark.realize(my_context)
-            curl = templated.configure_curl(
+            
+            # Reconfigure if context changed
+            new_mod_count = my_context.mod_count
+            if new_mod_count != old_mod_count:
+                templated = benchmark.realize(my_context)
+                curl = templated.configure_curl(
                 timeout=testset_config.timeout, context=my_context, curl_handle=curl)
-            # Do not store actual response body at all.
-            curl.setopt(pycurl.WRITEFUNCTION, lambda x: None)
+                # Do not store actual response body at all.
+                curl.setopt(pycurl.WRITEFUNCTION, lambda x: None)
+                old_mod_count = new_mod_count
+            
+            curl.setopt(curl.COOKIELIST, "ALL")
             curl.perform()
 
         callbacks.log_status('Warmup: ' + message + ' finished')
 
         callbacks.log_status('Benchmark: ' + message + ' starting')
 
+        old_mod_count = -1
         for x in xrange(0, benchmark_runs):  # Run the actual benchmarks
+
             # Setup benchmark
             benchmark.update_context_before(my_context)
-            templated = benchmark.realize(my_context)
-            curl = templated.configure_curl(
-                timeout=testset_config.timeout, context=my_context, curl_handle=curl)
-            # Do not store actual response body at all.
-            curl.setopt(pycurl.WRITEFUNCTION, lambda x: None)
+
+            # Only reconfigure if mod count changed
+            new_mod_count = my_context.mod_count
+            if new_mod_count != old_mod_count:
+                templated = benchmark.realize(my_context)
+                curl = templated.configure_curl(
+                    timeout=testset_config.timeout, context=my_context, curl_handle=curl)
+                # Do not store actual response body at all.
+                curl.setopt(pycurl.WRITEFUNCTION, lambda x: None)
+                old_mod_count = new_mod_count
 
             try:  # Run the curl call, if it errors, then add to failure counts for benchmark
+                curl.setopt(curl.COOKIELIST, "ALL")
                 curl.perform()
             except Exception:
                 output.failures = output.failures + 1
@@ -272,7 +291,6 @@ class Benchmark(Test):
             temp_results[metricnames[i]] = results[i]
         output.results = temp_results
         return analyze_benchmark_results(output, benchmark)
-
 
 def realize_partial(self, context=None):
     """ Attempt to template out what is possible for this benchmark """
