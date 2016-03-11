@@ -11,6 +11,7 @@ from django.core.management import call_command
 
 from . import tests
 from .tests import Test
+from . import benchmarks
 from . import binding
 from .binding import Context
 from . import resttest
@@ -307,11 +308,11 @@ class RestTestCase(unittest.TestCase):
 
     def test_benchmark_get(self):
         """ Benchmark basic local get test """
-        benchmark_config = resttest.Benchmark()
+        benchmark_config = benchmarks.Benchmark()
         benchmark_config.url = self.prefix + '/api/person/'
         benchmark_config.add_metric(
             'total_time').add_metric('total_time', 'median')
-        benchmark_result = resttest.run_benchmark(benchmark_config)
+        benchmark_result = benchmark_config.execute_macro()
         print("Benchmark - median request time: " +
               str(benchmark_result.aggregates[0]))
         self.assertTrue(benchmark_config.benchmark_runs, len(

@@ -18,7 +18,6 @@ except:
     except ImportError:
         from io import BytesIO as MyIO
 
-ESCAPE_DECODING = 'string-escape'
 # Python 3 compatibility
 if sys.version_info[0] > 2:
     from past.builtins import basestring
@@ -173,179 +172,6 @@ def read_file(path):
         f.close()
     return string
 
-
-
-
-
-def run_benchmark(benchmark, test_config=TestConfig(), context=None, *args, **kwargs):
-    """ Perform a benchmark, (re)using a given, configured CURL call to do so
-        The actual analysis of metrics is performed separately, to allow for testing
-    """
-
-    # Context handling
-    my_context = context
-    if my_context is None:
-        my_context = Context()
-
-    warmup_runs = benchmark.warmup_runs
-    benchmark_runs = benchmark.benchmark_runs
-    message = ''  # Message is name of benchmark... print it?
-
-    if (benchmark_runs <= 0):
-        raise Exception(
-            "Invalid number of benchmark runs, must be > 0 :" + benchmark_runs)
-
-    result = TestResponse()
-
-    # TODO create and use a curl-returning configuration function
-    # TODO create and use a post-benchmark cleanup function
-    # They should use is_dynamic/is_context_modifier to determine if they need to
-    #  worry about context and re-reading/retemplating and only do it if needed
-    #    - Also, they will need to be smart enough to handle extraction functions
-    #  For performance reasons, we don't want to re-run templating/extraction if
-    #   we do not need to, and do not want to save request bodies.
-
-    # Initialize variables to store output
-    output = BenchmarkResult()
-    output.name = benchmark.name
-    output.group = benchmark.group
-    metricnames = list(benchmark.metrics)
-    # Metric variable for curl, to avoid hash lookup for every metric name
-    metricvalues = [METRICS[name] for name in metricnames]
-    # Initialize arrays to store results for each metric
-    results = [list() for x in xrange(0, len(metricnames))]
-    curl = pycurl.Curl()
-
-    # Benchmark warm-up to allow for caching, JIT compiling, on client
-    logger.info('Warmup: ' + message + ' started')
-    for x in xrange(0, warmup_runs):
-        benchmark.update_context_before(my_context)
-        templated = benchmark.realize(my_context)
-        curl = templated.configure_curl(
-            timeout=test_config.timeout, context=my_context, curl_handle=curl)
-        # Do not store actual response body at all.
-        curl.setopt(pycurl.WRITEFUNCTION, lambda x: None)
-        curl.perform()
-
-    logger.info('Warmup: ' + message + ' finished')
-
-    logger.info('Benchmark: ' + message + ' starting')
-
-    for x in xrange(0, benchmark_runs):  # Run the actual benchmarks
-        # Setup benchmark
-        benchmark.update_context_before(my_context)
-        templated = benchmark.realize(my_context)
-        curl = templated.configure_curl(
-            timeout=test_config.timeout, context=my_context, curl_handle=curl)
-        # Do not store actual response body at all.
-        curl.setopt(pycurl.WRITEFUNCTION, lambda x: None)
-
-        try:  # Run the curl call, if it errors, then add to failure counts for benchmark
-            curl.perform()
-        except Exception:
-            output.failures = output.failures + 1
-            curl.close()
-            curl = pycurl.Curl()
-            continue  # Skip metrics collection
-
-        # Get all metrics values for this run, and store to metric lists
-        for i in xrange(0, len(metricnames)):
-            results[i].append(curl.getinfo(metricvalues[i]))
-
-    logger.info('Benchmark: ' + message + ' ending')
-
-    temp_results = dict()
-    for i in xrange(0, len(metricnames)):
-        temp_results[metricnames[i]] = results[i]
-    output.results = temp_results
-    return analyze_benchmark_results(output, benchmark)
-
-
-def analyze_benchmark_results(benchmark_result, benchmark):
-    """ Take a benchmark result containing raw benchmark results, and do aggregation by
-    applying functions
-
-    Aggregates come out in format of metricname, aggregate_name, result """
-
-    output = BenchmarkResult()
-    output.name = benchmark_result.name
-    output.group = benchmark_result.group
-    output.failures = benchmark_result.failures
-
-    # Copy raw metric arrays over where necessary
-    raw_results = benchmark_result.results
-    temp = dict()
-    for metric in benchmark.raw_metrics:
-        temp[metric] = raw_results[metric]
-    output.results = temp
-
-    # Compute aggregates for each metric, and add tuples to aggregate results
-    aggregate_results = list()
-    for metricname, aggregate_list in benchmark.aggregated_metrics.items():
-        numbers = raw_results[metricname]
-        for aggregate_name in aggregate_list:
-            if numbers:  # Only compute aggregates if numbers exist
-                aggregate_function = AGGREGATES[aggregate_name]
-                aggregate_results.append(
-                    (metricname, aggregate_name, aggregate_function(numbers)))
-            else:
-                aggregate_results.append((metricname, aggregate_name, None))
-
-    output.aggregates = aggregate_results
-    return output
-
-
-def metrics_to_tuples(raw_metrics):
-    """ Converts metric dictionary of name:values_array into list of tuples
-        Use case: writing out benchmark to CSV, etc
-
-        Input:
-        {'metric':[value1,value2...], 'metric2':[value1,value2,...]...}
-
-        Output: list, with tuple header row, then list of tuples of values
-        [('metric','metric',...), (metric1_value1,metric2_value1, ...) ... ]
-    """
-    if not isinstance(raw_metrics, dict):
-        raise TypeError("Input must be dictionary!")
-
-    metrics = sorted(raw_metrics.keys())
-    arrays = [raw_metrics[metric] for metric in metrics]
-
-    num_rows = len(arrays[0])  # Assume all same size or this fails
-    output = list()
-    output.append(tuple(metrics))  # Add headers
-
-    # Create list of tuples mimicking 2D array from input
-    for row in xrange(0, num_rows):
-        new_row = tuple([arrays[col][row] for col in xrange(0, len(arrays))])
-        output.append(new_row)
-    return output
-
-
-def write_benchmark_json(file_out, benchmark_result, benchmark, test_config=TestConfig()):
-    """ Writes benchmark to file as json """
-    json.dump(benchmark_result, file_out, default=safe_to_json)
-
-
-def write_benchmark_csv(file_out, benchmark_result, benchmark, test_config=TestConfig()):
-    """ Writes benchmark to file as csv """
-    writer = csv.writer(file_out)
-    writer.writerow(('Benchmark', benchmark_result.name))
-    writer.writerow(('Benchmark Group', benchmark_result.group))
-    writer.writerow(('Failures', benchmark_result.failures))
-
-    # Write result arrays
-    if benchmark_result.results:
-        writer.writerow(('Results', ''))
-        writer.writerows(metrics_to_tuples(benchmark_result.results))
-    if benchmark_result.aggregates:
-        writer.writerow(('Aggregates', ''))
-        writer.writerows(benchmark_result.aggregates)
-
-# Method to call when writing benchmark file
-OUTPUT_METHODS = {u'csv': write_benchmark_csv, u'json': write_benchmark_json}
-
-
 def log_failure(failure, context=None, test_config=TestConfig()):
     """ Log a failure from a test """
     logger.error("Test Failure, failure type: {0}, Reason: {1}".format(
@@ -355,6 +181,8 @@ def log_failure(failure, context=None, test_config=TestConfig()):
 
 class LoggerCallbacks(MacroCallbacks):
     """ Uses a standard python logger """
+    def log_status(self, input):
+        logger.info(input)
     def log_intermediate(self, input): 
         logger.debug(input)
 
@@ -438,8 +266,7 @@ def run_testsets(testsets):
 
             logger.info("Benchmark Starting: " + benchmark.name +
                         " Group: " + benchmark.group)
-            benchmark_result = run_benchmark(
-                benchmark, myconfig, context=context)
+            benchmark_result = benchmark.execute_macro(test_config=myconfig, context=context)
             print(benchmark_result)
             logger.info("Benchmark Done: " + benchmark.name +
                         " Group: " + benchmark.group)

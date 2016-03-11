@@ -24,13 +24,16 @@ def resolve_option(name, object_self, test_config, cmdline_args):
             return v
     return None
 
-class MacroCallbacks(object):
+class MacroCallbacks(object):  # Possibly call this an execution context?
     """ Callbacks bundle to handle reporting """
+
+    # Logging outputs
     def start_macro(self, input): lambda x: None
     def end_macro(self, input): lambda x: None
-    def pre_request(self, input): lambda x: None
-    def post_request(self, input): lambda x: None
-    def log_intermediate(self, input): lambda x: None
+    def pre_request(self, input): lambda x: None  # Called just before submitting requests
+    def post_request(self, input): lambda x: None # Called just after submitting requests
+    def log_status(self, input): lambda x: None  # Logs status info
+    def log_intermediate(self, input): lambda x: None  # Logs debug results while running
 
 class TestConfig(object):
     """ Configuration for a test run """
