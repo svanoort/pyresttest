@@ -6,6 +6,7 @@
 # This is all our general execution framework stuff + HTTP request stuff
 
 import sys
+import json
 from email import message_from_string  # For headers handling
 
 from .generators import parse_generator

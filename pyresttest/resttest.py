@@ -168,13 +168,13 @@ def log_failure(failure, context=None, testset_config=TestSetConfig()):
 class LoggerCallbacks(MacroCallbacks):
     """ Uses a standard python logger """
     def log_status(self, input):
-        logger.info(input)
+        logger.info(str(input))
     def log_intermediate(self, input): 
-        logger.debug(input)
+        logger.debug(str(input))
     def log_failure(self, input):
-        logger.error(input)
+        logger.error(str(input))
     def log_success(self, input):
-        logger.info(input)
+        logger.info(str(input))
 
 def run_testsets(testsets):
     """ Execute a set of tests, using given TestSet list input """
@@ -216,7 +216,7 @@ def run_testsets(testsets):
                 group_results[test.group] = list()
                 group_failure_counts[test.group] = 0
 
-            result = test.execute_macro(testset_config=myconfig, context=context, curl_handle=curl_handle)
+            result = test.execute_macro(callbacks=callbacks, testset_config=myconfig, context=context, curl_handle=curl_handle)
             result.body = None  # Remove the body, save some memory!
 
             if not result.passed:  # Print failure, increase failure counts for that test group
@@ -256,7 +256,7 @@ def run_testsets(testsets):
 
             logger.info("Benchmark Starting: " + benchmark.name +
                         " Group: " + benchmark.group)
-            benchmark_result = benchmark.execute_macro(testset_config=myconfig, context=context)
+            benchmark_result = benchmark.execute_macro(callbacks=callbacks, testset_config=myconfig, context=context)
             print(benchmark_result)
             logger.info("Benchmark Done: " + benchmark.name +
                         " Group: " + benchmark.group)
@@ -364,7 +364,9 @@ def main(args):
 
     if 'log' in args and args['log'] is not None:
         logger.setLevel(LOGGING_LEVELS.get(
-            args['log'].lower(), logging.NOTSET))
+            args['log'].lower(), logging.INFO))
+    else:
+        logger.setLevel(logging.INFO)
 
     if 'import_extensions' in args and args['import_extensions']:
         extensions = args['import_extensions'].split(';')
