@@ -5,7 +5,7 @@ RUN apt-get update && apt-get install --no-install-recommends -y python python-p
     && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Python 2 and 3 dependencies
-RUN pip install mock jmespath jsonpath pyyaml django==1.6.5 django-tastypie==0.12.1
+RUN pip install mock jmespath jsonschema pyyaml django==1.6.5 django-tastypie==0.12.1
 
 COPY verify_image.py /tmp/verify_image.py
 RUN chmod a+rwx /tmp/verify_image.py
