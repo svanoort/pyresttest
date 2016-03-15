@@ -1,8 +1,11 @@
 import traceback
 import json
 
+from sys import version_info
 import yaml
 import jsonschema
+
+PYTHON_MAJOR_VERSION = version_info[0]
 
 try:  # First try to load pyresttest from global namespace
     from pyresttest import validators
@@ -27,7 +30,10 @@ class JsonSchemaValidator(validators.AbstractValidator):
         try:
             # TODO try draft3/draft4 iter_errors -
             # https://python-jsonschema.readthedocs.org/en/latest/validate/#jsonschema.IValidator.iter_errors
-            jsonschema.validate(json.loads(body), schema)
+            parsed_body = body
+            if PYTHON_MAJOR_VERSION > 2 and isinstance(body, bytes):
+                parsed_body = str(body, 'utf-8')
+            jsonschema.validate(json.loads(parsed_body), schema)
             return True
         except jsonschema.exceptions.ValidationError as ve:
             trace = traceback.format_exc()
