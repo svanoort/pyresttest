@@ -5,9 +5,9 @@ set -x
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd $DIR
 
-UBUNTU_14_VERSION=0.5
-CENTOS6_VERSION=0.5
-PYTHON3_VERSION=0.6
+UBUNTU_14_VERSION=0.6
+CENTOS6_VERSION=0.6
+PYTHON3_VERSION=0.7
 
 docker build -t pyresttest-build-ubuntu-14:$UBUNTU_14_VERSION-SNAPSHOT ./ubuntu14-py27
 docker build -t pyresttest-build-centos6:$CENTOS6_VERSION-SNAPSHOT ./centos6-py26
@@ -22,7 +22,7 @@ if [ $? -ne 0 ]; then  # Test failed, remove the built image and exit with error
 fi
 docker tag -f pyresttest-build-ubuntu-14:$UBUNTU_14_VERSION-SNAPSHOT pyresttest-build-ubuntu-14:$UBUNTU_14_VERSION
 docker tag -f pyresttest-build-ubuntu-14:$UBUNTU_14_VERSION-SNAPSHOT pyresttest-build-ubuntu-14:latest
-docker rmi pyresttest-build-ubuntu-14:$UBUNTU_14_VERSION-SNAPSHOT
+docker rmi pyresttest-build-ubuntu-14:$UBUNTU_14_VERSION-SNAPSHOT || true
 
 docker run -t --rm pyresttest-build-centos6:$CENTOS6_VERSION-SNAPSHOT python /tmp/verify_image.py
 if [ $? -ne 0 ]; then  # Test failed, remove the built image and exit with error
@@ -32,7 +32,7 @@ if [ $? -ne 0 ]; then  # Test failed, remove the built image and exit with error
 fi
 docker tag -f pyresttest-build-centos6:$CENTOS6_VERSION-SNAPSHOT pyresttest-build-centos6:$CENTOS6_VERSION
 docker tag -f pyresttest-build-centos6:$CENTOS6_VERSION-SNAPSHOT pyresttest-build-centos6:latest
-docker rmi pyresttest-build-centos6:$CENTOS6_VERSION-SNAPSHOT
+docker rmi pyresttest-build-centos6:$CENTOS6_VERSION-SNAPSHOT || true
 
 docker run -t --rm pyresttest-build-python3:$PYTHON3_VERSION-SNAPSHOT python3 /tmp/verify_image.py
 if [ $? -ne 0 ]; then  # Test failed, remove the built image and exit with error

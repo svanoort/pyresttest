@@ -37,6 +37,9 @@ pyresttest
 - Logic is written and [extensible](extensions.md) in Python
 
 # Status
+
+**NEW: Full Python 3 Support in Alpha** - download it, 'pip install future' and give it a try!
+ 
 Apache License, Version 2.0
 
 ![Status Badge](http://52.4.228.82:8080/jenkins/buildStatus/icon?job=set-main-build-status) [![PyPI version](https://badge.fury.io/py/pyresttest.svg)](https://badge.fury.io/py/pyresttest) 
@@ -213,8 +216,13 @@ There are 5 top level test syntax elements:
 ```yaml
 ---
 # Will load the test sets from miniapp-test.yaml and run them
+# Note that this will run AFTER the current test set is executed
+# Also note that imported tests get a new Context: any variables defined will be lost between test sets
 - import: examples/miniapp-test.yaml
 ```
+
+Imports are intended to let you create top-level test suites that run many independent, isolated test scenarios (test sets).
+They may also be used to create sample data or perform cleanup *as long as you don't rely on variables to store this information.*  For example, if one testset creates a user for a set of scenarios, tests that rely on that user's ID need to start by querying the API to get the ID.
 
 ## Url Test With Timeout
 A simple URL test is equivalent to a basic GET test with that URL.

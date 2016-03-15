@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.7.1 Mon Mar 15 23:05:00 2016 -0400
+**Bugfixes:**
+* Fix JSONschema extension in Python 3, and add test coverage for it
+  - Thanks to @BastienAr for reporting it: https://github.com/svanoort/pyresttest/issues/173
+
 ## 1.7.0 Sat Mar 06 14:30:00 2016 -0400
 **Features:**
 * Unicode support epic: fix handling of request body and a whole raft of smaller fixes + more tests: https://github.com/svanoort/pyresttest/issues/104

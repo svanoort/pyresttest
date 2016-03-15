@@ -16,7 +16,7 @@ else:
   test_dependencies.append('discover')
 
 setup(name='pyresttest',
-      version='1.7.0',
+      version='1.7.1',
       description='Python RESTful API Testing & Microbenchmarking Tool',
       long_description='Python RESTful API Testing & Microbenchmarking Tool \n Documentation at https://github.com/svanoort/pyresttest',
       author='Sam Van Oort',
@@ -30,6 +30,7 @@ setup(name='pyresttest',
           'Programming Language :: Python :: 2.6',
           'Programming Language :: Python :: 2.7',
           'Programming Language :: Python :: 3.4',
+          'Programming Language :: Python :: 3.5',
           'Topic :: Software Development :: Testing',
           'Topic :: Software Development :: Quality Assurance',
           'Topic :: Utilities'
@@ -44,7 +45,7 @@ setup(name='pyresttest',
       install_requires=dependencies,
       tests_require=test_dependencies,
       extras_require= {
-        'JSONPath': ['jsonpath'],
+        'JSONSchema': ['jsonschema'],
         'JMESPath': ['jmespath']
       },
       # Make this executable from command line when installed
