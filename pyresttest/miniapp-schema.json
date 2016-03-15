@@ -1,0 +1,21 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "Person",
+    "description": "A person from the miniapp",
+    "type": "object",
+    "properties": {
+        "id": {
+            "type": "integer",
+            "description": "Unique person ID"
+        },
+        "first_name": {
+            "type": "string"
+        },
+        "last_name": {
+          "type": "string"
+        },
+        "login": {
+            "type": "string"
+        }
+    }
+}

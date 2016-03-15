@@ -318,7 +318,24 @@ class RestTestCase(unittest.TestCase):
         self.assertTrue(benchmark_config.benchmark_runs, len(
             benchmark_result.results['total_time']))
 
-    def test_get_validators_jmespath_fail(self):
+    def test_use_validator_ext_jsonschema(self):
+        try:
+            import jsonschema           
+        except ImportError:
+            print("Skipping jsonschema import test because library absent")
+            raise unittest.SkipTest("JSONSchema module absent")
+        # Serious hack dumping the schema in local directory to allow executing it this way
+        # But otherwise kind of painful
+        path = os.path.join(os.path.dirname(
+            os.path.realpath(__file__)), 'testapp/schema_test.yaml')
+        print(path)
+        tests = resttest.parse_testsets('http://localhost:8000', resttest.read_test_file(
+            path), working_directory=os.path.dirname(os.path.realpath(__file__)))
+        failures = resttest.run_testsets(tests)
+        self.assertTrue(
+            failures == 0, 'Simple tests failed where success expected')
+
+    def test_use_validators_jmespath_fail(self):
         try:
             import jmespath            
         except ImportError:
