@@ -22,7 +22,7 @@ if [ $? -ne 0 ]; then  # Test failed, remove the built image and exit with error
 fi
 docker tag -f pyresttest-build-ubuntu-14:$UBUNTU_14_VERSION-SNAPSHOT pyresttest-build-ubuntu-14:$UBUNTU_14_VERSION
 docker tag -f pyresttest-build-ubuntu-14:$UBUNTU_14_VERSION-SNAPSHOT pyresttest-build-ubuntu-14:latest
-docker rmi pyresttest-build-ubuntu-14:$UBUNTU_14_VERSION-SNAPSHOT
+docker rmi pyresttest-build-ubuntu-14:$UBUNTU_14_VERSION-SNAPSHOT || true
 
 docker run -t --rm pyresttest-build-centos6:$CENTOS6_VERSION-SNAPSHOT python /tmp/verify_image.py
 if [ $? -ne 0 ]; then  # Test failed, remove the built image and exit with error
@@ -32,7 +32,7 @@ if [ $? -ne 0 ]; then  # Test failed, remove the built image and exit with error
 fi
 docker tag -f pyresttest-build-centos6:$CENTOS6_VERSION-SNAPSHOT pyresttest-build-centos6:$CENTOS6_VERSION
 docker tag -f pyresttest-build-centos6:$CENTOS6_VERSION-SNAPSHOT pyresttest-build-centos6:latest
-docker rmi pyresttest-build-centos6:$CENTOS6_VERSION-SNAPSHOT
+docker rmi pyresttest-build-centos6:$CENTOS6_VERSION-SNAPSHOT || true
 
 docker run -t --rm pyresttest-build-python3:$PYTHON3_VERSION-SNAPSHOT python3 /tmp/verify_image.py
 if [ $? -ne 0 ]; then  # Test failed, remove the built image and exit with error
