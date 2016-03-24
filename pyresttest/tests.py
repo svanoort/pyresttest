@@ -291,9 +291,9 @@ class Test(object):
 
         if curl_handle:
             curl = curl_handle
-            curl.reset()
             try:  # Check the curl handle isn't closed, and reuse it if possible
                 curl.getinfo(curl.HTTP_CODE)
+                curl.reset()
                 if not cookiejar:
                     # Below clears the cookies & curl options for clean run
                     # But retains the DNS cache and connection pool
