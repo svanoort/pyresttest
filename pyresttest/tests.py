@@ -291,12 +291,12 @@ class Test(object):
 
         if curl_handle:
             curl = curl_handle
+            curl.reset()
             try:  # Check the curl handle isn't closed, and reuse it if possible
                 curl.getinfo(curl.HTTP_CODE)
                 if not cookiejar:
                     # Below clears the cookies & curl options for clean run
                     # But retains the DNS cache and connection pool
-                    curl.reset()
                     curl.setopt(curl.COOKIELIST, "ALL")
             except pycurl.error:
                 curl = pycurl.Curl()
@@ -307,6 +307,7 @@ class Test(object):
         if cookiejar:
             curl.setopt(curl.COOKIEJAR, cookiejar)
             curl.setopt(curl.COOKIEFILE, cookiejar)
+            curl.setopt(curl.COOKIELIST, "RELOAD")
 
         # curl.setopt(pycurl.VERBOSE, 1)  # Debugging convenience
         curl.setopt(curl.URL, str(self.url))
@@ -330,8 +331,7 @@ class Test(object):
                 curl.setopt(pycurl.HTTPAUTH, self.auth_type)
         if self.method == u'GET':
             curl.setopt(HTTP_METHODS[u'GET'], 1)
-            curl.unsetopt(curl.CUSTOMREQUEST)
-        if self.method == u'POST':
+        elif self.method == u'POST':
             curl.setopt(HTTP_METHODS[u'POST'], 1)
             # Required for some servers
             if bod is not None:

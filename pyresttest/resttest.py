@@ -713,7 +713,10 @@ def run_testsets(testsets):
 
         if myconfig.cookiejar:
             curl_handle.close()
-            os.remove('/'.join([os.getcwd(), myconfig.cookiejar]))
+            try:
+                os.remove('/'.join([os.getcwd(), myconfig.cookiejar]))
+            except OSError:
+                pass
 
     if myinteractive:
         # a break for when interactive bits are complete, before summary data
