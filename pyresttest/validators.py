@@ -1,5 +1,6 @@
 import logging
 import json
+import Cookie
 import operator
 import traceback
 import string
@@ -286,6 +287,24 @@ class HeaderExtractor(AbstractExtractor):
     @classmethod
     def parse(cls, config, extractor_base=None):
         base = HeaderExtractor()
+        return cls.configure_base(config, base)
+
+
+class CookieExtractor(AbstractExtractor):
+    """ Extractor that pulls out a named cookie """
+    extractor_type = 'cookie'
+    is_header_extractor = True
+
+    def extract_internal(self, query = None, args = None, body = None, headers = None):
+        extracted = [y[1] for y in filter(lambda x: x[0] == 'set-cookie', headers) if y[1].startswith(query + '=')]
+        if len(extracted) == 0:
+            raise ValueError("Cookie named {0} not known".format(query))
+        else:
+            return str(dict(Cookie.SimpleCookie(extracted[0]))[query].value)
+
+    @classmethod
+    def parse(cls, config, extractor_base = None):
+        base = CookieExtractor()
         return cls.configure_base(config, base)
 
 
@@ -595,6 +614,7 @@ def register_comparator(comparator_name, comparator_function):
 # --- REGISTRY OF EXTRACTORS AND VALIDATORS ---
 register_extractor('jsonpath_mini', MiniJsonExtractor.parse)
 register_extractor('header', HeaderExtractor.parse)
+register_extractor('cookie', CookieExtractor.parse)
 register_extractor('raw_body', RawBodyExtractor.parse)
 # ENHANCEME: add JsonPath-rw support for full JsonPath syntax
 # ENHANCEME: add elementree support for xpath extract on XML, very simple no?
