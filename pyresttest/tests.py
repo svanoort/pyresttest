@@ -180,6 +180,11 @@ class Test(object):
         val = self.realize_template(self.NAME_URL, context)
         if val is None:
             val = self._url
+        else:
+            url_parts = [part for part in val.split('/') if part != '']
+            if val.endswith('/'):
+                url_parts.append(' ')
+            val = '/'.join(url_parts).strip()
         return val
     url = property(get_url, set_url, None, 'URL fragment for request')
 
@@ -293,14 +298,14 @@ class Test(object):
             curl = curl_handle
 
             try:  # Check the curl handle isn't closed, and reuse it if possible
-                curl.getinfo(curl.HTTP_CODE)                
+                curl.getinfo(curl.HTTP_CODE)
                 # Below clears the cookies & curl options for clean run
                 # But retains the DNS cache and connection pool
                 curl.reset()
                 curl.setopt(curl.COOKIELIST, "ALL")
             except pycurl.error:
                 curl = pycurl.Curl()
-            
+
         else:
             curl = pycurl.Curl()
 
@@ -319,8 +324,8 @@ class Test(object):
             curl.setopt(curl.READFUNCTION, MyIO(bod).read)
 
         if self.auth_username and self.auth_password:
-            curl.setopt(pycurl.USERPWD, 
-                parsing.encode_unicode_bytes(self.auth_username) + b':' + 
+            curl.setopt(pycurl.USERPWD,
+                parsing.encode_unicode_bytes(self.auth_username) + b':' +
                 parsing.encode_unicode_bytes(self.auth_password))
             if self.auth_type:
                 curl.setopt(pycurl.HTTPAUTH, self.auth_type)
