@@ -2,15 +2,18 @@ import string
 import os
 import copy
 import json
+import traceback
 import pycurl
 import sys
 
-
+from .binding import Context
 from . import contenthandling
 from .contenthandling import ContentHandler
 from . import validators
+from .validators import Failure
 from . import parsing
 from .parsing import *
+from .macros import *
 
 # Find the best implementation available on this platform
 try:
@@ -90,7 +93,7 @@ def coerce_list_of_ints(val):
     else:
         return [int(val)]
 
-class Test(object):
+class Test(Macro):
     """ Describes a REST test """
     _url = None
     expected_status = [200]  # expected HTTP status code or codes
@@ -114,10 +117,6 @@ class Test(object):
     variable_binds = None
     generator_binds = None  # Dict of variable name and then generator name
     extract_binds = None  # Dict of variable name and extract function to run
-
-    @staticmethod
-    def has_contains():
-        return 'contains' in validators.VALIDATORS
 
     def ninja_copy(self):
         """ Optimization: limited copy of test object, for realize() methods
@@ -291,6 +290,142 @@ class Test(object):
     def __str__(self):
         return json.dumps(self, default=safe_to_json)
 
+    def execute_macro(self, testset_config=TestSetConfig(), context=None, cmdline_args=None, callbacks=MacroCallbacks(), curl_handle=None, *args, **kwargs):
+        """ Put together test pieces: configure & run actual test, return results """
+
+        # Initialize a context if not supplied
+        my_context = context
+        if my_context is None:
+            my_context = Context()
+
+        mytest=self
+
+        mytest.update_context_before(my_context)
+        templated_test = mytest.realize(my_context)
+        curl = templated_test.configure_curl(
+            timeout=testset_config.timeout, context=my_context, curl_handle=curl_handle)
+        result = TestResponse()
+        result.test = templated_test
+
+        # reset the body, it holds values from previous runs otherwise
+        headers = MyIO()
+        body = MyIO()
+        curl.setopt(pycurl.WRITEFUNCTION, body.write)
+        curl.setopt(pycurl.HEADERFUNCTION, headers.write)
+        if testset_config.verbose:
+            curl.setopt(pycurl.VERBOSE, True)
+        if testset_config.ssl_insecure:
+            curl.setopt(pycurl.SSL_VERIFYPEER, 0)
+            curl.setopt(pycurl.SSL_VERIFYHOST, 0)
+
+        result.passed = None
+
+        if testset_config.interactive:
+            callbacks.log_status("===================================")
+            callbacks.log_status("%s" % mytest.name)
+            callbacks.log_status("-----------------------------------")
+            callbacks.log_status("REQUEST:")
+            callbacks.log_status("%s %s" % (templated_test.method, templated_test.url))
+            callbacks.log_status("HEADERS:")
+            callbacks.log_status("%s" % (templated_test.headers))
+            if mytest.body is not None:
+                callbacks.log_status("\n%s" % templated_test.body)
+            raw_input("Press ENTER when ready (%d): " % (mytest.delay))
+
+        if mytest.delay > 0:
+            callbacks.log_status("Delaying for %ds" % mytest.delay)
+            time.sleep(mytest.delay)
+
+        try:
+            curl.perform()  # Run the actual call
+        except Exception as e:
+            # Curl exception occurred (network error), do not pass go, do not
+            # collect $200
+            trace = traceback.format_exc()
+            result.failures.append(Failure(message="Curl Exception: {0}".format(
+                e), details=trace, failure_type=validators.FAILURE_CURL_EXCEPTION))
+            result.passed = False
+            curl.close()
+            return result
+
+        # Retrieve values
+        result.body = body.getvalue()
+        body.close()
+        result.response_headers = text_type(headers.getvalue(), HEADER_ENCODING)  # Per RFC 2616
+        headers.close()
+
+        response_code = curl.getinfo(pycurl.RESPONSE_CODE)
+        result.response_code = response_code
+
+        callbacks.log_intermediate("Initial Test Result, based on expected response code: " +
+                     str(response_code in mytest.expected_status))
+
+        if response_code in mytest.expected_status:
+            result.passed = True
+        else:
+            # Invalid response code
+            result.passed = False
+            failure_message = "Invalid HTTP response code: response code {0} not in expected codes [{1}]".format(
+                response_code, mytest.expected_status)
+            result.failures.append(Failure(
+                message=failure_message, details=None, failure_type=validators.FAILURE_INVALID_RESPONSE))
+
+        # Parse HTTP headers
+        try:
+            result.response_headers = parse_headers(result.response_headers)
+        except Exception as e:
+            trace = traceback.format_exc()
+            result.failures.append(Failure(message="Header parsing exception: {0}".format(
+                e), details=trace, failure_type=validators.FAILURE_TEST_EXCEPTION))
+            result.passed = False
+            curl.close()
+            return result
+
+        # print str(testset_config.print_bodies) + ',' + str(not result.passed) + ' ,
+        # ' + str(testset_config.print_bodies or not result.passed)
+
+        head = result.response_headers
+
+        # execute validator on body
+        if result.passed is True:
+            body = result.body
+            if mytest.validators is not None and isinstance(mytest.validators, list):
+                callbacks.log_intermediate("executing this many validators: " +
+                             str(len(mytest.validators)))
+                failures = result.failures
+                for validator in mytest.validators:
+                    validate_result = validator.validate(
+                        body=body, headers=head, context=my_context)
+                    if not validate_result:
+                        result.passed = False
+                    # Proxy for checking if it is a Failure object, because of
+                    # import issues with isinstance there
+                    if hasattr(validate_result, 'details'):
+                        failures.append(validate_result)
+                    # TODO add printing of validation for interactive mode
+            else:
+                callbacks.log_intermediate("no validators found")
+
+            # Only do context updates if test was successful
+            mytest.update_context_after(result.body, head, my_context)
+
+        # Print response body if override is set to print all *OR* if test failed
+        # (to capture maybe a stack trace)
+        if testset_config.print_bodies or not result.passed:
+            if testset_config.interactive:
+                callbacks.log_status("RESPONSE:")
+            callbacks.log_status(result.body.decode(ESCAPE_DECODING))
+
+        if testset_config.print_headers or not result.passed:
+            if testset_config.interactive:
+                callbacks.log_status("RESPONSE HEADERS:")
+            callbacks.log_status(result.response_headers)
+
+        # TODO add string escape on body output
+        callbacks.log_intermediate(result)
+
+        return result
+
     def configure_curl(self, timeout=DEFAULT_TIMEOUT, context=None, curl_handle=None):
         """ Create and mostly configure a curl object for test, reusing existing if possible """
 
@@ -368,6 +503,7 @@ class Test(object):
                 curl.setopt(pycurl.POSTFIELDSIZE, len(bod))
 
         # Template headers as needed and convert headers dictionary to list of header entries
+        
         head = self.get_headers(context=context)
         head = copy.copy(head)  # We're going to mutate it, need to copy
 
@@ -418,8 +554,6 @@ class Test(object):
 
         # Clean up for easy parsing
         node = lowercase_keys(flatten_dictionaries(node))
-
-
 
         # Simple table of variable name, coerce function, and optionally special store function
         CONFIG_ELEMENTS = {

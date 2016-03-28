@@ -34,4 +34,4 @@ context = Context()
 context.add_generator('gen', factory_generate_ids(starting_id=10)())
 test.generator_binds = {'id': 'gen'}
 print 'Running templated PUT test'
-cProfile.run('resttest.run_benchmark(test, context=context)', sort='cumtime')
+cProfile.run('test.execute_macro(context=context)', sort='cumtime')

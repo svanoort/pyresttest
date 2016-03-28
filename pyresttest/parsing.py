@@ -1,7 +1,8 @@
 from __future__ import absolute_import
 import sys
 import string
-
+import os
+from optparse import OptionParser
 
 # Python 3 compatibility shims
 from . import six
@@ -100,35 +101,52 @@ def safe_to_bool(input):
         raise TypeError(
             'Input Object is not a boolean or string form of boolean!')
 
+def parse_command_line_args(args_in):
+    """ Runs everything needed to execute from the command line, so main method is callable without arg parsing """
+    parser = OptionParser(
+        usage="usage: %prog base_url test_filename.yaml [options] ")
+    parser.add_option(u"--print-bodies", help="Print all response bodies",
+                      action="store", type="string", dest="print_bodies")
+    parser.add_option(u"--print-headers", help="Print all response headers",
+                      action="store", type="string", dest="print_headers")
+    parser.add_option(u"--log", help="Logging level",
+                      action="store", type="string")
+    parser.add_option(u"--interactive", help="Interactive mode",
+                      action="store", type="string")
+    parser.add_option(
+        u"--url", help="Base URL to run tests against", action="store", type="string")
+    parser.add_option(u"--test", help="Test file to use",
+                      action="store", type="string")
+    parser.add_option(u'--import_extensions',
+                      help='Extensions to import, separated by semicolons', action="store", type="string")
+    parser.add_option(
+        u'--vars', help='Variables to set, as a YAML dictionary', action="store", type="string")
+    parser.add_option(u'--verbose', help='Put cURL into verbose mode for extra debugging power',
+                      action='store_true', default=False, dest="verbose")
+    parser.add_option(u'--ssl-insecure', help='Disable cURL host and peer cert verification',
+                      action='store_true', default=False, dest="ssl_insecure")
+    parser.add_option(u'--absolute-urls', help='Enable absolute URLs in tests instead of relative paths',
+                      action="store_true", dest="absolute_urls")
+    parser.add_option(u'--skip_term_colors', help='Turn off the output term colors',
+                      action='store_true', default=False, dest="skip_term_colors")
 
-class SuperConfigurator(object):
-    """ It's a bird!  It's a plane! No, it's....
-        The solution to handling horribly nasty, thorny configuration handling methods
+    (args, unparsed_args) = parser.parse_args(args_in)
+    args = vars(args)
 
-    """
-
-    def run_configure(self, key, value, configurable, validator_func=None, converter_func=None, store_func=None, *args, **kwargs):
-        """ Run a single configuration element
-            Run a validator on the value, if supplied
-            Run a converter_funct to turn the value into something to storeable:
-                converter_func takes params (value) at least and throws exception if failed
-            If a  store_func is supplied, use that to store the option
-              store_func needs to take params (object, key, value, args, kwargs)
-            If store_func NOT supplied we do a setattr on object
-        """
-        if validator_func and not validator(value):
-            raise TypeError("Illegal argument for {0}".format(value))
-        storeable = value
-        if converter_func:
-            storeable = converter_func(value)
-        if store_func:
-            store_func(configurable, key, storeable)
+    # Handle url/test as named, or, failing that, positional arguments
+    if not args['url'] or not args['test']:
+        if len(unparsed_args) == 2:
+            args[u'url'] = unparsed_args[0]
+            args[u'test'] = unparsed_args[1]
+        elif len(unparsed_args) == 1 and args['url']:
+            args['test'] = unparsed_args[0]
+        elif len(unparsed_args) == 1 and args['test']:
+            args['url'] = unparsed_args[0]
         else:
-            configurable.setattr(configurable, key, value)
+            parser.print_help()
+            parser.error(
+                "wrong number of arguments, need both url and test filename, either as 1st and 2nd parameters or via --url and --test")
 
-    def configure(self, configs, configurable, handler, *args, **kwargs):
-        """ Use the configs and configurable to parse"""
-        for key, value in configs.items():
-            # Read handler arguments and use them to call the configurator
-            handler[key] = config_options
-            self.run_configure(value, configurable)
+    # So modules can be loaded from current folder
+    args['cwd'] = os.path.realpath(os.path.abspath(os.getcwd()))
+    return args
