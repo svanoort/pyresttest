@@ -158,6 +158,7 @@ Manually copying in a working system pycurl installation may help:
 - Advanced features have [separate documentation](advanced_guide.md) (templating, generators, content extraction, complex validation).
 - How to [extend PyRestTest](extensions.md) is its own document
 - There are a [ton of examples](https://github.com/svanoort/pyresttest/tree/master/examples)
+- @BastienAr has created an [Atom editor package](https://atom.io/packages/language-pyresttest) for PyRestTest development (thank you!)
 
 ## Running A Simple Test
 
