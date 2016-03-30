@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.7.2 UNRELEASED
+**Bugfixes:**
+- Fix threading issue with changing relative paths & reading files
+  - Thank you to @akshay059 for opening an issue for this https://github.com/svanoort/pyresttest/issues/183
+
+**Features:**
+* Mention new Atom editor package for PyRestTest, created by @BastienAr (Thank you!)
+* Strip duplicate backslashes in templated URLs
+   - Thank you @danielatdattrixdotcom for you PR! - https://github.com/svanoort/pyresttest/pull/182
+
+**Special mentions:**
+  - Big thank you to @spradeev for assisting with issues and questions, to free up time for working on code/architectural improvments for big features!
+
 ## 1.7.1 Mon Mar 15 23:05:00 2016 -0400
 **Bugfixes:**
 * Fix JSONschema extension in Python 3, and add test coverage for it
