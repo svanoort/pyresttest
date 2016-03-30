@@ -8,6 +8,7 @@ import pycurl
 import json
 import csv
 import logging
+import threading
 from optparse import OptionParser
 from email import message_from_string  # For headers handling
 import time
@@ -79,7 +80,7 @@ LOGGING_LEVELS = {'debug': logging.DEBUG,
 logging.basicConfig(format='%(levelname)s:%(message)s')
 logger = logging.getLogger('pyresttest')
 
-
+DIR_LOCK = threading.RLock()  # Guards operations changing the working directory
 class cd:
     """Context manager for changing the current working directory"""
     # http://stackoverflow.com/questions/431684/how-do-i-cd-in-python/13197763#13197763
@@ -89,12 +90,14 @@ class cd:
 
     def __enter__(self):
         if self.newPath:  # Don't CD to nothingness
+            DIR_LOCK.acquire()
             self.savedPath = os.getcwd()
             os.chdir(self.newPath)
 
     def __exit__(self, etype, value, traceback):
-        if self.newPath:  # Don't CD to nothingness
+        if self.newPath:  # Don't CD to nothingness            
             os.chdir(self.savedPath)
+            DIR_LOCK.release()
 
 
 class TestConfig:
