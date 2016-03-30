@@ -313,10 +313,6 @@ Example:
   - expected_status: [201]
 ```
 
-Example 2:
-```yaml
-compare: {header: 'content-type', expected: 'application/json'}
-
 ## Extractor: raw_body
 This extracts the raw HTTP response body.
 This value can be tested with comparisons or extract tests.
