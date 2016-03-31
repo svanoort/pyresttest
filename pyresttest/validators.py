@@ -300,7 +300,7 @@ class CookieExtractor(AbstractExtractor):
         if len(extracted) == 0:
             raise ValueError("Cookie named {0} not known".format(query))
         else:
-            return str(dict(Cookie.SimpleCookie(extracted[0]))[query].value)
+            return Cookie.SimpleCookie(extracted[-1])[query].value
 
     @classmethod
     def parse(cls, config, extractor_base = None):
