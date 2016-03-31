@@ -113,7 +113,7 @@ Manually copying in a working system pycurl installation may help:
 ---
 - config:
     - testset: "Basic tests"
-
+    - timeout: 100  # Increase timeout from the default 10 seconds
 - test: 
     - name: "Basic get"
     - url: "/api/person/"
@@ -210,7 +210,7 @@ There are 5 top level test syntax elements:
 - *url:* a simple test, fetches given url via GET request and checks for good response code
 - *test*: a fully defined test (see below)
 - *benchmark*: a fully defined benchmark (see below)
-- *config* or *configuration*: overall test configuration
+- *config* or *configuration*: overall test configuration (timeout is the most common option)
 - *import*: import another test set file so you Don't Repeat Yourself
 
 ## Import example
