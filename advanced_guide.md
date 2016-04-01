@@ -11,7 +11,7 @@ For how to write custom Python extensions, see the [extensions guide](extensions
 
 # Templating and Context Basics
 - Tests and benchmarks may use variables to template out configuration dynamically.
-- Templating is performed using basic [Python string templating](https://docs.python.org/2/library/string.html#template-strings).  
+- Templating is performed using basic [Python string templating](https://docs.python.org/2/library/string.html#template-strings).
 - Templating uses variables contained in a context, and **templates are evaluated freshly** for each test run or benchmark iteration
 - Contexts are either passed into a test, or created in the text if not supplied
 - **Contexts are persistent within a TestSet. Once a variable is set, it can be used in all following tests**
@@ -22,14 +22,14 @@ For how to write custom Python extensions, see the [extensions guide](extensions
         + Generator bindings evaluate once per HTTP call:
             - **Only once per Test**, and **multiple times for a Benchmark**
         + Generator bindings only apply to the Test/Benchmark they are declared in. New values are generated only when the binding is evaluated.
-    3. **Data may be extracted from the HTTP response body** with the 'extract_binds' element in a test. 
+    3. **Data may be extracted from the HTTP response body** with the 'extract_binds' element in a test.
         + Note that if the request fails, the data cannot be set (nothing to work with)
         + Currently, this is unsupported for benchmarks: using extraction doesn't make sense because benchmarks should be isolated.
 
 ## Templating, Generators, and Binding Example
 What if you want to benchmark creating/updating a series of users, but the users must have unique IDs and logins?
 
-*Easy-peasy with generators!*  You simply declare a number sequence generator, and bind it to the ID field for a PUT benchmark. 
+*Easy-peasy with generators!*  You simply declare a number sequence generator, and bind it to the ID field for a PUT benchmark.
 
 To demonstrate static variable binding, this does binding for both first and last names too.
 
@@ -41,7 +41,7 @@ To demonstrate static variable binding, this does binding for both first and las
     # Variables to use in the test set
     - variable_binds: {firstname: 'Gaius-Test', lastname: 'Baltar-Test'}
     # Generators to use in the test set
-    - generators:  
+    - generators:
         # Generator named 'id' that counts up from 10
         - 'id': {type: 'number_sequence', start: 10}
 
@@ -79,16 +79,16 @@ List of all generators and their configuration elements (required, optional, and
 
 ## Additional Details For Generators
 ### env_variable: explanation
-The variable name is used to lookup the environment variable. 
+The variable name is used to lookup the environment variable.
 For example, if you used $HOST in a shellscript, the 'variable_name' value for the generator would be 'HOST'
 
 ### env_string: explanation
-This is a string substitution with potentially multiple environment variables used. 
+This is a string substitution with potentially multiple environment variables used.
 BASH: `echo "$USER logged into $HOSTNAME"`
-becomes generator: 
+becomes generator:
 ```yaml
 {type: 'env_string', 'string': "$USER logged into $HOSTNAME"}
-``` 
+```
 
 ### random_text: explanation
 This generates strings of random characters.
@@ -102,7 +102,7 @@ All it needs is the:
   + a 'character_set': a named character set of values, see below for table
 
 ### Character Sets Reference
-Python internal character sets come from the [String constants](https://docs.python.org/2/library/string.html#string-constants) in the string module. 
+Python internal character sets come from the [String constants](https://docs.python.org/2/library/string.html#string-constants) in the string module.
 
 **Reference:**
 
@@ -132,7 +132,7 @@ Python internal character sets come from the [String constants](https://docs.pyt
 # Extractors Basics
 Extractors are query-based ways to extract some part of an HTTP response body for use.
 
-This can be used as part of a validator or to capture values to a context variable for later use. 
+This can be used as part of a validator or to capture values to a context variable for later use.
 
 Current extractors are limited, but the functions are pluggable -- it is very easy to add full JsonPath, regex matching, xpath, xquery, etc and use them in your testing.
 
@@ -147,7 +147,7 @@ The basic 'jsonpath_mini' extractor provides a very limited [JsonPath](http://go
 
 The elements of this  syntax are a list of keys or indexes, descending down a tree, seperated by periods. Numbers are assumed to be array indices.
 
-If you wish to return the whole object, you may use an empty "" query or "." -- this can be helpful for APIs returning an array of objects, where you want to count the number of objects returned (using countEq operator). 
+If you wish to return the whole object, you may use an empty "" query or "." -- this can be helpful for APIs returning an array of objects, where you want to count the number of objects returned (using countEq operator).
 
 **Example:**
 Given this JSON:
@@ -183,7 +183,7 @@ Will return: the whole response (as a python object). This can be very useful if
 - This query: 'thing.0'
 Will return: None -- trick question, 'thing' is not an array!
 
-Super simple, super basic, but it actually will cover a lot of useful cases. 
+Super simple, super basic, but it actually will cover a lot of useful cases.
 
 **This extractor also supports templating:**
 ```yaml
@@ -272,7 +272,7 @@ Given this JSON:
 |```"test12.myarray[?contains(@, 'foo') == `true`]"``` | ```"['foo', 'foobar', 'barfoo', 'barfoobaz']"``` |
 
 ## Extractor: header
-This extracts the value of an HTTP header from the response. 
+This extracts the value of an HTTP header from the response.
 This value can be tested with comparisons or extract tests.
 Note that **headers are case-insensitive**, 'content-type' and 'Content-Type' will be the same. If multiple values are defined for the header, a list of values will be returned (example: cookies).
 
@@ -286,15 +286,42 @@ Example 2:
 compare: {header: 'content-type', expected: 'application/json'}
 ```
 
+## Extractor: cookie
+This extracts the value of a cookie from the Set-Cookie HTTP header from the response.
+Use only when you expect a response with Set-Cookie. **Cookie names are case-sensitive**.
+
+Example:
+```yaml
+- test:
+  - group: "CSRF Test"
+  - name: "Login"
+  - url: "/api/login/"
+  - method: "PUT"
+  - body: '{"username": "testuser","password": "testpass"}'
+  - headers: {'Content-Type': 'application/json'}
+  - expected_status: [200]
+  - extract_binds:
+      - 'csrftoken': {'cookie': 'csrftoken'}
+
+- test:
+  - group: 'CSRF Test'
+  - name: 'Add Widget'
+  - url: '/api/widget/'
+  - method: "POST"
+  - headers: {template: {'Content-Type': 'application/json', 'X-CSRFToken': '$csrftoken'}}
+  - body: '{"level": 1, "owner": "Joe Chip"}'
+  - expected_status: [201]
+```
+
 ## Extractor: raw_body
-This extracts the raw HTTP response body. 
+This extracts the raw HTTP response body.
 This value can be tested with comparisons or extract tests.
-This does not take any configuration values. 
+This does not take any configuration values.
 
 # Validation Basics
-Validators test response bodies for correctness.  They perform a test on the response body, with context supplied, and return a value that will evaluate to boolean True or False. 
+Validators test response bodies for correctness.  They perform a test on the response body, with context supplied, and return a value that will evaluate to boolean True or False.
 
-Optionally, validators can return a Failure which evaluates to False, but supplies additional information. 
+Optionally, validators can return a Failure which evaluates to False, but supplies additional information.
 
 ## Current Validators:
 ### Extract and test value:
@@ -323,7 +350,7 @@ Optionally, validators can return a Failure which evaluates to False, but suppli
     + (extractor): an extractor definition, see above, named by extractor type
     + comparator: a comparator function to apply, which returns true or false (see list below)
     + expected: value is:
-        + expected value (a literal) 
+        + expected value (a literal)
         + a template: {template: 'template_string'} - gotcha here, you need to use 'str_eq' comparator if you want to template numeric values.
         + an extractor definition. Yes, you can compare two parts of the response body.
 
@@ -332,10 +359,10 @@ Optionally, validators can return a Failure which evaluates to False, but suppli
 - validators:
      # Check the user name matches
      - compare: {jsonpath_mini: "user_name", comparator: "eq", expected: 'neo'}
-     
+
      # Check the total_count key has value over 10
      - compare: {jsonpath_mini: "total_count", comparator: "gt", expected: 10}
-     
+
      # Check the user's login
      - compare: {jsonpath_mini: "total_count", comparator: "gt", expected: }
 ```
@@ -384,7 +411,7 @@ TYPES = {
 
 - **Name:** json_schema
 - **Description:** This validator lets you validate a request against a [JSON Schema](http://json-schema.org/), which can be in the test body or an external file (as per the request body).
-- **Arguments:** 
+- **Arguments:**
    + schema - the JSON schema to use in validating the request body
 - **Examples:**
 
@@ -425,23 +452,23 @@ Validate against a schema in file 'miniapp-schema.json'
 ## General Benchmark Lifecycle
 1. Pre-processing (set up to store metrics efficiently)
 2. Warmup, runs *warmup_runs* times
-    1. Update context before test (variable and generator binding) 
+    1. Update context before test (variable and generator binding)
     2. Realize test templating
     3. Reconfigure a Curl call (curl objects are reused if possible)
     4. Run Curl
 3. Benchmarking, runs *benchmark_runs* times
-    1. Update context before test (variable and generator binding) 
+    1. Update context before test (variable and generator binding)
     2. Realize test templating
     3. Reconfigure a Curl call (curl objects are reused if possible)
     4. Run Curl
     5. Collect metrics (adding to arrays)
 4. Postprocessing: analyze benchmark results, condense arrays, and generate a BenchmarkResult object
 
-###Key notes about benchmarks: 
+###Key notes about benchmarks:
 * Benchmarks do as little as possible: they do NOT run validators or extractors
 * HTTP response bodies are not stored, to get the most accurate result possible
 * They do NOT currently check HTTP response codes (this may be added later)
 * Benchmarks track a static failure count, to account for network issues
-* Benchmarks will try to optimize out as much templating as they can safely. 
+* Benchmarks will try to optimize out as much templating as they can safely.
 
 
