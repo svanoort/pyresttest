@@ -11,6 +11,7 @@ import logging
 import threading
 from optparse import OptionParser
 from email import message_from_string  # For headers handling
+from xml.etree import cElementTree as ET # For junit formatter
 import time
 
 try:
@@ -95,7 +96,7 @@ class cd:
             os.chdir(self.newPath)
 
     def __exit__(self, etype, value, traceback):
-        if self.newPath:  # Don't CD to nothingness            
+        if self.newPath:  # Don't CD to nothingness
             os.chdir(self.savedPath)
             DIR_LOCK.release()
 
@@ -715,6 +716,7 @@ def run_testsets(testsets):
         # a break for when interactive bits are complete, before summary data
         print("===================================")
 
+
     # Print summary results
     for group in sorted(group_results.keys()):
         test_count = len(group_results[group])
@@ -722,17 +724,59 @@ def run_testsets(testsets):
         total_failures = total_failures + failures
 
         passfail = {True: u'SUCCEEDED: ', False: u'FAILED: '}
-        output_string = "Test Group {0} {1}: {2}/{3} Tests Passed!".format(group, passfail[failures == 0], str(test_count - failures), str(test_count)) 
-        
+        output_string = "Test Group {0} {1}: {2}/{3} Tests Passed!".format(group, passfail[failures == 0], str(test_count - failures), str(test_count))
+
         if myconfig.skip_term_colors:
-            print(output_string)    
+            print(output_string)
         else:
             if failures > 0:
                 print('\033[91m' + output_string + '\033[0m')
             else:
                 print('\033[92m' + output_string + '\033[0m')
 
-    return total_failures
+    logger.debug("group_results: {0}".format(sorted(group_results.keys())))
+    _failure = group_results['Failure'][0].failures[0]
+    logger.debug("Failure: \n\tmessage: {0}\n\tfailure_type: {1}\n\tdetails: {2}\n\tvalidator:".format(_failure.message, _failure.failure_type,_failure.details, _failure.validator))
+    #logger.debug("Successful: {0}".format(group_results['Successful'][0].test))
+    return total_failures, group_results
+
+
+def write_junit(test_results, path, working_directory=None):
+    """ Write tests result in junit xml format """
+    if working_directory is None:
+        working_directory = os.path.abspath(os.getcwd())
+
+    et_test_suites = ET.Element('testsuites')
+    test_suite_id = 0
+
+    for group in sorted(test_results.keys()):
+        et_test_suite = ET.SubElement(et_test_suites, 'testsuite')
+        et_test_suite.set('id', str(test_suite_id))
+        et_test_suite.set('name', group)
+        et_test_suite.set('tests', str(len(test_results[group])))
+        failures = 0
+        for test_response in test_results[group]:
+            et_test_case = ET.SubElement(et_test_suite,'testcase')
+            et_test_case.set('name', test_response.test.name)
+            et_test_case.set('assertions', str(len(test_response.test.validators)))
+            et_test_case.set('calssname', test_response.test.name)
+            if test_response.passed:
+                et_test_case.set('status', 'Ok')
+            else:
+                et_test_case.set('status', 'Ko')
+                failures += 1
+                for failure in test_response.failures:
+                    et_failure = ET.SubElement(et_test_case, 'failure')
+                    if failure.message:
+                        et_failure.set('message', failure.message)
+                    if failure.failure_type:
+                        et_failure.set('type', str(failure.failure_type))
+        et_test_suite.set('failures', str(failures))
+        test_suite_id += 1
+
+    tree = ET.ElementTree(et_test_suites)
+    with cd(working_directory):
+        tree.write(path, encoding="UTF-8", xml_declaration=True)
 
 
 def register_extensions(modules):
@@ -769,6 +813,7 @@ def register_extensions(modules):
         if not has_registry:
             raise ImportError(
                 "Extension to register did not contain any registries: {0}".format(ext))
+
 
 # AUTOIMPORTS, these should run just before the main method, to ensure
 # everything else is loaded
@@ -832,6 +877,8 @@ def main(args):
     tests = parse_testsets(base_url, test_structure,
                            working_directory=os.path.dirname(test_file), vars=my_vars)
 
+    logger.debug("Config: {0}".format(tests[0].config))
+
     # Override configs from command line if config set
     for t in tests:
         if 'print_bodies' in args and args['print_bodies'] is not None and bool(args['print_bodies']):
@@ -853,7 +900,11 @@ def main(args):
             t.config.skip_term_colors = safe_to_bool(args['skip_term_colors'])
 
     # Execute all testsets
-    failures = run_testsets(tests)
+    failures, results = run_testsets(tests)
+    # if 'junit' in args and args['junit'] is not None:
+    #
+    if 'junit' in args and args['junit']:
+        write_junit(results, args['junit'], working_directory=os.path.dirname(test_file))
 
     sys.exit(failures)
 
@@ -886,6 +937,8 @@ def parse_command_line_args(args_in):
                       action="store_true", dest="absolute_urls")
     parser.add_option(u'--skip_term_colors', help='Turn off the output term colors',
                       action='store_true', default=False, dest="skip_term_colors")
+    parser.add_option(u'--junit', help='Path to junit file to write',
+                      action='store', type="string")
 
     (args, unparsed_args) = parser.parse_args(args_in)
     args = vars(args)
