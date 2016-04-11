@@ -444,8 +444,6 @@ def main(args):
     tests = parse_testsets(base_url, test_structure,
                            working_directory=os.path.dirname(test_file), vars=my_vars)
 
-    logger.debug("Config: {0}".format(tests[0].config))
-
     # Override configs from command line if config set
     for t in tests:
         if 'print_bodies' in args and args['print_bodies'] is not None and bool(args['print_bodies']):
