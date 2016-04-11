@@ -129,6 +129,8 @@ def parse_command_line_args(args_in):
                       action="store_true", dest="absolute_urls")
     parser.add_option(u'--skip_term_colors', help='Turn off the output term colors',
                       action='store_true', default=False, dest="skip_term_colors")
+    parser.add_option(u'--junit', help='Path to junit file to write',
+                      action='store', type="string")
 
     (args, unparsed_args) = parser.parse_args(args_in)
     args = vars(args)
