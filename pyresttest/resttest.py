@@ -734,10 +734,6 @@ def run_testsets(testsets):
             else:
                 print('\033[92m' + output_string + '\033[0m')
 
-    logger.debug("group_results: {0}".format(sorted(group_results.keys())))
-    _failure = group_results['Failure'][0].failures[0]
-    logger.debug("Failure: \n\tmessage: {0}\n\tfailure_type: {1}\n\tdetails: {2}\n\tvalidator:".format(_failure.message, _failure.failure_type,_failure.details, _failure.validator))
-    #logger.debug("Successful: {0}".format(group_results['Successful'][0].test))
     return total_failures, group_results
 
 
@@ -746,6 +742,7 @@ def write_junit(test_results, path, working_directory=None):
     if working_directory is None:
         working_directory = os.path.abspath(os.getcwd())
 
+    logger.debug("Formatting junit outpur")
     et_test_suites = ET.Element('testsuites')
     test_suite_id = 0
 
@@ -776,6 +773,7 @@ def write_junit(test_results, path, working_directory=None):
 
     tree = ET.ElementTree(et_test_suites)
     with cd(working_directory):
+        logger.debug("Writing junit output to: {0}".format(path))
         tree.write(path, encoding="UTF-8", xml_declaration=True)
 
 
