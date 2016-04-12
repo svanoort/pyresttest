@@ -16,11 +16,14 @@ import time
 
 try:
     from cStringIO import StringIO as MyIO
+    from cStringIO import StringIO as MyStringIO
 except:
     try:
         from StringIO import StringIO as MyIO
+        from StringIO import StringIO as MyStringIO
     except ImportError:
         from io import BytesIO as MyIO
+        from io import StringIO as MyStringIO
 
 ESCAPE_DECODING = 'string-escape'
 # Python 3 compatibility
@@ -742,7 +745,7 @@ def write_junit(test_results, path, working_directory=None):
     if working_directory is None:
         working_directory = os.path.abspath(os.getcwd())
 
-    logger.debug("Formatting junit outpur")
+    logger.debug("Formatting junit output")
     et_test_suites = ET.Element('testsuites')
     test_suite_id = 0
 
@@ -760,14 +763,24 @@ def write_junit(test_results, path, working_directory=None):
             if test_response.passed:
                 et_test_case.set('status', 'Ok')
             else:
-                et_test_case.set('status', 'Ko')
-                failures += 1
-                for failure in test_response.failures:
-                    et_failure = ET.SubElement(et_test_case, 'failure')
-                    if failure.message:
-                        et_failure.set('message', failure.message)
-                    if failure.failure_type:
-                        et_failure.set('type', str(failure.failure_type))
+                with MyStringIO() as system_err:
+                    et_test_case.set('status', 'Ko')
+                    failures += 1
+                    for idx, failure in enumerate(test_response.failures):
+                        et_failure = ET.SubElement(et_test_case, 'failure')
+                        if failure.message:
+                            et_failure.set('message', failure.message)
+                        if failure.failure_type:
+                            et_failure.set('type', str(failure.failure_type))
+                        if failure.details:
+                            system_err.write("\n====================================== ")
+                            system_err.write("FAILURE ")
+                            system_err.write(str(idx))
+                            system_err.write(" DETAILS")
+                            system_err.write(" ======================================\n")
+                            system_err.write(failure.details)
+                    el_system_err = ET.SubElement(et_test_case,'system-err')
+                    el_system_err.text = system_err.getvalue()
         et_test_suite.set('failures', str(failures))
         test_suite_id += 1
 
