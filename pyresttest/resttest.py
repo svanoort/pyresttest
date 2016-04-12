@@ -330,7 +330,10 @@ def write_junit(test_results, path, working_directory=None):
         for test_response in test_results[group]:
             et_test_case = ET.SubElement(et_test_suite,'testcase')
             et_test_case.set('name', test_response.test.name)
-            et_test_case.set('assertions', str(len(test_response.test.validators)))
+            num_assertion = 1 # At one assertion least on status
+            if test_response.test.validators:
+                num_assertion += len(test_response.test.validators)
+            et_test_case.set('assertions', str(num_assertion))  
             et_test_case.set('calssname', test_response.test.name)
             if test_response.passed:
                 et_test_case.set('status', 'Ok')
