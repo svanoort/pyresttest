@@ -761,7 +761,7 @@ def write_junit(test_results, path, working_directory=None):
             num_assertion = 1 # At one assertion least on status
             if test_response.test.validators:
                 num_assertion += len(test_response.test.validators)
-            et_test_case.set('assertions', str(num_assertion))  
+            et_test_case.set('assertions', str(num_assertion))
             et_test_case.set('calssname', test_response.test.name)
             if test_response.passed:
                 et_test_case.set('status', 'Ok')
@@ -913,10 +913,24 @@ def main(args):
 
     # Execute all testsets
     failures, results = run_testsets(tests)
-    # if 'junit' in args and args['junit'] is not None:
-    #
-    if 'junit' in args and args['junit']:
-        write_junit(results, args['junit'], working_directory=os.path.dirname(test_file))
+    # Write junit output
+    if 'junit' in args and safe_to_bool(args['junit']):
+        o_junit = ''
+        if 'junit_path' in args and args['junit_path'] is not None:
+            with cd(os.path.dirname(test_file)): # Cd to working dir
+                if os.path.isdir(args['junit_path']):
+                    o_junit = os.path.join(args['junit_path'], os.path.splitext(os.path.split(test_file)[1])[0] + '-test-results.xml') # Default file name
+                else:
+                    dir_path, filename = os.path.split(args['junit_path'])
+                    if not os.path.isdir(dir_path): # The directory does not exit, log error
+                        logger.error('Junit Failed: ouput dir {0} does not exist.'.format(dir_path))
+                    else:
+                        o_junit = args['junit_path']
+        else:
+            o_junit = os.path.splitext(os.path.split(test_file)[1])[0] + '-test-results.xml' # Default location and filename
+
+        if o_junit:
+            write_junit(results, o_junit, working_directory=os.path.dirname(test_file))
 
     sys.exit(failures)
 
@@ -937,10 +951,10 @@ def parse_command_line_args(args_in):
         u"--url", help="Base URL to run tests against", action="store", type="string")
     parser.add_option(u"--test", help="Test file to use",
                       action="store", type="string")
-    parser.add_option(u'--import_extensions',
-                      help='Extensions to import, separated by semicolons', action="store", type="string")
-    parser.add_option(
-        u'--vars', help='Variables to set, as a YAML dictionary', action="store", type="string")
+    parser.add_option(u'--import_extensions', help='Extensions to import, separated by semicolons',
+                      action="store", type="string")
+    parser.add_option(u'--vars', help='Variables to set, as a YAML dictionary',
+                      action="store", type="string")
     parser.add_option(u'--verbose', help='Put cURL into verbose mode for extra debugging power',
                       action='store_true', default=False, dest="verbose")
     parser.add_option(u'--ssl-insecure', help='Disable cURL host and peer cert verification',
@@ -948,9 +962,11 @@ def parse_command_line_args(args_in):
     parser.add_option(u'--absolute-urls', help='Enable absolute URLs in tests instead of relative paths',
                       action="store_true", dest="absolute_urls")
     parser.add_option(u'--skip_term_colors', help='Turn off the output term colors',
-                      action='store_true', default=False, dest="skip_term_colors")
-    parser.add_option(u'--junit', help='Path to junit file to write',
-                      action='store', type="string")
+                      action='store_true', default=False, dest="skip_term_colors"),
+    parser.add_option(u'--junit', help='Write junit output file.',
+                      action='store_true', default=False)
+    parser.add_option(u'--junit-path', help='Change the default location of junit ouput.',
+                      action='store', type="string", dest="junit_path")
 
     (args, unparsed_args) = parser.parse_args(args_in)
     args = vars(args)
