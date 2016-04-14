@@ -333,7 +333,7 @@ def write_junit(test_results, path, working_directory=None):
             num_assertion = 1 # At one assertion least on status
             if test_response.test.validators:
                 num_assertion += len(test_response.test.validators)
-            et_test_case.set('assertions', str(num_assertion))  
+            et_test_case.set('assertions', str(num_assertion))
             et_test_case.set('calssname', test_response.test.name)
             if test_response.passed:
                 et_test_case.set('status', 'Ok')
@@ -487,10 +487,24 @@ def main(args):
 
     # Execute all testsets
     failures, results = run_testsets(tests)
-    # if 'junit' in args and args['junit'] is not None:
-    #
-    if 'junit' in args and args['junit']:
-        write_junit(results, args['junit'], working_directory=os.path.dirname(test_file))
+    # Write junit output
+    if 'junit' in args and safe_to_bool(args['junit']):
+        o_junit = ''
+        if 'junit_path' in args and args['junit_path'] is not None:
+            with cd(os.path.dirname(test_file)): # Cd to working dir
+                if os.path.isdir(args['junit_path']):
+                    o_junit = os.path.join(args['junit_path'], os.path.splitext(os.path.split(test_file)[1])[0] + '-test-results.xml') # Default file name
+                else:
+                    dir_path, filename = os.path.split(args['junit_path'])
+                    if not os.path.isdir(dir_path): # The directory does not exit, log error
+                        logger.error('Junit Failed: ouput dir {0} does not exist.'.format(dir_path))
+                    else:
+                        o_junit = args['junit_path']
+        else:
+            o_junit = os.path.splitext(os.path.split(test_file)[1])[0] + '-test-results.xml' # Default location and filename
+
+        if o_junit:
+            write_junit(results, o_junit, working_directory=os.path.dirname(test_file))
 
     sys.exit(failures)
 

@@ -128,9 +128,11 @@ def parse_command_line_args(args_in):
     parser.add_option(u'--absolute-urls', help='Enable absolute URLs in tests instead of relative paths',
                       action="store_true", dest="absolute_urls")
     parser.add_option(u'--skip_term_colors', help='Turn off the output term colors',
-                      action='store_true', default=False, dest="skip_term_colors")
-    parser.add_option(u'--junit', help='Path to junit file to write',
-                      action='store', type="string")
+                      action='store_true', default=False, dest="skip_term_colors"),
+    parser.add_option(u'--junit', help='Write junit output file.',
+                      action='store_true', default=False)
+    parser.add_option(u'--junit-path', help='Change the default location of junit ouput.',
+                      action='store', type="string", dest="junit_path")
 
     (args, unparsed_args) = parser.parse_args(args_in)
     args = vars(args)
