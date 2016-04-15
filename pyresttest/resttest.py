@@ -5,6 +5,7 @@ import inspect
 import yaml
 import pycurl
 import logging
+from xml.etree import cElementTree as ET # For JUnit output
 
 # Python 3 compatibility
 if sys.version_info[0] > 2:
@@ -169,12 +170,119 @@ class LoggerCallbacks(MacroCallbacks):
     """ Uses a standard python logger """
     def log_status(self, input):
         logger.info(str(input))
-    def log_intermediate(self, input): 
+    def log_intermediate(self, input):
         logger.debug(str(input))
     def log_failure(self, input):
         logger.error(str(input))
     def log_success(self, input):
         logger.info(str(input))
+
+
+class JUnitCallback(MacroCallbacks):
+    """ Uses junit standard xml output """
+    def __init__(self):
+        self.el_test_suites = None
+        self.test_suite_current_id = 0
+        self.group_test_suite_map = None
+        self.working_directory = os.path.abspath(os.getcwd())
+        self.path = os.path.join(self.working_directory, 'test-results.xml')
+
+    def start_macro(self, input):
+        self.el_test_suites = ET.Element('testsuites')
+        self.test_suite_current_id = 0
+        self.group_test_suite_map = dict()
+
+    def end_macro(self, input):
+        self.write_file(self.el_test_suites)
+
+    def log_status(self, input):
+        logger.info(str(input))
+
+    def log_intermediate(self, input):
+        logger.debug("LOGGER INTERMEDIATE: " + str(input))
+
+    def log_failure(self, input):
+        if isinstance(input, TestResponse):
+            el_test_suite = self.get_test_suite(input.test.group)
+            try:
+                num_tests = int(el_test_suite.get('tests', '0'))
+            except ValueError:
+                num_tests = 0
+            el_test_suite.set('tests', str(num_tests + 1))
+            try:
+                num_failures = int(el_test_suite.get('failures', '0'))
+            except ValueError:
+                num_failures = 0
+            el_test_suite.set('failures', str(num_failures + 1))
+            el_test_case = self.start_test_case(el_test_suite, input.test, "Ko")
+            failure_messages = []
+            for idx, failure in enumerate(input.failures):
+                el_failure = ET.SubElement(el_test_case, 'failure')
+                if failure.message:
+                    el_failure.set('message', failure.message)
+                if failure.failure_type:
+                    el_failure.set('type', str(failure.failure_type))
+                if failure.details:
+                    failure_messages.append("\n\n====================================== FAILURE ")
+                    failure_messages.append(str(idx))
+                    failure_messages.append(" DETAILS ======================================\n")
+                    failure_messages.append(failure.details)
+            el_system_err = ET.SubElement(el_test_case, 'system-err')
+            el_system_err.text = ''.join(failure_messages)
+        else:
+            logger.error(str(input))
+
+    def log_success(self, input):
+        if isinstance(input, TestResponse):
+            el_test_suite = self.get_test_suite(input.test.group)
+            try:
+                num_tests = int(el_test_suite.get('tests', '0'))
+            except ValueError:
+                num_tests = 0
+            el_test_suite.set('tests', str(num_tests + 1))
+            el_test_case = self.start_test_case(el_test_suite, input.test, "Ok")
+        else:
+            logger.info(str(input))
+
+    def get_test_suite(self, group_name):
+        if group_name in self.group_test_suite_map.keys():
+            el_test_suite = self.group_test_suite_map[group_name]
+        else:
+            el_test_suite = ET.SubElement(self.el_test_suites, 'testsuite')
+            el_test_suite.set('id', str(self.test_suite_current_id))
+            self.test_suite_current_id += 1
+            el_test_suite.set('name', group_name)
+            self.group_test_suite_map[group_name] = el_test_suite
+        return el_test_suite
+
+    def start_test_case(self, el_suite, test, status):
+        el_test_case = ET.SubElement(el_suite,'testcase')
+        el_test_case.set('name', test.name)
+        num_assertion = 1 # At least one assertion least on status
+        if test.validators:
+            num_assertion += len(test.validators)
+        el_test_case.set('assertions', str(num_assertion))
+        el_test_case.set('classname', test.name)
+        el_test_case.set('status', status)
+        return el_test_case
+
+    def set_o_path(self, path, default_name='test-results.xml'):
+        with cd(self.working_directory):
+            if os.path.isdir(path):
+                self.path = os.path.join(path, default_name) # Default file name
+            else:
+                dir_path, filename = os.path.split(path)
+                if not os.path.isdir(dir_path): # The directory does not exit, log error
+                    logger.error('JUnit Error: ouput dir {0} does not exist. File will be writed to default path ({1}).'.format(dir_path, self.path))
+                else:
+                    self.path = path
+
+    def write_file(self, root):
+        tree = ET.ElementTree(root)
+        with cd(self.working_directory):
+            logger.debug("Writing junit output to: {0}".format(self.path))
+            tree.write(self.path, encoding="UTF-8", xml_declaration=True)
+
 
 def run_testsets(testsets):
     """ Execute a set of tests, using given TestSet list input """
@@ -183,10 +291,12 @@ def run_testsets(testsets):
     total_failures = 0
     myinteractive = False
     curl_handle = pycurl.Curl()
-    
+
     # Invoked during macro execution to report results
     # FIXME  I need to set up for logging before/after/during requests
     callbacks = LoggerCallbacks()
+    #callbacks = JUnitCallback()
+    callbacks.start_macro("Execution started")
 
     for testset in testsets:
         mytests = testset.tests
@@ -283,16 +393,17 @@ def run_testsets(testsets):
         total_failures = total_failures + failures
 
         passfail = {True: u'SUCCEEDED: ', False: u'FAILED: '}
-        output_string = "Test Group {0} {1}: {2}/{3} Tests Passed!".format(group, passfail[failures == 0], str(test_count - failures), str(test_count)) 
-        
+        output_string = "Test Group {0} {1}: {2}/{3} Tests Passed!".format(group, passfail[failures == 0], str(test_count - failures), str(test_count))
+
         if myconfig.skip_term_colors:
-            print(output_string)    
+            print(output_string)
         else:
             if failures > 0:
                 print('\033[91m' + output_string + '\033[0m')
             else:
                 print('\033[92m' + output_string + '\033[0m')
 
+    callbacks.end_macro("Execution done")
     return total_failures
 
 
