@@ -188,12 +188,12 @@ class JUnitCallback(MacroCallbacks):
         self.working_directory = os.path.abspath(os.getcwd())
         self.path = os.path.join(self.working_directory, 'test-results.xml')
 
-    def start_macro(self, input):
+    def start_testset(self, input):
         self.el_test_suites = ET.Element('testsuites')
         self.test_suite_current_id = 0
         self.group_test_suite_map = dict()
 
-    def end_macro(self, input):
+    def end_testset(self, input):
         self.write_file(self.el_test_suites)
 
     def log_status(self, input):
@@ -306,7 +306,7 @@ def run_testsets(testsets):
     # FIXME  I need to set up for logging before/after/during requests
     callbacks = LoggerCallbacks()
     #callbacks = JUnitCallback()
-    callbacks.start_macro("Execution started")
+    callbacks.start_testset()
 
     for testset in testsets:
         mytests = testset.tests
@@ -413,7 +413,7 @@ def run_testsets(testsets):
             else:
                 print('\033[92m' + output_string + '\033[0m')
 
-    callbacks.end_macro("Execution done")
+    callbacks.end_testset()
     return total_failures
 
 
