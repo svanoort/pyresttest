@@ -180,6 +180,7 @@ class LoggerCallbacks(MacroCallbacks):
 
 class JUnitCallback(MacroCallbacks):
     """ Uses junit standard xml output """
+
     def __init__(self):
         self.el_test_suites = None
         self.test_suite_current_id = 0
@@ -245,6 +246,7 @@ class JUnitCallback(MacroCallbacks):
             logger.info(str(input))
 
     def get_test_suite(self, group_name):
+        """ Return the test suite for group_name. If it does'nt exist, it will be created. """
         if group_name in self.group_test_suite_map.keys():
             el_test_suite = self.group_test_suite_map[group_name]
         else:
@@ -256,6 +258,7 @@ class JUnitCallback(MacroCallbacks):
         return el_test_suite
 
     def start_test_case(self, el_suite, test, status):
+        """ Start a test case and return the Element """
         el_test_case = ET.SubElement(el_suite,'testcase')
         el_test_case.set('name', test.name)
         num_assertion = 1 # At least one assertion least on status
@@ -267,6 +270,12 @@ class JUnitCallback(MacroCallbacks):
         return el_test_case
 
     def set_o_path(self, path, default_name='test-results.xml'):
+        """ Set output path, where the JUnit results willbe written
+        If path is incorrect (directory does not exists), an error is logged and the path stay unchanged.
+
+        path -- the path where to write JUnit output
+        default_name -- the default name of the file, if not present in the path (default 'test-results.xml')
+        """
         with cd(self.working_directory):
             if os.path.isdir(path):
                 self.path = os.path.join(path, default_name) # Default file name
@@ -278,6 +287,7 @@ class JUnitCallback(MacroCallbacks):
                     self.path = path
 
     def write_file(self, root):
+        """ Write root elemet to file """
         tree = ET.ElementTree(root)
         with cd(self.working_directory):
             logger.debug("Writing junit output to: {0}".format(self.path))
