@@ -186,14 +186,14 @@ class JUnitCallback(MacroCallbacks):
         self.test_suite_current_id = 0
         self.group_test_suite_map = None
         self.working_directory = os.path.abspath(os.getcwd())
-        self.path = os.path.join(self.working_directory, 'test-results.xml')
+        self.path = 'test-results.xml'
 
-    def start_testset(self, input):
+    def start_testset(self):
         self.el_test_suites = ET.Element('testsuites')
         self.test_suite_current_id = 0
         self.group_test_suite_map = dict()
 
-    def end_testset(self, input):
+    def end_testset(self):
         self.write_file(self.el_test_suites)
 
     def log_status(self, input):
@@ -286,6 +286,12 @@ class JUnitCallback(MacroCallbacks):
                 else:
                     self.path = path
 
+    def set_working_directory(self, dir_path):
+        if os.path.isdir(dir_path):
+            self.working_directory = dir_path
+        else:
+            logger.error('Junit Error: setting working dir to {0} : directory does not exist.'.format(dir_path))
+
     def write_file(self, root):
         """ Write root elemet to file """
         tree = ET.ElementTree(root)
@@ -301,11 +307,21 @@ def run_testsets(testsets):
     total_failures = 0
     myinteractive = False
     curl_handle = pycurl.Curl()
+    myconfig = TestSetConfig
+    if len(testsets) > 0:
+        myconfig = testsets[0].config
 
     # Invoked during macro execution to report results
     # FIXME  I need to set up for logging before/after/during requests
-    callbacks = LoggerCallbacks()
-    #callbacks = JUnitCallback()
+    if myconfig.junit:
+        callbacks = JUnitCallback()
+        if myconfig.working_directory is not None:
+            callbacks.set_working_directory(myconfig.working_directory)
+        if myconfig.junit_path is not None:
+            callbacks.set_o_path(myconfig.junit_path)
+    else:
+        callbacks = LoggerCallbacks()
+
     callbacks.start_testset()
 
     for testset in testsets:
@@ -535,6 +551,13 @@ def main(args):
 
         if 'skip_term_colors' in args and args['skip_term_colors'] is not None:
             t.config.skip_term_colors = safe_to_bool(args['skip_term_colors'])
+
+        if 'junit' in args and args['junit'] is not None:
+            t.config.junit = safe_to_bool(args['junit'])
+            if 'junit_path' in args and args['junit_path'] is not None:
+                t.config.junit_path = args['junit_path']
+
+        t.config.working_directory = os.path.dirname(test_file)
 
     # Execute all testsets
     failures = run_testsets(tests)

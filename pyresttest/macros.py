@@ -36,6 +36,10 @@ class MacroCallbacks(object):  # Possibly call this an execution context?
         if x: 
             print(x)
 
+    # Called at the begining and end of the test suite
+    def start_testset(self): simple_print('Starting testset')
+    def end_testset(self): simple_print('Testset done')
+    
     # Logging outputs, these are part of the lifecycle    
     def start_macro(self, input): lambda x: simple_print(x)
     def pre_request(self, input): lambda x: simple_print(x)  # Called just before submitting requests
@@ -59,6 +63,9 @@ class TestSetConfig(object):
     verbose = False
     ssl_insecure = False
     skip_term_colors = False  # Turn off output term colors
+    junit = False # Write junit output
+    junit_path = None # Path to write junit file
+    working_directory = None # Working directory
 
     # Binding and creation of generators
     variable_binds = None
