@@ -1,6 +1,5 @@
 import os
 import sys
-import base64
 import pycurl
 from . import parsing
 from .parsing import *
