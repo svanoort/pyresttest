@@ -335,19 +335,26 @@ class Test(object):
             else:
                 curl.setopt(pycurl.POSTFIELDSIZE, 0)
         elif self.method == u'PUT':
-            curl.setopt(HTTP_METHODS[u'PUT'], 1)
             # Required for some servers
+            curl.setopt(HTTP_METHODS[u'POST'], 1)
+            curl.setopt(pycurl.CUSTOMREQUEST, 'PUT')
             if bod is not None:
-                curl.setopt(pycurl.INFILESIZE, len(bod))
+                if isinstance(bod, (list, tuple)):
+                    curl.setopt(pycurl.HTTPPOST, bod)
+                else:
+                    curl.setopt(pycurl.POSTFIELDSIZE, len(bod))
             else:
                 curl.setopt(pycurl.INFILESIZE, 0)
         elif self.method == u'PATCH':
-            curl.setopt(curl.POSTFIELDS, bod)
+            curl.setopt(HTTP_METHODS[u'POST'], 1)
             curl.setopt(curl.CUSTOMREQUEST, 'PATCH')
             # Required for some servers
             # I wonder: how compatible will this be?  It worked with Django but feels iffy.
             if bod is not None:
-                curl.setopt(pycurl.INFILESIZE, len(bod))
+                if isinstance(bod, (list, tuple)):
+                    curl.setopt(pycurl.HTTPPOST, bod)
+                else:
+                    curl.setopt(pycurl.POSTFIELDSIZE, len(bod))
             else:
                 curl.setopt(pycurl.INFILESIZE, 0)
         elif self.method == u'DELETE':
