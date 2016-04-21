@@ -157,7 +157,7 @@ class Test(object):
         """ Read body from file, applying template if pertinent """
         if self._body is None:
             return None
-        elif isinstance(self._body, basestring):
+        elif isinstance(self._body, (basestring, list, tuple)):
             return self._body
         else:
             return self._body.get_content(context=context)
@@ -315,7 +315,7 @@ class Test(object):
             is_unicoded = True
 
         # Set read function for post/put bodies
-        if bod and len(bod) > 0:
+        if bod and isinstance(bod, basestring) and len(bod) > 0:
             curl.setopt(curl.READFUNCTION, MyIO(bod).read)
 
         if self.auth_username and self.auth_password:
@@ -327,9 +327,11 @@ class Test(object):
 
         if self.method == u'POST':
             curl.setopt(HTTP_METHODS[u'POST'], 1)
-            # Required for some servers
             if bod is not None:
-                curl.setopt(pycurl.POSTFIELDSIZE, len(bod))
+                if isinstance(bod, (list, tuple)):
+                    curl.setopt(pycurl.HTTPPOST, bod)
+                else:
+                    curl.setopt(pycurl.POSTFIELDSIZE, len(bod))
             else:
                 curl.setopt(pycurl.POSTFIELDSIZE, 0)
         elif self.method == u'PUT':

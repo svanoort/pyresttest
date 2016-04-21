@@ -1,6 +1,7 @@
 import os
 import sys
-
+import base64
+import pycurl
 from . import parsing
 from .parsing import *
 
@@ -20,19 +21,22 @@ class ContentHandler:
     Also creates pixie dust and unicorn farts on demand
     This is pulled out because logic gets complex rather fast
 
-    Covers 6 states:
+    Covers 8 states:
         - Inline body content, no templating
         - Inline body content, with templating
         - File path to content, NO templating
         - File path to content, content gets templated
         - Templated path to file content (path itself is templated), file content UNtemplated
         - Templated path to file content (path itself is templated), file content TEMPLATED
+        - Form data content, no templating
+        - Form data content, with templating
     """
 
     content = None  # Inline content
     is_file = False
     is_template_path = False
     is_template_content = False
+    is_form = False
 
     def is_dynamic(self):
         """ Is templating used? """
@@ -54,6 +58,16 @@ class ContentHandler:
                 return string.Template(data).safe_substitute(context.get_values())
             else:
                 return data
+        elif self.is_form:
+            content = []
+            for k, v in self.content.items():
+                content_row = [safe_substitute_unicode_template(k, context.get_values())]
+                if isinstance(v, (list, tuple)):
+                    content_row.append([v[0], safe_substitute_unicode_template(v[1], context.get_values())])
+                else:
+                    content_row.append(safe_substitute_unicode_template(v, context.get_values()))
+                content.append(content_row)
+            return content
         else:
             if self.is_template_content and context:
                 return safe_substitute_unicode_template(self.content, context.get_values())
@@ -70,7 +84,7 @@ class ContentHandler:
             output.content = f.read()
         return output
 
-    def setup(self, input, is_file=False, is_template_path=False, is_template_content=False):
+    def setup(self, input, is_file=False, is_template_path=False, is_template_content=False, is_form=False):
         """ Self explanatory, input is inline content or file path. """
         if not isinstance(input, basestring):
             raise TypeError("Input is not a string")
@@ -80,6 +94,7 @@ class ContentHandler:
         self.is_file = is_file
         self.is_template_path = is_template_path
         self.is_template_content = is_template_content
+        self.is_form = is_form
 
     @staticmethod
     def parse_content(node):
@@ -100,6 +115,7 @@ class ContentHandler:
         is_template_content = False
         is_file = False
         is_done = False
+        is_form = False
 
         while (node and not is_done):  # Dive through the configuration tree
             # Finally we've found the value!
@@ -144,5 +160,16 @@ class ContentHandler:
                         node = value
                         is_done = False
                         break
+
+                elif key == 'form':
+                    output.is_template_content = is_template_content
+                    output.content = {}
+                    for k, v in value.items():
+                        if isinstance(v, basestring) and v.startswith('@'):
+                            v = (pycurl.FORM_FILE, v[1:])
+                        output.content[k] = v
+                    output.is_form = True
+                    is_form = True
+                    return output
 
         raise Exception("Invalid configuration for content.")
