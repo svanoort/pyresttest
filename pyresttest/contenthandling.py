@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 import os
 import sys
 import pycurl
@@ -162,7 +164,7 @@ class ContentHandler:
 
                 elif key == 'form':
                     output.is_template_content = is_template_content
-                    output.content = {}
+                    output.content = OrderedDict()
                     for k, v in value.items():
                         if isinstance(v, basestring) and v.startswith('@'):
                             v = (pycurl.FORM_FILE, v[1:])
