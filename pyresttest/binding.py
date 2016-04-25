@@ -1,4 +1,6 @@
 import logging
+
+import datetime
 import types
 
 """
@@ -68,5 +70,5 @@ class Context(object):
         return self.generators.get(str(generator_name))
 
     def __init__(self):
-        self.variables = dict()
+        self.variables = dict(testset_datetime=datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S'))
         self.generators = dict()
