@@ -5,6 +5,7 @@ import inspect
 import yaml
 import pycurl
 import logging
+import re
 from xml.etree import cElementTree as ET # For JUnit output
 
 # Python 3 compatibility
@@ -188,12 +189,13 @@ class JUnitCallback(MacroCallbacks):
         self.working_directory = os.path.abspath(os.getcwd())
         self.path = 'test-results.xml'
 
-    def start_testset(self):
+    def start_testset(self, input):
         self.el_test_suites = ET.Element('testsuites')
+        self.el_test_suites.set('name', self.camelizeStr(str(input)))
         self.test_suite_current_id = 0
         self.group_test_suite_map = dict()
 
-    def end_testset(self):
+    def end_testset(self, input):
         self.write_file(self.el_test_suites)
 
     def log_status(self, input):
@@ -253,7 +255,9 @@ class JUnitCallback(MacroCallbacks):
             el_test_suite = ET.SubElement(self.el_test_suites, 'testsuite')
             el_test_suite.set('id', str(self.test_suite_current_id))
             self.test_suite_current_id += 1
-            el_test_suite.set('name', group_name)
+            suite_name = self.aggregate_name(self.el_test_suites.get('name',''), self.camelizeStr(group_name))
+            el_test_suite.set('name', suite_name)
+            el_test_suite.set('failures', '0')
             self.group_test_suite_map[group_name] = el_test_suite
         return el_test_suite
 
@@ -265,7 +269,8 @@ class JUnitCallback(MacroCallbacks):
         if test.validators:
             num_assertion += len(test.validators)
         el_test_case.set('assertions', str(num_assertion))
-        el_test_case.set('classname', test.name)
+        testcase_classname = self.aggregate_name(el_suite.get('name',''), self.camelizeStr(test.name))
+        el_test_case.set('classname', testcase_classname)
         el_test_case.set('status', status)
         return el_test_case
 
@@ -285,7 +290,19 @@ class JUnitCallback(MacroCallbacks):
                     logger.error('JUnit Error: ouput dir {0} does not exist. File will be writed to default path ({1}).'.format(dir_path, self.path))
                 else:
                     self.path = path
-
+                    
+    def camelizeStr(self, mystr):
+        """ Return a string formatted to camelCase """
+        camelized = ''
+        if mystr:
+            pattern = re.compile('[\W_]+')
+            camelized = pattern.sub('', mystr.title())
+            camelized = camelized[0].lower() + camelized[1:]
+        return camelized
+        
+    def aggregate_name(self, *args):
+        return ".".join(args)
+        
     def set_working_directory(self, dir_path):
         if os.path.isdir(dir_path):
             self.working_directory = dir_path
@@ -307,9 +324,10 @@ def run_testsets(testsets):
     total_failures = 0
     myinteractive = False
     curl_handle = pycurl.Curl()
-    myconfig = TestSetConfig
+    myconfig = TestSetConfig()
     if len(testsets) > 0:
         myconfig = testsets[0].config
+    testset_name = myconfig.name
 
     # Invoked during macro execution to report results
     # FIXME  I need to set up for logging before/after/during requests
@@ -322,7 +340,7 @@ def run_testsets(testsets):
     else:
         callbacks = LoggerCallbacks()
 
-    callbacks.start_testset()
+    callbacks.start_testset(testset_name)
 
     for testset in testsets:
         mytests = testset.tests
@@ -429,7 +447,7 @@ def run_testsets(testsets):
             else:
                 print('\033[92m' + output_string + '\033[0m')
 
-    callbacks.end_testset()
+    callbacks.end_testset(testset_name)
     return total_failures
 
 
