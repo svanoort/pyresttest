@@ -301,6 +301,7 @@ class JUnitCallback(MacroCallbacks):
         return camelized
         
     def aggregate_name(self, *args):
+        """ Aggrgate name to format a java-like package name """
         return ".".join(args)
         
     def set_working_directory(self, dir_path):
