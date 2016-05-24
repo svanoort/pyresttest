@@ -21,7 +21,7 @@ For how to write custom Python extensions, see the [extensions guide](extensions
         + Generators **must be declared by name** in the TestSet config for them to be used
         + Generator bindings evaluate once per HTTP call:
             - **Only once per Test**, and **multiple times for a Benchmark**
-        + Generator bindings only apply to the Test/Benchmark they are declared in. New values are generated only when the binding is evaluated.
+        + Generator bindings are re-evaluated (and a new value generated) every time they are declared in a Test/Benchmark. Once the value has been generated, it can be used in all subsequent tests (unless that variable is bound to something else). 
     3. **Data may be extracted from the HTTP response body** with the 'extract_binds' element in a test. 
         + Note that if the request fails, the data cannot be set (nothing to work with)
         + Currently, this is unsupported for benchmarks: using extraction doesn't make sense because benchmarks should be isolated.
