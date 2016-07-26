@@ -1,0 +1,15 @@
+# Simple tests to verify things work against a live REST service that returns JSON.. I picked github
+---
+- config:
+  - testset: "Simple github.com API Test with custom validator"
+  - generators:
+    - 'query' : {type: 'file_seq', values: '/Users/pcc/mail22.txt'}
+#    - 'query' : {type: 'number_sequence', start: 1}
+
+
+- test:
+  - generator_binds: {q: query}
+  - name: "Test with generator"
+  - url: {template: "http://www.baidu.com/s?ie=utf-8&f=8&rsv_bp=0&rsv_idx=1&tn=baidu&wd=$q"}
+  - group: "Baidu"
+
