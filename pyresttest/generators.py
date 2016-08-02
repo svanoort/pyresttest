@@ -4,8 +4,8 @@ import os
 import logging
 import sys
 
-from . import parsing
-from .parsing import flatten_dictionaries, lowercase_keys, safe_to_bool
+import parsing
+from parsing import flatten_dictionaries, lowercase_keys, safe_to_bool
 
 # Python 3 compatibility
 if sys.version_info[0] > 2:

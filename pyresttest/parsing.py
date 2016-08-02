@@ -4,9 +4,9 @@ import string
 
 
 # Python 3 compatibility shims
-from . import six
-from .six import binary_type
-from .six import text_type
+import six
+from six import binary_type
+from six import text_type
 
 # Python 2/3 switches
 PYTHON_MAJOR_VERSION = sys.version_info[0]
