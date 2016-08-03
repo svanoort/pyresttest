@@ -12,6 +12,7 @@ import threading
 from optparse import OptionParser
 from email import message_from_string  # For headers handling
 import time
+from json2html import *
 #import pdb
 
 try:
@@ -779,7 +780,10 @@ def run_testsets(testsets):
             .format(group, passfail[failures == 0], str(test_count - failures), str(test_count), str(skip)) 
 
         with open('test_result.json', 'w') as out:
-            json.dump(test_result, out)
+            json.dump(test_result, out, indent=4)
+
+        #with open('test_result.html', 'w') as out:
+        #    json.dump(json2html.convert(json = test_result), out)
 
         if myconfig.skip_term_colors:
             print(output_string)
