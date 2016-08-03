@@ -12,7 +12,6 @@ import threading
 from optparse import OptionParser
 from email import message_from_string  # For headers handling
 import time
-from json2html import *
 #import pdb
 
 try:
