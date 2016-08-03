@@ -402,7 +402,7 @@ def run_test(mytest, test_config=TestConfig(), context=None, curl_handle=None, *
     if response_code in mytest.expected_status:
         result.passed = True
     else:
-        # rerty not define
+        # if retry not define
         if retry == 0:
             # Invalid response code
             result.passed = False
@@ -416,19 +416,16 @@ def run_test(mytest, test_config=TestConfig(), context=None, curl_handle=None, *
             retry -= 1
             #retry from test
             if flag == 1:
-                #print "########## Retrying test :",mytest.name
+                print "########## Retrying test : ",mytest.name
                 mytest.retries = retry
-                #print "Delaying : ",mytest.delay
                 time.sleep(mytest.delay)
                 return run_test(mytest, test_config, context, curl_handle)
 
             #retry from config
             if flag == 2:
-                #print "########## Retrying :",mytest.name
+                print "########## Retrying : ",mytest.name
                 test_config.retries = retry
-                #print "Delaying : ",test_config.dalay
                 time.sleep(test_config.delay)
-                #mytest.expected_status = [204]
                 return run_test(mytest, test_config, context, curl_handle)
 
 
@@ -781,15 +778,15 @@ def run_testsets(testsets):
         output_string = "Test Group {0} {1}: {2}/{3} Tests Passed!\nTest Group {0} SKIPPED: {4}"\
             .format(group, passfail[failures == 0], str(test_count - failures), str(test_count), str(skip)) 
 
+        with open('test_result.json', 'w') as out:
+            json.dump(test_result, out)
+
         if myconfig.skip_term_colors:
             print(output_string)
             print test_result
         else:
             if failures > 0:
                 print('\033[91m' + output_string + '\033[0m')
-                str1 = json.dumps(test_result, indent=4, sort_keys=True)
-                with open('test_result.json', 'w') as out:
-                    json.dump(test_result, out)
             else:
                 print('\033[92m' + output_string + '\033[0m')
 
