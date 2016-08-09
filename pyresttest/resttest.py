@@ -12,7 +12,7 @@ import threading
 from optparse import OptionParser
 from email import message_from_string  # For headers handling
 import time
-#import pdb
+from collections import defaultdict
 
 try:
     from cStringIO import StringIO as MyIO
@@ -83,8 +83,9 @@ logger = logging.getLogger('pyresttest')
 
 DIR_LOCK = threading.RLock()  # Guards operations changing the working directory
 
-test_result = dict()
+test_result = defaultdict(dict)
 test_result_list = []
+
 class cd:
     """Context manager for changing the current working directory"""
     # http://stackoverflow.com/questions/431684/how-do-i-cd-in-python/13197763#13197763
@@ -359,7 +360,7 @@ def run_test(mytest, test_config=TestConfig(), context=None, curl_handle=None, *
 #        print("Delaying for %ds" % mytest.delay)
 #        time.sleep(mytest.delay)
     for test_need in mytest.depends_on:
-        if not test_result[test_need] or test_result[test_need] == 'skip':
+        if not test_result[test_need]['result'] or test_result[test_need]['result'] == 'skip':
             print "\n\033[1;31m 'test: {0}' depends on 'test: {1}' \033[0m".format(mytest.name, test_need)
             return
 
@@ -698,18 +699,23 @@ def run_testsets(testsets):
             if test.group not in group_results:
                 group_results[test.group] = list()
                 group_failure_counts[test.group] = 0
-            
+
             global is_retried
             is_retried = False
             print "\n ==================================================== \n"
             result = run_test(test, test_config=myconfig, context=context, curl_handle=curl_handle)
-           
+
+            if result is not None:
+                test_result[test.name]['result'] = result.passed
+                if not result.passed:
+                    test_result[test.name]['status'] = result.response_headers[3][1]
+                    test_result[test.name]['expected_status'] = test.expected_status
+
             if result is None:
                 skip += 1
-                test_result[test.name] = "skip"
+                test_result[test.name]['result'] = "skip"
+                test_result[test.name]['depends_on'] = test.depends_on
                 continue
-
-            test_result[test.name] = result.passed
 
             result.body = None  # Remove the body, save some memory!
             if not result.passed:  # Print failure, increase failure counts for that test group
@@ -781,12 +787,9 @@ def run_testsets(testsets):
         with open('test_result.json', 'w') as out:
             json.dump(test_result, out, indent=4)
 
-        #with open('test_result.html', 'w') as out:
-        #    json.dump(json2html.convert(json = test_result), out)
 
         if myconfig.skip_term_colors:
             print(output_string)
-            print test_result
         else:
             if failures > 0:
                 print('\033[91m' + output_string + '\033[0m')
