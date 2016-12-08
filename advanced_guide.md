@@ -349,6 +349,7 @@ Optionally, validators can return a Failure which evaluates to False, but suppli
 | 'le', 'less_than_or_equal'                   | Less Than Or Equal To                     | A <= B                                                                 |
 | 'eq', 'equals'                               | Equals                                    | A == B                                                                 |
 | 'str_eq'                                     | Values are Equal When Converted to String | str(A) == str(B) -- useful for comparing templated numbers/collections |
+| 'str_eq_insensitive'                         | Case Insensitive version of str_eq        | str(A).lower() == str(B).lower()                                       |
 | 'ne', 'not_equals'                           | Not Equals                                | A != B                                                                 |
 | 'ge', 'greater_than_or_equal'                | Greater Than Or Equal To                  | A >= B                                                                 |
 | 'gt', 'greater_than'                         | Greater Than                              | A > B                                                                  |
