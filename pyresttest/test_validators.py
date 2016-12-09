@@ -591,7 +591,7 @@ class ValidatorsTest(unittest.TestCase):
         self.assertTrue(comp_validator.validate(body=myjson_pass))
         self.assertFalse(comp_validator.validate(body=myjson_fail))
 
-    def test_validator_string_comparison(self):
+    def test_validator_string_insensitive_comparison(self):
         """ Tests case-insensitive string comparison """
         config = {
             'jsonpath_mini': 'key.val',
