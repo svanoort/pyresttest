@@ -226,7 +226,8 @@ class AbstractExtractor(object):
 
 class MiniJsonExtractor(AbstractExtractor):
     """ Extractor that uses jsonpath_mini syntax
-        IE key.key or array_index.key extraction
+        IE key.key or array_index.key extraction.
+        Returns the JSON object if no key.
     """
     extractor_type = 'jsonpath_mini'
     is_body_extractor = True
@@ -237,6 +238,8 @@ class MiniJsonExtractor(AbstractExtractor):
 
         try:
             body = json.loads(body)
+            if not query:
+                return body
             return self.query_dictionary(query, body)
         except ValueError:
             raise ValueError("Not legal JSON!")
