@@ -14,7 +14,6 @@ from email import message_from_string  # For headers handling
 import time
 from collections import defaultdict
 
-
 try:
     from cStringIO import StringIO as MyIO
 except:
