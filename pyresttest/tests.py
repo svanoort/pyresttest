@@ -288,21 +288,24 @@ class Test(Macro):
     def execute_macro(self, testset_config=TestSetConfig(), context=None, cmdline_args=None, callbacks=MacroCallbacks(), curl_handle=None, *args, **kwargs):
         """ Put together test pieces: configure & run actual test, return results """
 
-        # Initialize a context if not supplied
+        mytest=self
+
+        # Initialize a context if not supplied, and do context updates
         my_context = context
         if my_context is None:
             my_context = Context()
-
-        mytest=self
-
         mytest.update_context_before(my_context)
+        
+
+        # Pre-run initialization of object, generate executable test objects
         templated_test = mytest.realize(my_context)
-        curl = templated_test.configure_curl(
-            timeout=testset_config.timeout, context=my_context, curl_handle=curl_handle)
         result = TestResponse()
         result.test = templated_test
+        result.passed = None
 
-        # reset the body, it holds values from previous runs otherwise
+        # Request setup
+        curl = templated_test.configure_curl(
+            timeout=testset_config.timeout, context=my_context, curl_handle=curl_handle)
         headers = MyIO()
         body = MyIO()
         curl.setopt(pycurl.WRITEFUNCTION, body.write)
@@ -311,10 +314,9 @@ class Test(Macro):
             curl.setopt(pycurl.VERBOSE, True)
         if testset_config.ssl_insecure:
             curl.setopt(pycurl.SSL_VERIFYPEER, 0)
-            curl.setopt(pycurl.SSL_VERIFYHOST, 0)
+            curl.setopt(pycurl.SSL_VERIFYHOST, 0)        
 
-        result.passed = None
-
+        # Pre-request work, wait for input or add a delay before the request runs
         if testset_config.interactive:
             callbacks.log_status("===================================")
             callbacks.log_status("%s" % mytest.name)
@@ -331,6 +333,7 @@ class Test(Macro):
             callbacks.log_status("Delaying for %ds" % mytest.delay)
             time.sleep(mytest.delay)
 
+        # Execute the test, and handle errors
         try:
             curl.perform()  # Run the actual call
         except Exception as e:
@@ -343,14 +346,16 @@ class Test(Macro):
             curl.close()
             return result
 
-        # Retrieve values
+        # Post-request work: perform cleanup and gather info from the request as needed
+        response_code = curl.getinfo(pycurl.RESPONSE_CODE)
+        result.response_code = response_code
         result.body = body.getvalue()
         body.close()
         result.response_headers = text_type(headers.getvalue(), HEADER_ENCODING)  # Per RFC 2616
         headers.close()
-
-        response_code = curl.getinfo(pycurl.RESPONSE_CODE)
-        result.response_code = response_code
+        
+        # We are now done with the request, now we can do all the analysis and reporting
+        # This uses the result object and result bodies + test config
 
         callbacks.log_intermediate("Initial Test Result, based on expected response code: " +
                      str(response_code in mytest.expected_status))

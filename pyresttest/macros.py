@@ -92,6 +92,19 @@ class Macro(object):
     name = u'Unnamed'
     macro_name = None
 
+    def pre_request(self, *args, **kwargs):
+        """ Work done before request can run 
+
+        """
+        pass
+
+    def execute_request(self, *args, **kwargs):
+        pass
+
+    def post_request(self, *args, **kwargs):
+        """ Work done after request is run """
+        pass
+
     def execute_macro(self, testset_config=TestSetConfig(), context=None, cmdline_args=None, callbacks=MacroCallbacks(), curl_handle=None, *args, **kwargs):
         """ Skeletal execution basis """
 
