@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 import sys
 import os
 import inspect
@@ -622,6 +623,7 @@ def run_testsets(testsets):
     """ Execute a set of tests, using given TestSet list input """
     group_results = dict()  # results, by group
     group_failure_counts = dict()
+    group_test_case_results = dict()
     total_failures = 0
     myinteractive = False
     curl_handle = pycurl.Curl()
@@ -652,6 +654,7 @@ def run_testsets(testsets):
             # Initialize the dictionaries to store test fail counts and results
             if test.group not in group_results:
                 group_results[test.group] = list()
+                group_test_case_results[test.group] = list()
                 group_failure_counts[test.group] = 0
 
             result = run_test(test, test_config=myconfig, context=context, curl_handle=curl_handle)
@@ -661,6 +664,10 @@ def run_testsets(testsets):
                 # Use result test URL to allow for templating
                 logger.error('Test Failed: ' + test.name + " URL=" + result.test.url +
                              " Group=" + test.group + " HTTP Status Code: " + str(result.response_code))
+                # print('Test Failed: ' + test.name + " URL=" + result.test.url +
+                #       " Group=" + test.group + " HTTP Status Code: " + str(result.response_code))
+                test_name = test.name
+                status = 'FAILED'
 
                 # Print test failure reasons
                 if result.failures:
@@ -675,11 +682,19 @@ def run_testsets(testsets):
                 group_failure_counts[test.group] = failures
 
             else:  # Test passed, print results
+                # print('Test Succeeded: ' + test.name + " URL=" + test.url + " Group=" + test.group)
+                test_name = test.name
+                status = 'Passed'
                 logger.info('Test Succeeded: ' + test.name +
-                            " URL=" + test.url + " Group=" + test.group)
+                                " URL=" + test.url + " Group=" + test.group)
 
             # Add results for this test group to the resultset
+            # group_results[test.group][str(test.name)] = {}
+            # group_results[test.group][str(test.name)] = {str(test.name): status}
             group_results[test.group].append(result)
+            group_test_case_results[test.group].append({'test_case_name': test.name, 'status': status})
+
+
 
             # handle stop_on_failure flag
             if not result.passed and test.stop_on_failure is not None and test.stop_on_failure:
@@ -715,22 +730,37 @@ def run_testsets(testsets):
         # a break for when interactive bits are complete, before summary data
         print("===================================")
 
+    print(group_results.keys())
     # Print summary results
     for group in sorted(group_results.keys()):
         test_count = len(group_results[group])
+        # print("----%s" % (group_results[group]))
         failures = group_failure_counts[group]
         total_failures = total_failures + failures
+        group_test_case = group_test_case_results[group]
 
         passfail = {True: u'SUCCEEDED: ', False: u'FAILED: '}
-        output_string = "Test Group {0} {1}: {2}/{3} Tests Passed!".format(group, passfail[failures == 0], str(test_count - failures), str(test_count)) 
-        
+        '''
+        Here is the string that you want to print on console
+        '''
+        output_string = "Cubii feature Name: {0} : {1}: {2}/{3} Tests Passed!".format(group, passfail[failures == 0], str(test_count - failures), str(test_count))
+
         if myconfig.skip_term_colors:
             print(output_string)    
         else:
             if failures > 0:
+                pass
                 print('\033[91m' + output_string + '\033[0m')
             else:
+                pass
                 print('\033[92m' + output_string + '\033[0m')
+        for single_test_case in group_test_case:
+            sub_test_case = "{0} -- {1}".format(single_test_case['test_case_name'],single_test_case['status'])
+            if single_test_case['status'] == 'Passed':
+                print('\033[90m' + sub_test_case + '\033[0m')
+            else:
+                print('\033[90m' + sub_test_case + '\033[0m')
+
 
     return total_failures
 
@@ -914,5 +944,5 @@ def command_line_run(args_in):
     main(args)
 
 # Allow import into another module without executing the main method
-if(__name__ == '__main__'):
+if __name__ == '__main__':
     command_line_run(sys.argv[1:])
