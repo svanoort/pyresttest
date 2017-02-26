@@ -9,9 +9,10 @@ import json
 import csv
 import logging
 import threading
+import time
 from optparse import OptionParser
 from email import message_from_string  # For headers handling
-import time
+from builtins import input
 
 try:
     from cStringIO import StringIO as MyIO
@@ -344,7 +345,7 @@ def run_test(mytest, test_config=TestConfig(), context=None, curl_handle=None, *
         print("%s" % (templated_test.headers))
         if mytest.body is not None:
             print("\n%s" % templated_test.body)
-        raw_input("Press ENTER when ready (%d): " % (mytest.delay))
+        input("Press ENTER when ready (%d): " % (mytest.delay))
 
     if mytest.delay > 0:
         print("Delaying for %ds" % mytest.delay)
