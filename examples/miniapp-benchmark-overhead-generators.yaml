@@ -14,7 +14,7 @@
     - method: 'PUT'
     - headers: {'Content-Type': 'application/json'}
     - body: {template: '{"first_name": "Gaius","id": "$id","last_name": "Baltar","login": "$id"}'}
-    - 'benchmark_runs': '1000'
+    - 'benchmark_runs': '10000'
     - output_format: csv
     - metrics:
         - total_time: total
