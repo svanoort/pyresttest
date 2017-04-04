@@ -36,6 +36,10 @@ class MacroCallbacks(object):  # Possibly call this an execution context?
         if x: 
             print(x)
 
+    # Called at the begining and end of the test suite
+    def start_testset(self, input): lambda x: simple_print(x)
+    def end_testset(self, input): lambda x: simple_print(x)
+    
     # Logging outputs, these are part of the lifecycle    
     def start_macro(self, input): lambda x: simple_print(x)
     def pre_request(self, input): lambda x: simple_print(x)  # Called just before submitting requests
@@ -59,6 +63,10 @@ class TestSetConfig(object):
     verbose = False
     ssl_insecure = False
     skip_term_colors = False  # Turn off output term colors
+    junit = False # Write junit output
+    junit_path = None # Path to write junit file
+    working_directory = None # Working directory
+    name = '' # TestSetName
 
     # Binding and creation of generators
     variable_binds = None
@@ -211,5 +219,7 @@ def parse_configuration(node, base_config=None):
                 gen = parse_generator(generator_config)
                 gen_map[str(generator_name)] = gen
             testset_config.generators = gen_map
+        elif key == u'testset':
+            testset_config.name = str(value)            
 
     return testset_config

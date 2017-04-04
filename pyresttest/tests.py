@@ -422,7 +422,10 @@ class Test(Macro):
             callbacks.log_status(result.response_headers)
 
         # TODO add string escape on body output
-        callbacks.log_intermediate(result)
+        if result.passed is True:
+            callbacks.log_success(result)
+        else:
+            callbacks.log_failure(result)
 
         return result
 
@@ -433,14 +436,14 @@ class Test(Macro):
             curl = curl_handle
 
             try:  # Check the curl handle isn't closed, and reuse it if possible
-                curl.getinfo(curl.HTTP_CODE)                
+                curl.getinfo(curl.HTTP_CODE)
                 # Below clears the cookies & curl options for clean run
                 # But retains the DNS cache and connection pool
                 curl.reset()
                 curl.setopt(curl.COOKIELIST, "ALL")
             except pycurl.error:
                 curl = pycurl.Curl()
-            
+
         else:
             curl = pycurl.Curl()
 
@@ -459,8 +462,8 @@ class Test(Macro):
             curl.setopt(curl.READFUNCTION, MyIO(bod).read)
 
         if self.auth_username and self.auth_password:
-            curl.setopt(pycurl.USERPWD, 
-                parsing.encode_unicode_bytes(self.auth_username) + b':' + 
+            curl.setopt(pycurl.USERPWD,
+                parsing.encode_unicode_bytes(self.auth_username) + b':' +
                 parsing.encode_unicode_bytes(self.auth_password))
             if self.auth_type:
                 curl.setopt(pycurl.HTTPAUTH, self.auth_type)
@@ -503,7 +506,7 @@ class Test(Macro):
                 curl.setopt(pycurl.POSTFIELDSIZE, len(bod))
 
         # Template headers as needed and convert headers dictionary to list of header entries
-        
+
         head = self.get_headers(context=context)
         head = copy.copy(head)  # We're going to mutate it, need to copy
 
