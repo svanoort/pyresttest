@@ -5,6 +5,7 @@ import inspect
 import traceback
 import yaml
 import pycurl
+import certifi
 import json
 import csv
 import logging
@@ -324,6 +325,7 @@ def run_test(mytest, test_config=TestConfig(), context=None, curl_handle=None, *
     # reset the body, it holds values from previous runs otherwise
     headers = MyIO()
     body = MyIO()
+    curl.setopt(pycurl.CAINFO, certifi.where())
     curl.setopt(pycurl.WRITEFUNCTION, body.write)
     curl.setopt(pycurl.HEADERFUNCTION, headers.write)
     if test_config.verbose:
