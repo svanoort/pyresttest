@@ -623,7 +623,6 @@ def run_testsets(testsets):
     """ Execute a set of tests, using given TestSet list input """
     group_results = dict()  # results, by group
     group_failure_counts = dict()
-    group_test_case_results = dict()
     total_failures = 0
     myinteractive = False
     curl_handle = pycurl.Curl()
@@ -654,7 +653,6 @@ def run_testsets(testsets):
             # Initialize the dictionaries to store test fail counts and results
             if test.group not in group_results:
                 group_results[test.group] = list()
-                group_test_case_results[test.group] = list()
                 group_failure_counts[test.group] = 0
 
             result = run_test(test, test_config=myconfig, context=context, curl_handle=curl_handle)
@@ -664,7 +662,6 @@ def run_testsets(testsets):
                 # Use result test URL to allow for templating
                 logger.error('Test Failed: ' + test.name + " URL=" + result.test.url +
                              " Group=" + test.group + " HTTP Status Code: " + str(result.response_code))
-                status = 'FAILED'
 
                 # Print test failure reasons
                 if result.failures:
@@ -679,13 +676,11 @@ def run_testsets(testsets):
                 group_failure_counts[test.group] = failures
 
             else:  # Test passed, print results
-                status = 'Passed'
                 logger.info('Test Succeeded: ' + test.name +
                             " URL=" + test.url + " Group=" + test.group)
 
             # Add results for this test group to the resultset
             group_results[test.group].append(result)
-            group_test_case_results[test.group].append({'test_case_name': test.name, 'status': status})
 
             # handle stop_on_failure flag
             if not result.passed and test.stop_on_failure is not None and test.stop_on_failure:
@@ -726,7 +721,6 @@ def run_testsets(testsets):
         test_count = len(group_results[group])
         failures = group_failure_counts[group]
         total_failures = total_failures + failures
-        group_test_case = group_test_case_results[group]
 
         passfail = {True: u'SUCCEEDED: ', False: u'FAILED: '}
         output_string = "Test Group {0} {1}: {2}/{3} Tests Passed!".format(group, passfail[failures == 0], str(test_count - failures), str(test_count)) 
@@ -739,14 +733,15 @@ def run_testsets(testsets):
             else:
                 print('\033[92m' + output_string + '\033[0m')
         if myconfig.print_detail_testcases:
-            for single_test_case in group_test_case:
-                sub_test_case = "{0} -- {1}".format(single_test_case['test_case_name'],single_test_case['status'])
-                if single_test_case['status'] == 'Passed':
+            for r in group_results[group]:
+                if r.passed:
+                    sub_test_case = "[{0}] {1} -- Passed".format(r.test.group,r.test.name)
                     if myconfig.skip_term_colors:
                         print(sub_test_case)
                     else:       
                         print('\033[90m' + sub_test_case + '\033[0m')
                 else:
+                    sub_test_case = "[{0}] {1} -- Failed".format(r.test.group,r.test.name)
                     if myconfig.skip_term_colors:
                         print(sub_test_case)
                     else:       
