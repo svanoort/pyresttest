@@ -344,7 +344,12 @@ def run_test(mytest, test_config=TestConfig(), context=None, curl_handle=None, *
         print("%s" % (templated_test.headers))
         if mytest.body is not None:
             print("\n%s" % templated_test.body)
-        raw_input("Press ENTER when ready (%d): " % (mytest.delay))
+        
+
+        if sys.version_info >= (3,0):
+            input("Press ENTER when ready (%d): " % (mytest.delay))
+        else:
+            raw_input("Press ENTER when ready (%d): " % (mytest.delay))
 
     if mytest.delay > 0:
         print("Delaying for %ds" % mytest.delay)
