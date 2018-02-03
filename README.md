@@ -57,6 +57,7 @@ PyRestTest works on Linux or Mac with Python 2.6, 2.7, or 3.3+ (with module 'fut
 **First we need to install package python-pycurl:**
 * Ubuntu/Debian: (sudo) `apt-get install python-pycurl`
 * CentOS/RHEL: (sudo) `yum install python-pycurl`
+* Alpine: (sudo) `apk add curl-dev`
 * Mac: *don't worry about it*
 * Other platforms: *unsupported.*  You *may* get it to work by installing pycurl & pyyaml manually. Also include 'future' for Python 3. No guarantees though.
 *This is needed because the pycurl dependency may fail to install by pip.  In *very rare* cases you may need to intall python-pyyaml if pip cannot install it correctly.*
