@@ -577,5 +577,36 @@ class ValidatorsTest(unittest.TestCase):
         self.assertEqual(validation_result.message,
                          "Extract and test validator failed on test: exists(None)")
 
+    def test_validator_string_comparison(self):
+        """ Tests string comparison """
+        config = {
+            'jsonpath_mini': 'key.val',
+            'comparator': 'str_eq',
+            'expected': "data"
+        }
+        comp_validator = validators.ComparatorValidator.parse(config)
+        myjson_pass = '{"id": 3, "key": {"val": "data"}}'
+        myjson_fail = '{"id": 3, "key": {"val": "DATA"}}'
+
+        self.assertTrue(comp_validator.validate(body=myjson_pass))
+        self.assertFalse(comp_validator.validate(body=myjson_fail))
+
+    def test_validator_string_insensitive_comparison(self):
+        """ Tests case-insensitive string comparison """
+        config = {
+            'jsonpath_mini': 'key.val',
+            'comparator': 'str_eq_insensitive',
+            'expected': "data"
+        }
+        comp_validator = validators.ComparatorValidator.parse(config)
+        myjson_lowercase = '{"id": 3, "key": {"val": "data"}}'
+        myjson_uppercase = '{"id": 3, "key": {"val": "DATA"}}'
+        myjson_mixcase = '{"id": 3, "key": {"val": "DaTa"}}'
+
+        self.assertTrue(comp_validator.validate(body=myjson_lowercase))
+        self.assertTrue(comp_validator.validate(body=myjson_uppercase))
+        self.assertTrue(comp_validator.validate(body=myjson_mixcase))
+
+
 if __name__ == '__main__':
     unittest.main()
