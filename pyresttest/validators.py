@@ -53,6 +53,7 @@ COMPARATORS = {
     'eq': operator.eq,
     'equals': operator.eq,
     'str_eq': lambda x, y: operator.eq(str(x), str(y)),
+    'str_not_eq': lambda x, y: operator.ne(str(x), str(y)),
     'ne': operator.ne,
     'not_equals': operator.ne,
     'ge': operator.ge,
