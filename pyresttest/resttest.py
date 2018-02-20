@@ -111,6 +111,7 @@ class TestConfig:
     verbose = False
     ssl_insecure = False
     skip_term_colors = False  # Turn off output term colors
+    cookiejar = None
 
     # Binding and creation of generators
     variable_binds = None
@@ -281,6 +282,8 @@ def parse_configuration(node, base_config=None):
             test_config.timeout = int(value)
         elif key == u'print_bodies':
             test_config.print_bodies = safe_to_bool(value)
+        elif key == u'cookiejar':
+            test_config.cookiejar = os.path.basename(str(value))
         elif key == u'retries':
             test_config.retries = int(value)
         elif key == u'variable_binds':
@@ -317,7 +320,7 @@ def run_test(mytest, test_config=TestConfig(), context=None, curl_handle=None, *
     mytest.update_context_before(my_context)
     templated_test = mytest.realize(my_context)
     curl = templated_test.configure_curl(
-        timeout=test_config.timeout, context=my_context, curl_handle=curl_handle)
+        timeout=test_config.timeout, cookiejar=test_config.cookiejar, context=my_context, curl_handle=curl_handle)
     result = TestResponse()
     result.test = templated_test
 
@@ -716,6 +719,13 @@ def run_testsets(testsets):
                              benchmark, test_config=myconfig)
                 my_file.close()
 
+        if myconfig.cookiejar:
+            curl_handle.close()
+            try:
+                os.remove('/'.join([os.getcwd(), myconfig.cookiejar]))
+            except OSError:
+                pass
+
     if myinteractive:
         # a break for when interactive bits are complete, before summary data
         print("===================================")
@@ -727,10 +737,10 @@ def run_testsets(testsets):
         total_failures = total_failures + failures
 
         passfail = {True: u'SUCCEEDED: ', False: u'FAILED: '}
-        output_string = "Test Group {0} {1}: {2}/{3} Tests Passed!".format(group, passfail[failures == 0], str(test_count - failures), str(test_count)) 
-        
+        output_string = "Test Group {0} {1}: {2}/{3} Tests Passed!".format(group, passfail[failures == 0], str(test_count - failures), str(test_count))
+
         if myconfig.skip_term_colors:
-            print(output_string)    
+            print(output_string)
         else:
             if failures > 0:
                 print('\033[91m' + output_string + '\033[0m')
