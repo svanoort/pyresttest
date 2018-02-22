@@ -116,6 +116,7 @@ class TestConfig:
     variable_binds = None
     generators = None  # Map of generator name to generator function
 
+
     def __str__(self):
         return json.dumps(self, default=safe_to_json)
 
@@ -203,7 +204,7 @@ def parse_headers(header_string):
         return [(k.lower(), v) for k, v in header_msg.items()]
 
 
-def parse_testsets(base_url, test_structure, test_files=set(), working_directory=None, vars=None):
+def parse_testsets(base_url, test_structure, test_files=set(), working_directory=None, vars=None,run_testcase=""):
     """ Convert a Python data structure read from validated YAML to a set of structured testsets
     The data structure is assumed to be a list of dictionaries, each of which describes:
         - a tests (test structure)
@@ -221,6 +222,8 @@ def parse_testsets(base_url, test_structure, test_files=set(), working_directory
     test_config = TestConfig()
     testsets = list()
     benchmarks = list()
+    run_testcase = run_testcase.strip() if run_testcase else ''
+    run_testcase = run_testcase.split(',') if run_testcase else []
 
     if working_directory is None:
         working_directory = os.path.abspath(os.getcwd())
@@ -253,6 +256,8 @@ def parse_testsets(base_url, test_structure, test_files=set(), working_directory
                     with cd(working_directory):
                         child = node[key]
                         mytest = Test.parse_test(base_url, child)
+                        if run_testcase and mytest.name not in run_testcase:
+                            continue
                         tests_out.append(mytest)
                 elif key == u'benchmark':
                     benchmark = parse_benchmark(base_url, node[key])
@@ -798,8 +803,9 @@ def main(args):
     Keys allowed for args:
         url           - REQUIRED - Base URL
         test          - REQUIRED - Test file (yaml)
+        run_testcase  - OPTIONAL - run a specify test case
         print_bodies  - OPTIONAL - print response body
-        print_headers  - OPTIONAL - print response headers
+        print_headers - OPTIONAL - print response headers
         log           - OPTIONAL - set logging level {debug,info,warning,error,critical} (default=warning)
         interactive   - OPTIONAL - mode that prints info before and after test exectuion and pauses for user input for each test
         absolute_urls - OPTIONAL - mode that treats URLs in tests as absolute/full URLs instead of relative URLs
@@ -822,6 +828,8 @@ def main(args):
     test_file = args['test']
     test_structure = read_test_file(test_file)
 
+    run_testcase = args['run_testcase']
+
     my_vars = None
     if 'vars' in args and args['vars'] is not None:
         my_vars = yaml.safe_load(args['vars'])
@@ -835,7 +843,7 @@ def main(args):
         base_url = ''
 
     tests = parse_testsets(base_url, test_structure,
-                           working_directory=os.path.dirname(test_file), vars=my_vars)
+                           working_directory=os.path.dirname(test_file), vars=my_vars, run_testcase=run_testcase)
 
     # Override configs from command line if config set
     for t in tests:
@@ -878,6 +886,8 @@ def parse_command_line_args(args_in):
     parser.add_option(
         u"--url", help="Base URL to run tests against", action="store", type="string")
     parser.add_option(u"--test", help="Test file to use",
+                      action="store", type="string")
+    parser.add_option(u"--run_testcase", help="To run a specify test in file(identify by name, split multiple test by ,)",
                       action="store", type="string")
     parser.add_option(u'--import_extensions',
                       help='Extensions to import, separated by semicolons', action="store", type="string")
