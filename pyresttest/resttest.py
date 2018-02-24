@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 import sys
 import os
 import inspect
@@ -736,6 +737,20 @@ def run_testsets(testsets):
                 print('\033[91m' + output_string + '\033[0m')
             else:
                 print('\033[92m' + output_string + '\033[0m')
+        if myconfig.print_detail_testcases:
+            for r in group_results[group]:
+                if r.passed:
+                    sub_test_case = "[{0}] {1} -- Passed".format(r.test.group,r.test.name)
+                    if myconfig.skip_term_colors:
+                        print(sub_test_case)
+                    else:       
+                        print('\033[90m' + sub_test_case + '\033[0m')
+                else:
+                    sub_test_case = "[{0}] {1} -- Failed".format(r.test.group,r.test.name)
+                    if myconfig.skip_term_colors:
+                        print(sub_test_case)
+                    else:       
+                        print('\033[91m' + sub_test_case + '\033[0m')
 
     return total_failures
 
@@ -804,6 +819,7 @@ def main(args):
         interactive   - OPTIONAL - mode that prints info before and after test exectuion and pauses for user input for each test
         absolute_urls - OPTIONAL - mode that treats URLs in tests as absolute/full URLs instead of relative URLs
         skip_term_colors - OPTIONAL - mode that turn off the output term colors
+        print_detail_testcases - OPTIONAL - print test case detail with its status
     """
 
     if 'log' in args and args['log'] is not None:
@@ -857,6 +873,10 @@ def main(args):
         if 'skip_term_colors' in args and args['skip_term_colors'] is not None:
             t.config.skip_term_colors = safe_to_bool(args['skip_term_colors'])
 
+        if 'print_detail_testcases' in args and args['print_detail_testcases'] is not None:
+            t.config.print_detail_testcases = safe_to_bool(args['print_detail_testcases'])
+
+
     # Execute all testsets
     failures = run_testsets(tests)
 
@@ -891,6 +911,8 @@ def parse_command_line_args(args_in):
                       action="store_true", dest="absolute_urls")
     parser.add_option(u'--skip_term_colors', help='Turn off the output term colors',
                       action='store_true', default=False, dest="skip_term_colors")
+    parser.add_option(u'--print_detail_testcases', help='Print test case detail with its status.',
+                      action='store_true', default=False, dest="print_detail_testcases")
 
     (args, unparsed_args) = parser.parse_args(args_in)
     args = vars(args)
