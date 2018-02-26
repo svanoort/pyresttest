@@ -5,12 +5,11 @@ import json
 import pycurl
 import sys
 
-
-from . import contenthandling
-from .contenthandling import ContentHandler
-from . import validators
-from . import parsing
-from .parsing import *
+import contenthandling
+from contenthandling import ContentHandler
+import validators
+import parsing
+from parsing import *
 
 # Find the best implementation available on this platform
 try:
@@ -30,11 +29,11 @@ else:
     import urlparse
 
 # Python 3 compatibility shims
-from . import six
-from .six import binary_type
-from .six import text_type
-from .six import iteritems
-from .six.moves import filter as ifilter
+import six
+from six import binary_type
+from six import text_type
+from six import iteritems
+from six.moves import filter as ifilter
 
 """
 Pull out the Test objects and logic associated with them
@@ -90,8 +89,15 @@ def coerce_list_of_ints(val):
     else:
         return [int(val)]
 
+def coerce_list_of_strings(val):
+    """ If single value, try to parse as string, else try to parse as list of string """
+    if isinstance(val, list):
+        return [x for x in val]
+    else:
+        return [val]
+
 class Test(object):
-    """ Describes a REST test """
+    """ Describes a REST test "/delay"""
     _url = None
     expected_status = [200]  # expected HTTP status code or codes
     _body = None
@@ -106,6 +112,8 @@ class Test(object):
     auth_password = None
     auth_type = pycurl.HTTPAUTH_BASIC
     delay = 0
+    retries = 0
+    depends_on = []
     curl_options = None
 
     templates = None  # Dictionary of template to compiled template
@@ -406,7 +414,8 @@ class Test(object):
         This is to say: list(dict(),dict()) or dict(key,value) -->  dict() for some elements
 
         Accepted structure must be a single dictionary of key-value pairs for test configuration """
-
+        
+    
         mytest = input_test
         if not mytest:
             mytest = Test()
@@ -428,6 +437,8 @@ class Test(object):
             u'expected_status': [coerce_list_of_ints],
             u'delay': [lambda x: int(x)],
             u'stop_on_failure': [safe_to_bool],
+            u'retries': [lambda x: int(x)],
+            u'depends_on': [coerce_list_of_strings],
 
             # Templated / special handling
             #u'url': [coerce_templatable, set_templated),  # TODO: special handling for templated content, sigh
@@ -458,6 +469,7 @@ class Test(object):
 
         # Copy/convert input elements into appropriate form for a test object
         for configelement, configvalue in node.items():
+
             if use_config_parser(mytest, configelement, configvalue):
                 continue
 
@@ -492,7 +504,7 @@ class Test(object):
                     # Safe because length can only be 1
                     for extractor_type, extractor_config in extractor.items():
                         mytest.extract_binds[variable_name] = validators.parse_extractor(extractor_type, extractor_config)
-
+            
 
             elif configelement == u'validators':
                 # Add a list of validators

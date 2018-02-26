@@ -12,6 +12,7 @@ import threading
 from optparse import OptionParser
 from email import message_from_string  # For headers handling
 import time
+from collections import defaultdict
 
 try:
     from cStringIO import StringIO as MyIO
@@ -32,34 +33,34 @@ if sys.version_info[0] > 2:
 if __name__ == '__main__':
     sys.path.append(os.path.dirname(os.path.dirname(
     os.path.realpath(__file__))))
-    from pyresttest.six import text_type
-    from pyresttest.binding import Context
-    from pyresttest import generators
-    from pyresttest import validators
-    from pyresttest import tests
-    from pyresttest.generators import parse_generator
-    from pyresttest.parsing import flatten_dictionaries, lowercase_keys, safe_to_bool, safe_to_json
+    from six import text_type
+    from binding import Context
+    import generators
+    import validators
+    import tests
+    from generators import parse_generator
+    from parsing import flatten_dictionaries, lowercase_keys, safe_to_bool, safe_to_json
 
-    from pyresttest.validators import Failure
-    from pyresttest.tests import Test, DEFAULT_TIMEOUT
-    from pyresttest.benchmarks import Benchmark, AGGREGATES, METRICS, parse_benchmark
+    from validators import Failure
+    from tests import Test, DEFAULT_TIMEOUT
+    from benchmarks import Benchmark, AGGREGATES, METRICS, parse_benchmark
 else:  # Normal imports
-    from . import six
-    from .six import text_type
+    import six
+    from six import text_type
 
     # Pyresttest internals
-    from . import binding
-    from .binding import Context
-    from . import generators
-    from .generators import parse_generator
-    from . import parsing
-    from .parsing import flatten_dictionaries, lowercase_keys, safe_to_bool, safe_to_json
-    from . import validators
-    from .validators import Failure
-    from . import tests
-    from .tests import Test, DEFAULT_TIMEOUT
-    from . import benchmarks
-    from .benchmarks import Benchmark, AGGREGATES, METRICS, parse_benchmark
+    import binding
+    from binding import Context
+    import generators
+    from generators import parse_generator
+    import parsing
+    from parsing import flatten_dictionaries, lowercase_keys, safe_to_bool, safe_to_json
+    import validators
+    from validators import Failure
+    import tests
+    from tests import Test, DEFAULT_TIMEOUT
+    import benchmarks
+    from benchmarks import Benchmark, AGGREGATES, METRICS, parse_benchmark
 
 """
 Executable class, ties everything together into the framework.
@@ -81,6 +82,10 @@ logging.basicConfig(format='%(levelname)s:%(message)s')
 logger = logging.getLogger('pyresttest')
 
 DIR_LOCK = threading.RLock()  # Guards operations changing the working directory
+
+test_result = defaultdict(dict)
+test_result_list = []
+
 class cd:
     """Context manager for changing the current working directory"""
     # http://stackoverflow.com/questions/431684/how-do-i-cd-in-python/13197763#13197763
@@ -95,7 +100,7 @@ class cd:
             os.chdir(self.newPath)
 
     def __exit__(self, etype, value, traceback):
-        if self.newPath:  # Don't CD to nothingness            
+        if self.newPath:  # Don't CD to nothingness
             os.chdir(self.savedPath)
             DIR_LOCK.release()
 
@@ -114,7 +119,7 @@ class TestConfig:
 
     # Binding and creation of generators
     variable_binds = None
-    generators = None  # Map of generator name to generator function
+    generators = None  # Map of generator name to generator functionOB
 
     def __str__(self):
         return json.dumps(self, default=safe_to_json)
@@ -193,7 +198,7 @@ def parse_headers(header_string):
         return list()
 
     # Python 2.6 message header parsing fails for Unicode strings, 2.7 is fine. Go figure.
-    if sys.version_info < (2,7):
+    if sys.version_info < (2, 7):
         header_msg = message_from_string(headers.encode(HEADER_ENCODING))
         return [(text_type(k.lower(), HEADER_ENCODING), text_type(v, HEADER_ENCODING))
             for k, v in header_msg.items()]
@@ -260,6 +265,7 @@ def parse_testsets(base_url, test_structure, test_files=set(), working_directory
                 elif key == u'config' or key == u'configuration':
                     test_config = parse_configuration(
                         node[key], base_config=test_config)
+
     testset = TestSet()
     testset.tests = tests_out
     testset.config = test_config
@@ -283,6 +289,8 @@ def parse_configuration(node, base_config=None):
             test_config.print_bodies = safe_to_bool(value)
         elif key == u'retries':
             test_config.retries = int(value)
+        elif key == u'delay':
+            test_config.delay = int(value)
         elif key == u'variable_binds':
             if not test_config.variable_binds:
                 test_config.variable_binds = dict()
@@ -305,6 +313,8 @@ def read_file(path):
         f.close()
     return string
 
+#flag to check test is already retried
+is_retried = False
 
 def run_test(mytest, test_config=TestConfig(), context=None, curl_handle=None, *args, **kwargs):
     """ Put together test pieces: configure & run actual test, return results """
@@ -351,9 +361,13 @@ def run_test(mytest, test_config=TestConfig(), context=None, curl_handle=None, *
         else:
             raw_input("Press ENTER when ready (%d): " % (mytest.delay))
 
-    if mytest.delay > 0:
-        print("Delaying for %ds" % mytest.delay)
-        time.sleep(mytest.delay)
+#    if mytest.delay > 0:
+#        print("Delaying for %ds" % mytest.delay)
+#        time.sleep(mytest.delay)
+    for test_need in mytest.depends_on:
+        if not test_result[test_need]['result'] or test_result[test_need]['result'] == 'skip':
+            print "\n\033[1;31m 'test: {0}' depends on 'test: {1}' \033[0m".format(mytest.name, test_need)
+            return
 
     try:
         curl.perform()  # Run the actual call
@@ -379,15 +393,47 @@ def run_test(mytest, test_config=TestConfig(), context=None, curl_handle=None, *
     logger.debug("Initial Test Result, based on expected response code: " +
                  str(response_code in mytest.expected_status))
 
+    flag = 0
+    global is_retried
+    retry = 0
+
+    if mytest.retries >= 0:
+        retry = mytest.retries
+        flag = 1
+        is_retried = True
+    elif not is_retried:
+        retry = test_config.retries
+        flag = 2
+
     if response_code in mytest.expected_status:
         result.passed = True
     else:
-        # Invalid response code
-        result.passed = False
-        failure_message = "Invalid HTTP response code: response code {0} not in expected codes [{1}]".format(
-            response_code, mytest.expected_status)
-        result.failures.append(Failure(
-            message=failure_message, details=None, failure_type=validators.FAILURE_INVALID_RESPONSE))
+        # if retry not define
+        if retry == 0:
+            # Invalid response code
+            result.passed = False
+            failure_message = "Invalid HTTP response code: response code {0} not in expected codes [{1}]".format(
+                response_code, mytest.expected_status)
+            result.failures.append(Failure(
+                message=failure_message, details=None, failure_type=validators.FAILURE_INVALID_RESPONSE))
+
+        # retry test
+        else:
+            retry -= 1
+            #retry from test
+            if flag == 1:
+                print "########## Retrying test : ",mytest.name
+                mytest.retries = retry
+                time.sleep(mytest.delay)
+                return run_test(mytest, test_config, context, curl_handle)
+
+            #retry from config
+            if flag == 2:
+                print "########## Retrying : ",mytest.name
+                test_config.retries = retry
+                time.sleep(test_config.delay)
+                return run_test(mytest, test_config, context, curl_handle)
+
 
     # Parse HTTP headers
     try:
@@ -404,7 +450,6 @@ def run_test(mytest, test_config=TestConfig(), context=None, curl_handle=None, *
     # ' + str(test_config.print_bodies or not result.passed)
 
     head = result.response_headers
-
     # execute validator on body
     if result.passed is True:
         body = result.body
@@ -652,6 +697,7 @@ def run_testsets(testsets):
 
         myinteractive = True if myinteractive or myconfig.interactive else False
 
+        skip = 0
         # Run tests, collecting statistics as needed
         for test in mytests:
             # Initialize the dictionaries to store test fail counts and results
@@ -659,20 +705,33 @@ def run_testsets(testsets):
                 group_results[test.group] = list()
                 group_failure_counts[test.group] = 0
 
+            global is_retried
+            is_retried = False
+            print "\n ==================================================== \n"
             result = run_test(test, test_config=myconfig, context=context, curl_handle=curl_handle)
+
+            if result is not None:
+                test_result[test.name]['result'] = result.passed
+                if not result.passed:
+                    test_result[test.name]['status'] = result.response_headers[3][1]
+                    test_result[test.name]['expected_status'] = test.expected_status
+
+            if result is None:
+                skip += 1
+                test_result[test.name]['result'] = "skip"
+                test_result[test.name]['depends_on'] = test.depends_on
+                continue
+
             result.body = None  # Remove the body, save some memory!
-
             if not result.passed:  # Print failure, increase failure counts for that test group
-                # Use result test URL to allow for templating
+            # Use result test URL to allow for templating
                 logger.error('Test Failed: ' + test.name + " URL=" + result.test.url +
-                             " Group=" + test.group + " HTTP Status Code: " + str(result.response_code))
-
+                         " Group=" + test.group + " HTTP Status Code: " + str(result.response_code))
                 # Print test failure reasons
                 if result.failures:
                     for failure in result.failures:
                         log_failure(failure, context=context,
                                     test_config=myconfig)
-
                 # Increment test failure counts for that group (adding an entry
                 # if not present)
                 failures = group_failure_counts[test.group]
@@ -681,7 +740,7 @@ def run_testsets(testsets):
 
             else:  # Test passed, print results
                 logger.info('Test Succeeded: ' + test.name +
-                            " URL=" + test.url + " Group=" + test.group)
+                    " URL=" + test.url + " Group=" + test.group)
 
             # Add results for this test group to the resultset
             group_results[test.group].append(result)
@@ -715,7 +774,7 @@ def run_testsets(testsets):
                 write_method(my_file, benchmark_result,
                              benchmark, test_config=myconfig)
                 my_file.close()
-
+    print "\n ==================================================== \n"
     if myinteractive:
         # a break for when interactive bits are complete, before summary data
         print("===================================")
@@ -727,10 +786,15 @@ def run_testsets(testsets):
         total_failures = total_failures + failures
 
         passfail = {True: u'SUCCEEDED: ', False: u'FAILED: '}
-        output_string = "Test Group {0} {1}: {2}/{3} Tests Passed!".format(group, passfail[failures == 0], str(test_count - failures), str(test_count)) 
-        
+        output_string = "Test Group {0} {1}: {2}/{3} Tests Passed!\nTest Group {0} SKIPPED: {4}"\
+            .format(group, passfail[failures == 0], str(test_count - failures), str(test_count), str(skip)) 
+
+        with open('test_result.json', 'w') as out:
+            json.dump(test_result, out, indent=4)
+
+
         if myconfig.skip_term_colors:
-            print(output_string)    
+            print(output_string)
         else:
             if failures > 0:
                 print('\033[91m' + output_string + '\033[0m')
@@ -821,7 +885,6 @@ def main(args):
 
     test_file = args['test']
     test_structure = read_test_file(test_file)
-
     my_vars = None
     if 'vars' in args and args['vars'] is not None:
         my_vars = yaml.safe_load(args['vars'])
