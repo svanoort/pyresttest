@@ -37,8 +37,8 @@ setup(name='pyresttest',
       ],
       py_modules=['pyresttest.resttest', 'pyresttest.generators', 'pyresttest.binding',
                   'pyresttest.parsing', 'pyresttest.validators', 'pyresttest.contenthandling',
-                  'pyresttest.benchmarks', 'pyresttest.tests', 
-                  'pyresttest.six',
+                  'pyresttest.benchmarks', 'pyresttest.tests',
+                  'pyresttest.six','pyresttest.command_line',
                   'pyresttest.ext.validator_jsonschema',
                   'pyresttest.ext.extractor_jmespath'],
       license='Apache License, Version 2.0',
@@ -49,6 +49,8 @@ setup(name='pyresttest',
         'JMESPath': ['jmespath']
       },
       # Make this executable from command line when installed
-      scripts=['util/pyresttest', 'util/resttest.py'],
+      entry_points = {
+        'console_scripts': ['pyresttest=pyresttest.command_line:main'],
+      },
       provides=['pyresttest']
       )
