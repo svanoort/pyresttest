@@ -856,6 +856,16 @@ def main(args):
 
         if 'skip_term_colors' in args and args['skip_term_colors'] is not None:
             t.config.skip_term_colors = safe_to_bool(args['skip_term_colors'])
+            if not t.config.skip_term_colors:
+                try:
+                    from colorama import init as colorama_init
+                except ImportError:
+                    if sys.platform == 'win32':
+                        logger.warn('Terminal colors on Windows require the colorama package. '
+                                    '`pip install colorama` to enable. Colors will be disabled.')
+                        t.config.skip_term_colors = True
+                else:  # run colorama_init() only if the import was successful
+                    colorama_init()
 
     # Execute all testsets
     failures = run_testsets(tests)
