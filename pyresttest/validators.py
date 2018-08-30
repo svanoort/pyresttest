@@ -382,8 +382,13 @@ class ComparatorValidator(AbstractValidator):
 
         if not comparison:
             failure = Failure(validator=self)
+            
+            output_extracted_val = extracted_val
+            if self.comparator_name in ("count_eq", "length_eq"):
+                output_extracted_val = len(extracted_val)
+
             failure.message = "Comparison failed, evaluating {0}({1}, {2}) returned False".format(
-                self.comparator_name, extracted_val, expected_val)
+                self.comparator_name, output_extracted_val, expected_val)
             failure.details = self.get_readable_config(context=context)
             failure.failure_type = FAILURE_VALIDATOR_FAILED
             return failure
