@@ -13,7 +13,7 @@ For how to write custom Python extensions, see the [extensions guide](extensions
 - Tests and benchmarks may use variables to template out configuration dynamically.
 - Templating is performed using basic [Python string templating](https://docs.python.org/2/library/string.html#template-strings).  
 - Templating uses variables contained in a context, and **templates are evaluated freshly** for each test run or benchmark iteration
-- Contexts are either passed into a test, or created in the text if not supplied
+- Contexts are either passed into a test, or created in the test if not supplied
 - **Contexts are persistent within a TestSet. Once a variable is set, it can be used in all following tests**
 - **Context variables are modified and set** in 3 ways:
     1. **Variable values may be statically declared** with 'variable_binds' in TestSet config or the test
@@ -175,7 +175,7 @@ Will return: NOTHING (None object) -- that key is not defined for 'person'.
 - This query: 'thing'
 Will return: {"foo":"bar"}
 
-*Note that if you use this in templates it will appear as {u'foo': u'bar'} because it is converted to a python dictionary.*  If you with to use it in other tests, you will need to extract the component elements individually.
+*Note that if you use this in templates it will appear as {u'foo': u'bar'} because it is converted to a python dictionary.*  If you wish to use it in other tests, you will need to extract the component elements individually.
 
 - This query: '.'
 Will return: the whole response (as a python object). This can be very useful if you want to do contains or count operations on it.
