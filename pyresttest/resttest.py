@@ -333,7 +333,7 @@ def run_test(mytest, test_config=TestConfig(), context=None, curl_handle=None, *
         curl.setopt(pycurl.SSL_VERIFYPEER, 0)
         curl.setopt(pycurl.SSL_VERIFYHOST, 0)
     if test_config.non_persistent:
-        curl.setopt(pycurl.CURLOPT_TCP_KEEPALIVE, 0)
+        curl.setopt(pycurl.TCP_KEEPALIVE, 0)
 
     result.passed = None
 
