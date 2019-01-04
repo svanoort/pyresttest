@@ -662,6 +662,9 @@ def run_testsets(testsets):
                 group_results[test.group] = list()
                 group_failure_counts[test.group] = 0
 
+            # Reuse handle, but clean first
+            if curl_handle:
+                curl_handle.reset()
             result = run_test(test, test_config=myconfig, context=context, curl_handle=curl_handle)
             result.body = None  # Remove the body, save some memory!
 
