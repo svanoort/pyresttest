@@ -632,7 +632,6 @@ def run_testsets(testsets):
     group_failure_counts = dict()
     total_failures = 0
     myinteractive = False
-    curl_handle = pycurl.Curl()
 
     for testset in testsets:
         mytests = testset.tests
@@ -662,10 +661,7 @@ def run_testsets(testsets):
                 group_results[test.group] = list()
                 group_failure_counts[test.group] = 0
 
-            # Reuse handle, but clean first
-            if curl_handle:
-                curl_handle.reset()
-            result = run_test(test, test_config=myconfig, context=context, curl_handle=curl_handle)
+            result = run_test(test, test_config=myconfig, context=context)
             result.body = None  # Remove the body, save some memory!
 
             if not result.passed:  # Print failure, increase failure counts for that test group
