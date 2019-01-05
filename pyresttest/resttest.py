@@ -110,6 +110,7 @@ class TestConfig:
     interactive = False
     verbose = False
     ssl_insecure = False
+    non_persistent = False # Disables keep-alive pycurl option
     skip_term_colors = False  # Turn off output term colors
 
     # Binding and creation of generators
@@ -331,6 +332,8 @@ def run_test(mytest, test_config=TestConfig(), context=None, curl_handle=None, *
     if test_config.ssl_insecure:
         curl.setopt(pycurl.SSL_VERIFYPEER, 0)
         curl.setopt(pycurl.SSL_VERIFYHOST, 0)
+    if test_config.non_persistent:
+        curl.setopt(pycurl.TCP_KEEPALIVE, 0)
 
     result.passed = None
 
@@ -629,7 +632,6 @@ def run_testsets(testsets):
     group_failure_counts = dict()
     total_failures = 0
     myinteractive = False
-    curl_handle = pycurl.Curl()
 
     for testset in testsets:
         mytests = testset.tests
@@ -659,7 +661,7 @@ def run_testsets(testsets):
                 group_results[test.group] = list()
                 group_failure_counts[test.group] = 0
 
-            result = run_test(test, test_config=myconfig, context=context, curl_handle=curl_handle)
+            result = run_test(test, test_config=myconfig, context=context)
             result.body = None  # Remove the body, save some memory!
 
             if not result.passed:  # Print failure, increase failure counts for that test group
@@ -853,6 +855,9 @@ def main(args):
 
         if 'ssl_insecure' in args and args['ssl_insecure'] is not None:
             t.config.ssl_insecure = safe_to_bool(args['ssl_insecure'])
+        
+        if 'non_persistent' in args and args['non_persistent'] is not None:
+            t.config.non_persistent = safe_to_bool(args['non_persistent'])
 
         if 'skip_term_colors' in args and args['skip_term_colors'] is not None:
             t.config.skip_term_colors = safe_to_bool(args['skip_term_colors'])
@@ -887,6 +892,8 @@ def parse_command_line_args(args_in):
                       action='store_true', default=False, dest="verbose")
     parser.add_option(u'--ssl-insecure', help='Disable cURL host and peer cert verification',
                       action='store_true', default=False, dest="ssl_insecure")
+    parser.add_option(u'--non-persistent', help='Disables persistent connections',
+                      action='store_true', default=False, dest="non_persistent")
     parser.add_option(u'--absolute-urls', help='Enable absolute URLs in tests instead of relative paths',
                       action="store_true", dest="absolute_urls")
     parser.add_option(u'--skip_term_colors', help='Turn off the output term colors',
