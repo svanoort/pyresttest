@@ -111,6 +111,7 @@ class TestConfig:
     verbose = False
     ssl_insecure = False
     skip_term_colors = False  # Turn off output term colors
+    unix_socket = None
 
     # Binding and creation of generators
     variable_binds = None
@@ -331,6 +332,8 @@ def run_test(mytest, test_config=TestConfig(), context=None, curl_handle=None, *
     if test_config.ssl_insecure:
         curl.setopt(pycurl.SSL_VERIFYPEER, 0)
         curl.setopt(pycurl.SSL_VERIFYHOST, 0)
+    if test_config.unix_socket != None:
+        curl.setopt(pycurl.UNIX_SOCKET_PATH, test_config.unix_socket)
 
     result.passed = None
 
@@ -798,6 +801,7 @@ def main(args):
     Keys allowed for args:
         url           - REQUIRED - Base URL
         test          - REQUIRED - Test file (yaml)
+        unix_socket   - OPTIONAL - connect to this UNIX socket
         print_bodies  - OPTIONAL - print response body
         print_headers  - OPTIONAL - print response headers
         log           - OPTIONAL - set logging level {debug,info,warning,error,critical} (default=warning)
@@ -854,6 +858,9 @@ def main(args):
         if 'ssl_insecure' in args and args['ssl_insecure'] is not None:
             t.config.ssl_insecure = safe_to_bool(args['ssl_insecure'])
 
+        if 'unix_socket' in args and args['unix_socket'] is not None:
+            t.config.unix_socket = args['unix_socket']
+
         if 'skip_term_colors' in args and args['skip_term_colors'] is not None:
             t.config.skip_term_colors = safe_to_bool(args['skip_term_colors'])
 
@@ -877,6 +884,8 @@ def parse_command_line_args(args_in):
                       action="store", type="string")
     parser.add_option(
         u"--url", help="Base URL to run tests against", action="store", type="string")
+    parser.add_option(u"--unix-socket", help="Connect to this UNIX socket",
+                      action="store", type="string", dest="unix_socket")
     parser.add_option(u"--test", help="Test file to use",
                       action="store", type="string")
     parser.add_option(u'--import_extensions',
