@@ -442,6 +442,7 @@ def run_test(mytest, test_config=TestConfig(), context=None, curl_handle=None, *
 
     # TODO add string escape on body output
     logger.debug(result)
+    curl.close()
 
     return result
 
