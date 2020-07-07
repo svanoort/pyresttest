@@ -49,7 +49,7 @@ See the [sample extension](sample_extension.py).
 It shows an extension for all extensible functions. 
 
 
-# What Doe An Extension Need To Work?
+# What Does An Extension Need To Work?
 
 1. Function(s) to run 
 2. Registry Entries: these are special ALLCAPS variables binding extension names
