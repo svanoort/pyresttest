@@ -2,8 +2,8 @@
 import unittest
 import sys
 
-from . import parsing
-from .parsing import *
+from pyresttest import parsing
+from pyresttest.parsing import *
 
 PYTHON_MAJOR_VERSION = sys.version_info[0]
 
@@ -110,11 +110,8 @@ class TestParsing(unittest.TestCase):
             pass  # Good
 
     def test_safe_to_json(self):
-        if PYTHON_MAJOR_VERSION == 2:
-            self.assertEqual(u'adj12321nv', safe_to_json(
-                bytearray(b'adj12321nv', 'UTF-8')))
-        else:
-            self.assertEqual(u'adj12321nv', safe_to_json(u'adj12321nv'))
+
+        self.assertEqual(u'adj12321nv', safe_to_json(u'adj12321nv'))
 
         self.assertEqual(u'5.2', safe_to_json(5.2))
 

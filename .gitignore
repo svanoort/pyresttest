@@ -54,3 +54,7 @@ coverage.xml
 # Sphinx documentation
 docs/_build/
 
+venv/include/
+venv/lib64
+venv/pyvenv.cfg
+venv/share/

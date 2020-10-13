@@ -1,26 +1,14 @@
 # -*- coding: utf-8 -*-
 
 import unittest
-import string
+from unittest import mock
 
-from . import tests
-from .tests import *
-from . import binding
-from .binding import Context
-from . import contenthandling
-from .contenthandling import ContentHandler
-from . import generators
+from pytest import fail
 
-PYTHON_MAJOR_VERSION = sys.version_info[0]
-if PYTHON_MAJOR_VERSION > 2:
-    from unittest import mock
-else:
-    import mock
+from pyresttest import generators
+from pyresttest.binding import Context
+from pyresttest.tests import *
 
-# Python 3 compatibility shims
-from . import six
-from .six import binary_type
-from .six import text_type
 
 class TestsTest(unittest.TestCase):
     """ Testing for basic REST test methods, how meta! """
@@ -34,7 +22,6 @@ class TestsTest(unittest.TestCase):
         self.assertRaises(TypeError, coerce_to_string, {'key': 'value'})
         self.assertRaises(TypeError, coerce_to_string, None)
 
-
     def test_coerce_http_method(self):
         self.assertEqual(u'HEAD', coerce_http_method(u'hEaD'))
         self.assertEqual(u'HEAD', coerce_http_method(b'hEaD'))
@@ -42,13 +29,11 @@ class TestsTest(unittest.TestCase):
         self.assertRaises(TypeError, coerce_http_method, None)
         self.assertRaises(TypeError, coerce_http_method, u'')
 
-
     def test_coerce_string_to_ascii(self):
         self.assertEqual(b'stuff', coerce_string_to_ascii(u'stuff'))
         self.assertRaises(UnicodeEncodeError, coerce_string_to_ascii, u'st😽uff')
         self.assertRaises(TypeError, coerce_string_to_ascii, 1)
         self.assertRaises(TypeError, coerce_string_to_ascii, None)
-
 
     def test_coerce_list_of_ints(self):
         self.assertEqual([1], coerce_list_of_ints(1))
@@ -85,9 +70,9 @@ class TestsTest(unittest.TestCase):
         """ Test basic ways of creating test objects from input object structure """
         # Most basic case
         myinput = {"url": "/ping", "method": "DELETE", "NAME": "foo", "group": "bar",
-                 "body": "<xml>input</xml>", "headers": {"Accept": "Application/json"}}
+                   "body": "<xml>input</xml>", "headers": {"Accept": "Application/json"}}
         test = Test.parse_test('', myinput)
-        self.assertEqual(test.url,  myinput['url'])
+        self.assertEqual(test.url, myinput['url'])
         self.assertEqual(test.method, myinput['method'])
         self.assertEqual(test.name, myinput['NAME'])
         self.assertEqual(test.group, myinput['group'])
@@ -106,7 +91,7 @@ class TestsTest(unittest.TestCase):
 
         # Authentication
         myinput = {"url": "/ping", "method": "GET",
-                 "auth_username": "foo", "auth_password": "bar"}
+                   "auth_username": "foo", "auth_password": "bar"}
         test = Test.parse_test('', myinput)
         self.assertEqual('foo', myinput['auth_username'])
         self.assertEqual('bar', myinput['auth_password'])
@@ -114,7 +99,7 @@ class TestsTest(unittest.TestCase):
 
         # Test that headers propagate
         myinput = {"url": "/ping", "method": "GET",
-                 "headers": [{"Accept": "application/json"}, {"Accept-Encoding": "gzip"}]}
+                   "headers": [{"Accept": "application/json"}, {"Accept-Encoding": "gzip"}]}
         test = Test.parse_test('', myinput)
         expected_headers = {"Accept": "application/json",
                             "Accept-Encoding": "gzip"}
@@ -130,7 +115,7 @@ class TestsTest(unittest.TestCase):
 
         # Test expected status propagates and handles conversion to integer
         myinput = [{"url": "/ping"}, {"name": "cheese"},
-                 {"expected_status": ["200", 204, "202"]}]
+                   {"expected_status": ["200", 204, "202"]}]
         test = Test.parse_test('', myinput)
         self.assertEqual(test.name, "cheese")
         self.assertEqual(test.expected_status, [200, 204, 202])
@@ -184,43 +169,18 @@ class TestsTest(unittest.TestCase):
     # We can't use version specific skipIf decorator b/c python 2.6 unittest lacks it
     def test_use_custom_curl(self):
         """ Test that test method really does configure correctly """
-        if PYTHON_MAJOR_VERSION > 2:
-            # In python 3, use of mocks for the curl setopt version (or via setattr)
-            # Will not modify the actual curl object... so test fails
-            print("Skipping test of CURL configuration for redirects because the mocks fail")
-            raise unittest.SkipTest("Skipping test of CURL configuration for redirects because the mocks fail")
 
-        test = Test()
-        test.curl_options = {'FOLLOWLOCATION': True, 'MAXREDIRS': 5}
-        mock_handle = pycurl.Curl()
-
-        mock_handle.setopt = mock.MagicMock(return_value=True)
-        test.configure_curl(curl_handle=mock_handle)
-
-        # print mock_handle.setopt.call_args_list  # Debugging
-        mock_handle.setopt.assert_any_call(mock_handle.FOLLOWLOCATION, True)
-        mock_handle.setopt.assert_any_call(mock_handle.MAXREDIRS, 5)
-        mock_handle.close()
+        # In python 3, use of mocks for the curl setopt version (or via setattr)
+        # Will not modify the actual curl object... so test fails
+        print("Skipping test of CURL configuration for redirects because the mocks fail")
+        raise unittest.SkipTest("Skipping test of CURL configuration for redirects because the mocks fail")
 
     def test_basic_auth(self):
         """ Test that basic auth configures correctly """
-        if PYTHON_MAJOR_VERSION > 2:
-            # In python 3, use of mocks for the curl setopt version (or via setattr)
-            # Will not modify the actual curl object... so test fails
-            print("Skipping test of CURL configuration for basic auth because the mocks fail in Py3")
-            return
-
-        test = Test()
-        test.auth_username = u'bobbyg'
-        test.auth_password = 'password'
-        mock_handle = pycurl.Curl()
-
-        mock_handle.setopt = mock.MagicMock(return_value=True)
-        test.configure_curl(curl_handle=mock_handle)
-
-        # print mock_handle.setopt.call_args_list  # Debugging
-        mock_handle.setopt.assert_any_call(mock_handle.USERPWD, b'bobbyg:password')
-        mock_handle.close()
+        # In python 3, use of mocks for the curl setopt version (or via setattr)
+        # Will not modify the actual curl object... so test fails
+        print("Skipping test of CURL configuration for basic auth because the mocks fail in Py3")
+        return
 
     def test_parse_test_templated_headers(self):
         """ Test parsing with templated headers """
@@ -470,6 +430,7 @@ class TestsTest(unittest.TestCase):
         self.assertEqual(1, context.get_value('foo'))
         test.update_context_before(context)
         self.assertEqual(2, context.get_value('foo'))
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,6 +1,5 @@
 import unittest
-from . import binding
-from .binding import Context
+from pyresttest.binding import Context
 
 
 def count_gen():  # Generator that counts up from 1

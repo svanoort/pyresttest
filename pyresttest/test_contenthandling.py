@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
+import json
 import unittest
 import string
 import os
-from . import contenthandling
-from .contenthandling import ContentHandler
-from . import binding
-from .binding import Context
+from pyresttest.contenthandling import ContentHandler
+from pyresttest.binding import Context
 
 
 class ContentHandlerTest(unittest.TestCase):
@@ -207,7 +206,7 @@ class ContentHandlerTest(unittest.TestCase):
 
         for config in failing_configs:
             try:
-                handler = ContentHandler.parse_content(node)
+                handler = ContentHandler.parse_content(config)
                 self.fail("Should raise an exception on invalid parse, config: " +
                           json.dumps(config, default=lambda o: o.__dict__))
             except Exception:

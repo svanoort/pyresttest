@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 import unittest
 
-from . import validators
-from .validators import register_extractor
-from . import binding
-from .binding import Context
+from pyresttest import validators
+from pyresttest.validators import register_extractor
+from pyresttest.binding import Context
 
 class ValidatorsTest(unittest.TestCase):
     """ Testing for validators and extract functions """

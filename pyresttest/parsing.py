@@ -5,13 +5,14 @@ def encode_unicode_bytes(my_string):
     """ Shim function, converts Unicode to UTF-8 encoded bytes regardless of the source format
         Intended for python 3 compatibility mode, and b/c PyCurl only takes raw bytes
     """
-    if not isinstance(my_string, str):
-        my_string = repr(my_string)
-
-    if isinstance(my_string, str):
-        return my_string.encode('utf-8')
-    elif isinstance(my_string, bytes):
+    if isinstance(my_string, (bytearray, bytes)):
         return my_string
+    else:
+        my_string = str(my_string)
+    if isinstance(my_string, str):
+        my_string = my_string.encode('utf-8')
+
+    return my_string
 
 # TODO create a full class that extends string.Template
 def safe_substitute_unicode_template(templated_string, variable_map):

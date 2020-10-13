@@ -30,30 +30,34 @@ HTTP_METHODS = {u'GET': pycurl.HTTPGET,
 
 # Parsing helper functions
 def coerce_to_string(val):
-    if isinstance(val, text_type):
+    if isinstance(val, str):
         return val
     elif isinstance(val, int):
-        return text_type(val)
-    elif isinstance(val, binary_type):
+        return str(val)
+    elif isinstance(val, (bytes, bytearray)):
         return val.decode('utf-8')
     else:
         raise TypeError("Input {0} is not a string or integer, and it needs to be!".format(val))
 
 
 def coerce_string_to_ascii(val):
-    if isinstance(val, text_type):
+    if isinstance(val, str):
         return val.encode('ascii')
-    elif isinstance(val, binary_type):
+    elif isinstance(val, (bytes, bytearray)):
         return val
     else:
         raise TypeError("Input {0} is not a string, string expected".format(val))
 
 
-def coerce_http_method(val):
+def coerce_http_method(val: str):
+    try:
+        val = val.decode()
+    except (UnicodeDecodeError, AttributeError):
+        pass
     if not isinstance(val, str) or len(val) == 0:
         raise TypeError("Invalid HTTP method name: input {0} is not a string or has 0 length".format(val))
-    if isinstance(val, binary_type):
-        val = val.decode('utf-8')
+
+
     return val.upper()
 
 
@@ -286,15 +290,11 @@ class Test(object):
         curl.setopt(curl.URL, str(self.url))
         curl.setopt(curl.TIMEOUT, timeout)
 
-        is_unicoded = False
-        bod = self.body
-        if isinstance(bod, text_type):  # Encode unicode
-            bod = bod.encode('UTF-8')
-            is_unicoded = True
+        self.body = self.body.encode('UTF-8')
 
         # Set read function for post/put bodies
-        if bod and len(bod) > 0:
-            curl.setopt(curl.READFUNCTION, MyIO(bod).read)
+        if self.body and len(self.body) > 0:
+            curl.setopt(curl.READFUNCTION, MyIO(self.body).read)
 
         if self.auth_username and self.auth_password:
             curl.setopt(pycurl.USERPWD,
@@ -306,50 +306,49 @@ class Test(object):
         if self.method == u'POST':
             curl.setopt(HTTP_METHODS[u'POST'], 1)
             # Required for some servers
-            if bod is not None:
-                curl.setopt(pycurl.POSTFIELDSIZE, len(bod))
+            if self.body is not None:
+                curl.setopt(pycurl.POSTFIELDSIZE, len(self.body))
             else:
                 curl.setopt(pycurl.POSTFIELDSIZE, 0)
         elif self.method == u'PUT':
             curl.setopt(HTTP_METHODS[u'PUT'], 1)
             # Required for some servers
-            if bod is not None:
-                curl.setopt(pycurl.INFILESIZE, len(bod))
+            if self.body is not None:
+                curl.setopt(pycurl.INFILESIZE, len(self.body))
             else:
                 curl.setopt(pycurl.INFILESIZE, 0)
         elif self.method == u'PATCH':
-            curl.setopt(curl.POSTFIELDS, bod)
+            curl.setopt(curl.POSTFIELDS, self.body)
             curl.setopt(curl.CUSTOMREQUEST, 'PATCH')
             # Required for some servers
             # I wonder: how compatible will this be?  It worked with Django but feels iffy.
-            if bod is not None:
-                curl.setopt(pycurl.INFILESIZE, len(bod))
+            if self.body is not None:
+                curl.setopt(pycurl.INFILESIZE, len(self.body))
             else:
                 curl.setopt(pycurl.INFILESIZE, 0)
         elif self.method == u'DELETE':
             curl.setopt(curl.CUSTOMREQUEST, 'DELETE')
-            if bod is not None:
-                curl.setopt(pycurl.POSTFIELDS, bod)
-                curl.setopt(pycurl.POSTFIELDSIZE, len(bod))
+            if self.body is not None:
+                curl.setopt(pycurl.POSTFIELDS, self.body)
+                curl.setopt(pycurl.POSTFIELDSIZE, len(self.body))
         elif self.method == u'HEAD':
             curl.setopt(curl.NOBODY, 1)
             curl.setopt(curl.CUSTOMREQUEST, 'HEAD')
         elif self.method and self.method.upper() != 'GET':  # Alternate HTTP methods
             curl.setopt(curl.CUSTOMREQUEST, self.method.upper())
-            if bod is not None:
-                curl.setopt(pycurl.POSTFIELDS, bod)
-                curl.setopt(pycurl.POSTFIELDSIZE, len(bod))
+            if self.body is not None:
+                curl.setopt(pycurl.POSTFIELDS, self.body)
+                curl.setopt(pycurl.POSTFIELDSIZE, len(self.body))
 
         # Template headers as needed and convert headers dictionary to list of header entries
         head = self.get_headers(context=context)
         head = copy.copy(head)  # We're going to mutate it, need to copy
 
         # Set charset if doing unicode conversion and not set explicitly
-        # TESTME
-        if is_unicoded and u'content-type' in head.keys():
+        if head.get('content-type'):
             content = head[u'content-type']
-            if u'charset' not in content:
-                head[u'content-type'] = content + u' ; charset=UTF-8'
+            if 'charset' not in content:
+                head['content-type'] = content + ' ; charset=UTF-8'
 
         if head:
             headers = [str(headername) + ':' + str(headervalue)
