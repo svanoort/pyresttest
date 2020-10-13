@@ -1,9 +1,6 @@
-from dataclasses import dataclass
 
 DEFAULT_TIMEOUT = 10
 
-
-@dataclass(frozen=True)
 class YamlKeyWords:
     IMPORT = 'import'
     TEST = 'test'
