@@ -147,7 +147,7 @@ Manually copying in a working system pycurl installation may help:
 * The [Quickstart](quickstart.md) should be *everyone's* starting point
 * Here's a [really good example](examples/miniapp-extract-validate.yaml) for how to create a user and then do tests on it.  
   - This shows how to use extraction from responses, templating, and different test types
-* If you're trying to do something fancy, take a look at the [content-test.yaml](pyresttest/content-test.yaml).
+* If you're trying to do something fancy, take a look at the [content-test.yaml](py3resttest/tests/content-test.yaml).
   - This shows most kinds of templating & variable uses. It shows how to read from file, using a variable in the file path, and templating on its content!
 * PyRestTest isn't limited to JSON; there's an [example for submitting form data](https://github.com/svanoort/pyresttest/tree/master/examples/dummyapp-posting-forms.yaml)
 * There's a [whole folder](https://github.com/svanoort/pyresttest/tree/master/examples) of example tests to help get started

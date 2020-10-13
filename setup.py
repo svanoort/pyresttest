@@ -16,7 +16,7 @@ else:
     test_dependencies.append('mock')
     test_dependencies.append('discover')
 
-setup(name='pyresttest',
+setup(name='py3resttest',
       version='1.7.2.dev',
       description='Python RESTful API Testing & Micro benchmarking Tool',
       long_description='Python RESTful API Testing & Microbenchmarking Tool \n Documentation at https://github.com/svanoort/pyresttest',
@@ -36,12 +36,12 @@ setup(name='pyresttest',
           'Topic :: Software Development :: Quality Assurance',
           'Topic :: Utilities'
       ],
-      py_modules=['pyresttest.resttest', 'pyresttest.generators', 'pyresttest.binding',
-                  'pyresttest.parsing', 'pyresttest.validators', 'pyresttest.contenthandling',
-                  'pyresttest.benchmarks', 'pyresttest.tests',
-                  'pyresttest.six',
-                  'pyresttest.ext.validator_jsonschema',
-                  'pyresttest.ext.extractor_jmespath'],
+      py_modules=['py3resttest.resttest', 'py3resttest.generators', 'py3resttest.binding',
+                  'py3resttest.parsing', 'py3resttest.validators', 'py3resttest.contenthandling',
+                  'py3resttest.benchmarks', 'py3resttest.tests',
+                  'py3resttest.six',
+                  'py3resttest.ext.validator_jsonschema',
+                  'py3resttest.ext.extractor_jmespath'],
       license='Apache License, Version 2.0',
       install_requires=dependencies,
       tests_require=test_dependencies,
@@ -50,6 +50,6 @@ setup(name='pyresttest',
           'JMESPath': ['jmespath']
       },
       # Make this executable from command line when installed
-      scripts=['util/pyresttest', 'util/resttest.py'],
-      provides=['pyresttest']
+      scripts=['util/py3resttest', 'util/resttest.py'],
+      provides=['py3resttest']
       )
