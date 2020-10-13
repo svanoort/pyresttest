@@ -19,7 +19,7 @@ jobs:
 
     steps:
     - name: Install xmllint
-      run: sudo apt-get install python-pycurl
+      run: sudo apt-get install -y python-pycurl libssl-dev libcurl4-openssl-dev python-dev
     - uses: actions/checkout@v2
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
