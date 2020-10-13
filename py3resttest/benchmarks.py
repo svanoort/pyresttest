@@ -2,9 +2,9 @@ import math
 import json
 import pycurl
 
-from constants import DEFAULT_TIMEOUT
-from tests import Test, coerce_to_string
-from parsing import *
+from py3resttest.constants import DEFAULT_TIMEOUT
+from py3resttest.tests import Test, coerce_to_string
+from py3resttest.parsing import *
 
 
 

@@ -1,11 +1,7 @@
-import json
-import math
-import string
-import yaml
 import unittest
-
+from py3resttest.benchmarks import Benchmark
 from py3resttest import resttest
-from resttest import *
+from py3resttest.resttest import *
 
 
 class TestRestTest(unittest.TestCase):
@@ -50,11 +46,11 @@ class TestRestTest(unittest.TestCase):
         headers = packed[0]
 
         # Check header generation
-        for x in xrange(0, len(keys)):
+        for x in range(0, len(keys)):
             self.assertEqual(keys[x], headers[x])
 
         # Check data was correctly converted to 2D format, in order of input
-        for x in xrange(1, len(array1) + 1):
+        for x in range(1, len(array1) + 1):
             my_tuple = packed[x]
             self.assertEqual(array1[x - 1], my_tuple[0])
             self.assertEqual(array2[x - 1], my_tuple[1])
@@ -105,7 +101,7 @@ class TestRestTest(unittest.TestCase):
             print("Skipping jmespath import test because library absent")
             raise unittest.SkipTest("JMESPath module absent")
 
-        from . import validators
+        from py3resttest import validators
         self.assertTrue('jmespath' in validators.EXTRACTORS)
         jmespathext = validators.EXTRACTORS['jmespath']('test1.a')
 

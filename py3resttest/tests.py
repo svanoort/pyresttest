@@ -1,16 +1,13 @@
-import string
-import os
+
 import copy
 import json
 import pycurl
-import sys
 
-import contenthandling
-from constants import DEFAULT_TIMEOUT
-from contenthandling import ContentHandler
-from urllib.parse import urlparse, urljoin
-import validators
-from parsing import *
+from py3resttest.constants import DEFAULT_TIMEOUT
+from py3resttest.contenthandling import ContentHandler
+from urllib.parse import urljoin
+from py3resttest import validators
+from py3resttest.parsing import *
 from io import BytesIO as MyIO
 
 """

@@ -1,6 +1,5 @@
 import unittest
-from py3resttest import benchmarks
-from benchmarks import *
+from py3resttest.benchmarks import *
 
 
 class BenchmarkTest(unittest.TestCase):

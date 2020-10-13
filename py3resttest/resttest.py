@@ -16,7 +16,7 @@ import yaml
 
 from io import BytesIO
 
-from benchmarks import METRICS, AGGREGATES, parse_benchmark
+from py3resttest.benchmarks import METRICS, AGGREGATES, parse_benchmark
 from py3resttest.constants import YamlKeyWords
 from py3resttest.binding import Context
 from py3resttest import generators
@@ -25,7 +25,8 @@ from py3resttest.generators import parse_generator
 from py3resttest.parsing import flatten_dictionaries, lowercase_keys, safe_to_bool, safe_to_json
 
 from py3resttest.validators import Failure
-from tests import Test, DEFAULT_TIMEOUT
+from py3resttest.tests import Test
+from py3resttest.constants import DEFAULT_TIMEOUT
 ESCAPE_DECODING = 'unicode_escape'
 
 """

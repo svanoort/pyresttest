@@ -6,7 +6,7 @@ from pytest import fail
 
 from py3resttest import generators
 from py3resttest.binding import Context
-from tests import *
+from py3resttest.tests import *
 
 
 class TestsTest(unittest.TestCase):

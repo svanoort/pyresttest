@@ -364,7 +364,7 @@ class ComparatorValidator(AbstractValidator):
             expected_val = self.expected
 
         # Handle a bytes-based body and a unicode expected value seamlessly
-        if isinstance(extracted_val, bool) and isinstance(expected_val, str):
+        if isinstance(extracted_val, bytes) and isinstance(expected_val, str):
             expected_val = expected_val.encode('utf-8')
         comparison = self.comparator(extracted_val, expected_val)
 
