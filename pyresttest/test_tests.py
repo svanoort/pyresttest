@@ -434,7 +434,7 @@ class TestsTest(unittest.TestCase):
         self.assertEqual(1, len(head))
         self.assertEqual('$val', head['$key'])
 
-        test.set_headers(head_templated, isTemplate=True)
+        test.set_headers(head_templated, is_template=True)
         self.assertTrue(test.templates)
         self.assertTrue(test.NAME_HEADERS in test.templates)
 

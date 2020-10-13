@@ -1,21 +1,12 @@
 import math
 import json
 import pycurl
-import sys
 
-from . import tests
-from .tests import Test
-from . import parsing
-from .parsing import *
+from constants import DEFAULT_TIMEOUT
+from tests import Test, coerce_to_string
+from parsing import *
 
-# Python 2/3 switches
-if sys.version_info[0] > 2:
-    from past.builtins import basestring
 
-# Python 3 compatibility shims
-from . import six
-from .six import binary_type
-from .six import text_type
 
 """
 Encapsulates logic related to benchmarking
@@ -109,10 +100,7 @@ def std_deviation(array):
 
     average = AGGREGATES['mean_arithmetic'](array)
     variance = map(lambda x: (x - average)**2, array)
-    try:
-        len(variance)
-    except TypeError:  # Python 3.3 workaround until can use the statistics module from 3.4
-        variance = list(variance)
+    variance = list(variance)
     stdev = AGGREGATES['mean_arithmetic'](variance)
     return math.sqrt(stdev)
 
@@ -193,13 +181,9 @@ def realize_partial(self, context=None):
         # Enhanceme - once extract is done, check if variables already bound,
         # in that case template out
         return self
-    else:
-        copyout = copy.cop
-
-    pass
 
 
-def configure_curl(self, timeout=tests.DEFAULT_TIMEOUT, context=None, curl_handle=None):
+def configure_curl(self, timeout=DEFAULT_TIMEOUT, context=None, curl_handle=None):
     curl = super().configure_curl(self, timeout=timeout,
                                   context=context, curl_handle=curl_handle)
     # Simulate results from different users hitting server
@@ -229,42 +213,42 @@ def parse_benchmark(base_url, node):
             else:
                 raise ValueError('Invalid benchmark output format: ' + format)
         elif key == u'output_file':
-            if not isinstance(value, basestring):
+            if not isinstance(value, str):
                 raise ValueError("Invalid output file format")
             benchmark.output_file = value
         elif key == u'metrics':
-            if isinstance(value, basestring):
+            if isinstance(value, str):
                 # Single value
-                benchmark.add_metric(tests.coerce_to_string(value))
+                benchmark.add_metric(coerce_to_string(value))
             # FIXME refactor the parsing of metrics here, lots of duplicated logic
             elif isinstance(value, list) or isinstance(value, set):
                 # List of single values or list of {metric:aggregate, ...}
                 for metric in value:
                     if isinstance(metric, dict):
                         for metricname, aggregate in metric.items():
-                            if not isinstance(metricname, basestring):
+                            if not isinstance(metricname, str):
                                 raise TypeError(
                                     "Invalid metric input: non-string metric name")
-                            if not isinstance(aggregate, basestring):
+                            if not isinstance(aggregate, str):
                                 raise TypeError(
                                     "Invalid aggregate input: non-string aggregate name")
                             # TODO unicode-safe this
-                            benchmark.add_metric(tests.coerce_to_string(metricname),
-                                tests.coerce_to_string(aggregate))
+                            benchmark.add_metric(coerce_to_string(metricname),
+                                coerce_to_string(aggregate))
 
-                    elif isinstance(metric, basestring):
-                        benchmark.add_metric(tests.coerce_to_string(metric))
+                    elif isinstance(metric, str):
+                        benchmark.add_metric(coerce_to_string(metric))
             elif isinstance(value, dict):
                 # Dictionary of metric-aggregate pairs
                 for metricname, aggregate in value.items():
-                    if not isinstance(metricname, basestring):
+                    if not isinstance(metricname, str):
                         raise TypeError(
                             "Invalid metric input: non-string metric name")
-                    if not isinstance(aggregate, basestring):
+                    if not isinstance(aggregate, str):
                         raise TypeError(
                             "Invalid aggregate input: non-string aggregate name")
-                    benchmark.add_metric(tests.coerce_to_string(metricname),
-                        tests.coerce_to_string(aggregate))
+                    benchmark.add_metric(coerce_to_string(metricname),
+                        coerce_to_string(aggregate))
             else:
                 raise TypeError(
                     "Invalid benchmark metric datatype: " + str(value))

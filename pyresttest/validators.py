@@ -5,21 +5,11 @@ import traceback
 import string
 import os
 import re
-import sys
 
-# Local module imports
-from . import parsing
+from pyresttest import parsing
 
-# Python 3 compatibility shims
-from . import six
-from .six import binary_type
-from .six import text_type
 
-# Python 3 compatibility
-PYTHON_MAJOR_VERSION = sys.version_info[0]
-if PYTHON_MAJOR_VERSION > 2:
-    from past.builtins import basestring
-    from past.builtins import long
+
 
 """
 Validator/Extractor logic for utility use
@@ -70,16 +60,16 @@ COMPARATORS['length_eq'] = COMPARATORS['count_eq']
 TYPES = {
     'null': type(None),
     'none': type(None),
-    'number': (int, long, float),
-    'int': (int, long),
+    'number': (int,  float),
+    'int': (int, ),
     'float': float,
     'boolean': bool,
-    'string': basestring,
+    'string': str,
     'array': list,
     'list': list,
     'dict': dict,
     'map': dict,
-    'scalar': (bool, int, long, float, basestring, type(None)),
+    'scalar': (bool, int,  float, str, type(None)),
     'collection': (list, dict, set)
 }
 
@@ -215,7 +205,7 @@ class AbstractExtractor(object):
             except KeyError:
                 raise ValueError(
                     "Cannot define a dictionary config for abstract extractor without it having template key")
-        elif isinstance(config, basestring):
+        elif isinstance(config, str):
             extractor_base.query = config
             extractor_base.is_templated = False
         else:
@@ -232,8 +222,6 @@ class MiniJsonExtractor(AbstractExtractor):
     is_body_extractor = True
 
     def extract_internal(self, query=None, args=None, body=None, headers=None):
-        if PYTHON_MAJOR_VERSION > 2 and isinstance(body, binary_type):
-            body = text_type(body, 'utf-8')  # Default JSON encoding
 
         try:
             body = json.loads(body)
@@ -376,7 +364,7 @@ class ComparatorValidator(AbstractValidator):
             expected_val = self.expected
 
         # Handle a bytes-based body and a unicode expected value seamlessly
-        if isinstance(extracted_val, binary_type) and isinstance(expected_val, text_type):
+        if isinstance(extracted_val, bool) and isinstance(expected_val, str):
             expected_val = expected_val.encode('utf-8')
         comparison = self.comparator(extracted_val, expected_val)
 
@@ -429,13 +417,13 @@ class ComparatorValidator(AbstractValidator):
         # Expected value can be another extractor query, or a single value, or
         # a templated value
 
-        if isinstance(expected, basestring) or isinstance(expected, (int, long, float, complex)):
+        if isinstance(expected, str) or isinstance(expected, (int, float, complex)):
             output.expected = expected
         elif isinstance(expected, dict):
             expected = parsing.lowercase_keys(expected)
             template = expected.get('template')
             if template:  # Templated string
-                if not isinstance(template, basestring):
+                if not isinstance(template, str):
                     raise ValueError(
                         "Can't template a comparator-validator unless template value is a string")
                 output.isTemplateExpected = True
@@ -556,7 +544,7 @@ def register_validator(name, parse_function):
 
 def register_extractor(extractor_name, parse_function):
     """ Register a new body extraction function """
-    if not isinstance(extractor_name, basestring):
+    if not isinstance(extractor_name, str):
         raise TypeError("Cannot register a non-string extractor name")
     if extractor_name.lower() == 'comparator':
         raise ValueError(
@@ -575,7 +563,7 @@ def register_extractor(extractor_name, parse_function):
 
 def register_test(test_name, test_function):
     """ Register a new one-argument test function """
-    if not isinstance(test_name, basestring):
+    if not isinstance(test_name, str):
         raise TypeError("Cannot register a non-string test name")
     elif test_name in VALIDATOR_TESTS:
         raise ValueError(
@@ -585,7 +573,7 @@ def register_test(test_name, test_function):
 
 def register_comparator(comparator_name, comparator_function):
     """ Register a new twpo-argument comparator function returning true or false """
-    if not isinstance(comparator_name, basestring):
+    if not isinstance(comparator_name, str):
         raise TypeError("Cannot register a non-string comparator name")
     elif comparator_name in COMPARATORS:
         raise ValueError(

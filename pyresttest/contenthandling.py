@@ -1,13 +1,5 @@
 import os
-import sys
-
-from . import parsing
-from .parsing import *
-
-# Python 2/3 switches
-PYTHON_MAJOR_VERSION = sys.version_info[0]
-if PYTHON_MAJOR_VERSION > 2:
-    from past.builtins import basestring
+from pyresttest.parsing import *
 
 
 """
@@ -72,7 +64,7 @@ class ContentHandler:
 
     def setup(self, input, is_file=False, is_template_path=False, is_template_content=False):
         """ Self explanatory, input is inline content or file path. """
-        if not isinstance(input, basestring):
+        if not isinstance(input, str):
             raise TypeError("Input is not a string")
         if is_file:
             input = os.path.abspath(input)
@@ -103,7 +95,7 @@ class ContentHandler:
 
         while (node and not is_done):  # Dive through the configuration tree
             # Finally we've found the value!
-            if isinstance(node, basestring):
+            if isinstance(node, str):
                 output.content = node
                 output.setup(node, is_file=is_file, is_template_path=is_template_path,
                              is_template_content=is_template_content)
@@ -118,7 +110,7 @@ class ContentHandler:
             flat = lowercase_keys(flatten_dictionaries(node))
             for key, value in flat.items():
                 if key == u'template':
-                    if isinstance(value, basestring):
+                    if isinstance(value, str):
                         if is_file:
                             value = os.path.abspath(value)
                         output.content = value
@@ -134,7 +126,7 @@ class ContentHandler:
                         break
 
                 elif key == 'file':
-                    if isinstance(value, basestring):
+                    if isinstance(value, str):
                         output.content = os.path.abspath(value)
                         output.is_file = True
                         output.is_template_content = is_template_content

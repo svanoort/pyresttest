@@ -1,4 +1,5 @@
 import sys
+
 try:
     from setuptools import setup
 except ImportError:
@@ -6,18 +7,18 @@ except ImportError:
 
 # Future is needed for pip distribution for python 3 support
 dependencies = ['pyyaml', 'pycurl']
-test_dependencies = ['django==1.6.5','django-tastypie==0.12.1','jsonpath','jmespath']
+test_dependencies = ['django==1.6.5', 'django-tastypie==0.12.1', 'jsonpath', 'jmespath']
 
 # Add additional compatibility shims
 if sys.version_info[0] > 2:
-  dependencies.append('future')  # Only works with direct local installs, not via pip
+    dependencies.append('future')  # Only works with direct local installs, not via pip
 else:
-  test_dependencies.append('mock')
-  test_dependencies.append('discover')
+    test_dependencies.append('mock')
+    test_dependencies.append('discover')
 
 setup(name='pyresttest',
       version='1.7.2.dev',
-      description='Python RESTful API Testing & Microbenchmarking Tool',
+      description='Python RESTful API Testing & Micro benchmarking Tool',
       long_description='Python RESTful API Testing & Microbenchmarking Tool \n Documentation at https://github.com/svanoort/pyresttest',
       author='Sam Van Oort',
       author_email='samvanoort@gmail.com',
@@ -37,16 +38,16 @@ setup(name='pyresttest',
       ],
       py_modules=['pyresttest.resttest', 'pyresttest.generators', 'pyresttest.binding',
                   'pyresttest.parsing', 'pyresttest.validators', 'pyresttest.contenthandling',
-                  'pyresttest.benchmarks', 'pyresttest.tests', 
+                  'pyresttest.benchmarks', 'pyresttest.tests',
                   'pyresttest.six',
                   'pyresttest.ext.validator_jsonschema',
                   'pyresttest.ext.extractor_jmespath'],
       license='Apache License, Version 2.0',
       install_requires=dependencies,
       tests_require=test_dependencies,
-      extras_require= {
-        'JSONSchema': ['jsonschema'],
-        'JMESPath': ['jmespath']
+      extras_require={
+          'JSONSchema': ['jsonschema'],
+          'JMESPath': ['jmespath']
       },
       # Make this executable from command line when installed
       scripts=['util/pyresttest', 'util/resttest.py'],
