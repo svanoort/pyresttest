@@ -5,11 +5,15 @@ __pycache__/
 # C extensions
 *.so
 
+# docker file to test all pytho3 version
+docker-*.yaml
+
 # Distribution / packaging
 .Python
 env/
 bin/
-.idea
+.idea/
+
 build/
 develop-eggs/
 dist/
