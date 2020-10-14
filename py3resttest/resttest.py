@@ -415,7 +415,7 @@ def run_benchmark(benchmark, test_config=TestConfig(), context=None, *args, **kw
     benchmark_runs = benchmark.benchmark_runs
     message = ''  # Message is name of benchmark... print it?
 
-    if (benchmark_runs <= 0):
+    if benchmark_runs <= 0:
         raise Exception(
             "Invalid number of benchmark runs, must be > 0 :" + benchmark_runs)
 

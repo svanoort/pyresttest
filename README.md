@@ -1,6 +1,8 @@
 py3resttest
 ==========
 
+This is a clone of pyresttest to support py3 and optimize lot of functionality. 
+*This is in dev staging*
 
 # Table of Contents
 
@@ -42,11 +44,6 @@ py3resttest
 **NEW: Full Python 3 Support in Alpha** - download it, 'pip install future' and give it a try!
  
 Apache License, Version 2.0
-
-![Status Badge](http://52.4.228.82:8080/jenkins/buildStatus/icon?job=set-main-build-status) [![PyPI version](https://badge.fury.io/py/pyresttest.svg)](https://badge.fury.io/py/pyresttest) 
-[![PyPI](https://img.shields.io/pypi/dm/Pyresttest.svg)]()
-
-[![Join the chat at https://gitter.im/svanoort/pyresttest](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/svanoort/pyresttest?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 [Changelog](CHANGELOG.md) shows the past and present, [milestones](https://github.com/svanoort/pyresttest/milestones) show the future roadmap.
 
