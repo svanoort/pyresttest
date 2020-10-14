@@ -6,7 +6,7 @@ __pycache__/
 *.so
 
 # docker file to test all pytho3 version
-docker-*.yaml
+docker-*
 
 # Distribution / packaging
 .Python
