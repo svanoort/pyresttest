@@ -7,6 +7,7 @@ __pycache__/
 
 # docker file to test all pytho3 version
 docker-*
+Dockerfile*
 
 # Distribution / packaging
 .Python

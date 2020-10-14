@@ -1,8 +1,8 @@
-import unittest
-import string
 import os
-import types
+import string
 import sys
+import types
+import unittest
 
 from py3resttest import generators
 
@@ -252,6 +252,7 @@ class GeneratorTest(unittest.TestCase):
         self.assertEqual(11, next(gen))
         self.generator_basic_test(gen)
         del config['type']
+
 
 if __name__ == '__main__':
     unittest.main()

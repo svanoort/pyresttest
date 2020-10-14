@@ -1,22 +1,21 @@
 #!/usr/bin/env python
+import json
+import logging
 import os
 import sys
 import time
-import json
 import unittest
-import logging
 from multiprocessing import Process
 
 from django.core.management import call_command
 
-from tests import Test
 from binding import Context
 from py3resttest import resttest
 from py3resttest import validators
-
+from tests import Test
+from .six import binary_type
 # Python 2/3 compat shims
 from .six import text_type
-from .six import binary_type
 
 # Django testing settings, initial configuration
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "testapp.settings")
@@ -76,7 +75,7 @@ class RestTestCase(unittest.TestCase):
         test.expected_status = [202]  # Django returns 202
         test_response = resttest.run_test(test)
         self.assertTrue(test_response.passed)
-        #self.assertEqual(202, test_response.response_code)
+        # self.assertEqual(202, test_response.response_code)
 
     def test_get_redirect(self):
         """ Basic local get test """
@@ -251,7 +250,6 @@ class RestTestCase(unittest.TestCase):
             bod = text_type(bod, 'utf-8')
         print(json.dumps(json.loads(bod)))
 
-
     def test_delete(self):
         """ Try removing an item """
         test = Test()
@@ -316,7 +314,7 @@ class RestTestCase(unittest.TestCase):
 
     def test_use_validator_ext_jsonschema(self):
         try:
-            import jsonschema           
+            import jsonschema
         except ImportError:
             print("Skipping jsonschema import test because library absent")
             raise unittest.SkipTest("JSONSchema module absent")
@@ -333,10 +331,10 @@ class RestTestCase(unittest.TestCase):
 
     def test_use_validators_jmespath_fail(self):
         try:
-            import jmespath            
+            import jmespath
         except ImportError:
             print("Skipping jmespath import test because library absent")
-            raise unittest.SkipTest("JMESPath module absent")   
+            raise unittest.SkipTest("JMESPath module absent")
 
         """ Test validators that should fail """
         test = Test()

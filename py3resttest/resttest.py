@@ -8,25 +8,24 @@ import threading
 import time
 import traceback
 from email import message_from_string
+from io import BytesIO
 from optparse import OptionParser
 from urllib.parse import urljoin
 
 import pycurl
 import yaml
 
-from io import BytesIO
-
-from py3resttest.benchmarks import METRICS, AGGREGATES, parse_benchmark
-from py3resttest.constants import YamlKeyWords
-from py3resttest.binding import Context
 from py3resttest import generators
 from py3resttest import validators
+from py3resttest.benchmarks import METRICS, AGGREGATES, parse_benchmark
+from py3resttest.binding import Context
+from py3resttest.constants import DEFAULT_TIMEOUT
+from py3resttest.constants import YamlKeyWords
 from py3resttest.generators import parse_generator
 from py3resttest.parsing import flatten_dictionaries, lowercase_keys, safe_to_bool, safe_to_json
-
+from py3resttest.testcase import Test
 from py3resttest.validators import Failure
-from py3resttest.tests import Test
-from py3resttest.constants import DEFAULT_TIMEOUT
+
 ESCAPE_DECODING = 'unicode_escape'
 
 """
@@ -732,14 +731,17 @@ def register_extensions(modules):
             raise ImportError(
                 "Extension to register did not contain any registries: {0}".format(ext))
 
+
 try:
     import jsonschema
+
     register_extensions('py3resttest.ext.validator_jsonschema')
 except ImportError as ie:
     logging.debug("Failed to load jsonschema validator, make sure the jsonschema "
                   "module is installed if you wish to use schema validators.")
 try:
     import jmespath
+
     register_extensions('py3resttest.ext.extractor_jmespath')
 except ImportError as ie:
     logging.debug("Failed to load jmespath extractor, make sure the jmespath module "

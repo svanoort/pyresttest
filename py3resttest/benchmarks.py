@@ -1,12 +1,11 @@
-import math
 import json
+import math
+
 import pycurl
 
 from py3resttest.constants import DEFAULT_TIMEOUT
-from py3resttest.tests import Test, coerce_to_string
 from py3resttest.parsing import *
-
-
+from py3resttest.testcase import Test, coerce_to_string
 
 """
 Encapsulates logic related to benchmarking
@@ -14,7 +13,6 @@ Encapsulates logic related to benchmarking
 - Benchmark object that extends tests.Test object with additional fields
 - Templating/Caching logic specific to benchmarks
 """
-
 
 # Curl metrics for benchmarking, key is name in config file, value is pycurl variable
 # Taken from pycurl docs, this is libcurl variable minus the CURLINFO prefix
@@ -51,7 +49,6 @@ METRICS = {
     # Total time of the previous request.
     'total_time': pycurl.TOTAL_TIME,
 
-
     # Transfer sizes and speeds
     'size_download': pycurl.SIZE_DOWNLOAD,
     'size_upload': pycurl.SIZE_UPLOAD,
@@ -68,11 +65,11 @@ METRICS = {
 # aggregation on an array
 AGGREGATES = {
     'mean_arithmetic':  # AKA the average, good for many things
-    lambda x: float(sum(x)) / float(len(x)),
+        lambda x: float(sum(x)) / float(len(x)),
     'mean':  # Alias for arithmetic mean
-    lambda x: float(sum(x)) / float(len(x)),
+        lambda x: float(sum(x)) / float(len(x)),
     'mean_harmonic':  # Harmonic mean, better predicts average of rates: http://en.wikipedia.org/wiki/Harmonic_mean
-    lambda x: 1.0 / (sum([1.0 / float(y) for y in x]) / float(len(x))),
+        lambda x: 1.0 / (sum([1.0 / float(y) for y in x]) / float(len(x))),
     'median': lambda x: median(x),
     'std_deviation': lambda x: std_deviation(x),
     'sum': lambda x: sum(x),
@@ -99,7 +96,7 @@ def std_deviation(array):
         return 0
 
     average = AGGREGATES['mean_arithmetic'](array)
-    variance = map(lambda x: (x - average)**2, array)
+    variance = map(lambda x: (x - average) ** 2, array)
     variance = list(variance)
     stdev = AGGREGATES['mean_arithmetic'](variance)
     return math.sqrt(stdev)
@@ -234,7 +231,7 @@ def parse_benchmark(base_url, node):
                                     "Invalid aggregate input: non-string aggregate name")
                             # TODO unicode-safe this
                             benchmark.add_metric(coerce_to_string(metricname),
-                                coerce_to_string(aggregate))
+                                                 coerce_to_string(aggregate))
 
                     elif isinstance(metric, str):
                         benchmark.add_metric(coerce_to_string(metric))
@@ -248,7 +245,7 @@ def parse_benchmark(base_url, node):
                         raise TypeError(
                             "Invalid aggregate input: non-string aggregate name")
                     benchmark.add_metric(coerce_to_string(metricname),
-                        coerce_to_string(aggregate))
+                                         coerce_to_string(aggregate))
             else:
                 raise TypeError(
                     "Invalid benchmark metric datatype: " + str(value))

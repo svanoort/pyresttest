@@ -14,6 +14,7 @@ def encode_unicode_bytes(my_string):
 
     return my_string
 
+
 # TODO create a full class that extends string.Template
 def safe_substitute_unicode_template(templated_string, variable_map):
     """ Perform string.Template safe_substitute on unicode input with unicode variable values by using escapes
@@ -21,7 +22,6 @@ def safe_substitute_unicode_template(templated_string, variable_map):
         Returns a Unicode type output, if you want UTF-8 bytes, do encode_unicode_bytes on it
     """
     return string.Template(templated_string).safe_substitute(variable_map)
-
 
 
 def safe_to_json(in_obj):
@@ -72,7 +72,6 @@ def safe_to_bool(input):
     else:
         raise TypeError(
             'Input Object is not a boolean or string form of boolean!')
-
 
 # class SuperConfigurator(object):
 #     """ It's a bird!  It's a plane! No, it's....

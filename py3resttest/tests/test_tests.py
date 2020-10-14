@@ -6,7 +6,7 @@ from pytest import fail
 
 from py3resttest import generators
 from py3resttest.binding import Context
-from py3resttest.tests import *
+from py3resttest.testcase import *
 
 
 class TestsTest(unittest.TestCase):
@@ -51,7 +51,6 @@ class TestsTest(unittest.TestCase):
         """ Verify issue with curloption handling from https://github.com/svanoort/pyresttest/issues/138 """
         testdefinition = {"url": "/ping", "curl_option_timeout": 14, 'curl_Option_interface': 'doesnotexist'}
         test = Test.parse_test('', testdefinition)
-        print(test.curl_options)
         self.assertTrue('TIMEOUT' in test.curl_options)
         self.assertTrue('INTERFACE' in test.curl_options)
         self.assertEqual(14, test.curl_options['TIMEOUT'])

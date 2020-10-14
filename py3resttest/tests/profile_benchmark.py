@@ -1,12 +1,11 @@
 # Profile the basic test execution
 
-from py3resttest import resttest
+import cProfile
+
 from py3resttest.benchmarks import Benchmark
 from py3resttest.binding import Context
 from py3resttest.contenthandling import ContentHandler
 from py3resttest.generators import factory_generate_ids
-
-import cProfile
 
 test = Benchmark()
 test.warmup_runs = 0
@@ -19,7 +18,7 @@ test.aggregated_metrics = {'total_time': ['total', 'mean']}
 test.url = 'http://localhost:8000/api/person/'
 test.name = 'Basic GET'
 print('Basic GET test')
-#cProfile.run('resttest.run_benchmark(test)', sort='cumtime')
+# cProfile.run('resttest.run_benchmark(test)', sort='cumtime')
 
 
 # Test a generator PUT method
@@ -33,5 +32,5 @@ test.body = handler
 context = Context()
 context.add_generator('gen', factory_generate_ids(starting_id=10)())
 test.generator_binds = {'id': 'gen'}
-print ('Running templated PUT test')
+print('Running templated PUT test')
 cProfile.run('resttest.run_benchmark(test, context=context)', sort='cumtime')

@@ -1,15 +1,12 @@
-import logging
 import json
+import logging
 import operator
-import traceback
-import string
 import os
 import re
+import string
+import traceback
 
 from py3resttest import parsing
-
-
-
 
 """
 Validator/Extractor logic for utility use
@@ -31,7 +28,6 @@ Validators:
 """
 
 logger = logging.getLogger('py3resttest.validators')
-
 
 # Binary comparison tests
 COMPARATORS = {
@@ -60,8 +56,8 @@ COMPARATORS['length_eq'] = COMPARATORS['count_eq']
 TYPES = {
     'null': type(None),
     'none': type(None),
-    'number': (int,  float),
-    'int': (int, ),
+    'number': (int, float),
+    'int': (int,),
     'float': float,
     'boolean': bool,
     'string': str,
@@ -69,7 +65,7 @@ TYPES = {
     'list': list,
     'dict': dict,
     'map': dict,
-    'scalar': (bool, int,  float, str, type(None)),
+    'scalar': (bool, int, float, str, type(None)),
     'collection': (list, dict, set)
 }
 
@@ -89,6 +85,7 @@ def test_type(val, mytype):
         return False
     except TypeError:
         return isinstance(val, typelist)
+
 
 # Unury comparison tests
 VALIDATOR_TESTS = {
@@ -113,6 +110,7 @@ def safe_length(var):
 
 def regex_compare(input, regex):
     return bool(re.search(regex, input))
+
 
 # Validator Failure Reasons
 FAILURE_INVALID_RESPONSE = 'Invalid HTTP Response Code'
@@ -162,7 +160,8 @@ class AbstractExtractor(object):
     args = None
 
     def __str__(self):
-        return "Extractor type: {0}, query: {1}, is_templated: {2}, args: {3}".format(self.extractor_type, self.query, self.is_templated, self.args)
+        return "Extractor type: {0}, query: {1}, is_templated: {2}, args: {3}".format(self.extractor_type, self.query,
+                                                                                      self.is_templated, self.args)
 
     def extract_internal(self, query=None, body=None, headers=None, args=None):
         """ Do extraction, query should be pre-templated """
@@ -222,6 +221,9 @@ class MiniJsonExtractor(AbstractExtractor):
     is_body_extractor = True
 
     def extract_internal(self, query=None, args=None, body=None, headers=None):
+
+        if isinstance(body, bytes):
+            body = body.decode()
 
         try:
             body = json.loads(body)
@@ -320,7 +322,7 @@ class ComparatorValidator(AbstractValidator):
     """ Does extract and compare from request body   """
 
     name = 'ComparatorValidator'
-    config = None   # Configuration text, if parsed
+    config = None  # Configuration text, if parsed
     extractor = None
     comparator = None
     comparator_name = ""
@@ -346,7 +348,8 @@ class ComparatorValidator(AbstractValidator):
                 body=body, headers=headers, context=context)
         except Exception as e:
             trace = traceback.format_exc()
-            return Failure(message="Extractor threw exception", details=trace, validator=self, failure_type=FAILURE_EXTRACTOR_EXCEPTION)
+            return Failure(message="Extractor threw exception", details=trace, validator=self,
+                           failure_type=FAILURE_EXTRACTOR_EXCEPTION)
 
         # Compute expected output, either templating or using expected value
         expected_val = None
@@ -356,7 +359,8 @@ class ComparatorValidator(AbstractValidator):
                     body=body, headers=headers, context=context)
             except Exception as e:
                 trace = traceback.format_exc()
-                return Failure(message="Expected value extractor threw exception", details=trace, validator=self, failure_type=FAILURE_EXTRACTOR_EXCEPTION)
+                return Failure(message="Expected value extractor threw exception", details=trace, validator=self,
+                               failure_type=FAILURE_EXTRACTOR_EXCEPTION)
         elif self.isTemplateExpected and context:
             expected_val = string.Template(
                 self.expected).safe_substitute(context.get_values())
@@ -469,7 +473,8 @@ class ExtractTestValidator(AbstractValidator):
                 body=body, headers=headers, context=context)
         except Exception as e:
             trace = traceback.format_exc()
-            return Failure(message="Exception thrown while running extraction from body", details=trace, validator=self, failure_type=FAILURE_EXTRACTOR_EXCEPTION)
+            return Failure(message="Exception thrown while running extraction from body", details=trace, validator=self,
+                           failure_type=FAILURE_EXTRACTOR_EXCEPTION)
 
         tested = self.test_fn(extracted)
         if tested:
@@ -579,6 +584,7 @@ def register_comparator(comparator_name, comparator_function):
         raise ValueError(
             "Cannot register a comparator name that already exists: {0}".format(comparator_name))
     COMPARATORS[comparator_name] = comparator_function
+
 
 # --- REGISTRY OF EXTRACTORS AND VALIDATORS ---
 register_extractor('jsonpath_mini', MiniJsonExtractor.parse)

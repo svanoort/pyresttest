@@ -1,7 +1,8 @@
+import logging
+import os
 import random
 import string
-import os
-import logging
+
 from py3resttest.parsing import flatten_dictionaries, lowercase_keys
 
 """ Collection of generators to be used in templating for test data

@@ -1,6 +1,6 @@
 import os
-from py3resttest.parsing import *
 
+from py3resttest.parsing import *
 
 """
 Encapsulates contend handling logic, for pulling file content into tests

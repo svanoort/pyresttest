@@ -1,6 +1,4 @@
 from django.db import models
-from django.core import serializers
-import json
 
 """
 Models for basic test application

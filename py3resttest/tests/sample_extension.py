@@ -1,13 +1,14 @@
 # Sample python extension
-import py3resttest.validators as validators
-from py3resttest.binding import Context
 import sys
+
+import py3resttest.validators as validators
 
 # Python 3 compatibility
 if sys.version_info[0] > 2:
     from past.builtins import basestring
 from py3resttest.six import text_type
 from py3resttest.six import binary_type
+
 
 class ContainsValidator(validators.AbstractValidator):
     # Sample validator that verifies a string is contained in the request body
@@ -61,15 +62,17 @@ def parse_generator_doubling(config):
     # limitations
     def generator():
         val = start
-        while(True):
+        while (True):
             yield val
             val = val * 2
+
     return generator()
 
 
 def test_is_dict(input):
     """ Simple test that returns true if item is a dictionary """
     return isinstance(input, dict)
+
 
 # This is where the magic happens, each one of these is a registry of
 # validators/extractors/generators to use

@@ -3,8 +3,7 @@ Rest API for basic REST application to use in testing REST testing
 And if that ain't meta I don't know what is!
 """
 from tastypie.authorization import Authorization
-from tastypie.resources import ModelResource, ALL, ALL_WITH_RELATIONS
-from tastypie import fields
+from tastypie.resources import ModelResource, ALL
 from testapp.models import Person
 
 

@@ -23,11 +23,13 @@ print('Test configure curl for 1M runs (s)' + str(time))
 
 # Time for full curl execution on Django testing rest app
 # Time: 41.4s for 10k runs, or about 4.14 ms per
-timeit.timeit("mycurl=mytest.configure_curl(); mycurl.setopt(pycurl.WRITEFUNCTION, lambda x: None); mycurl.perform(); mycurl.close()",
-              setup='import pycurl; from resttest import Test; input = {"url": "/api/person/", "NAME":"foo", "group":"bar"}; mytest=Test.parse_test("http://localhost:8000", input);',
-              number=10000)
+timeit.timeit(
+    "mycurl=mytest.configure_curl(); mycurl.setopt(pycurl.WRITEFUNCTION, lambda x: None); mycurl.perform(); mycurl.close()",
+    setup='import pycurl; from resttest import Test; input = {"url": "/api/person/", "NAME":"foo", "group":"bar"}; mytest=Test.parse_test("http://localhost:8000", input);',
+    number=10000)
 
 # Github perf test, 27 s for 100 runs = 270 ms per
-timeit.timeit("mycurl=mytest.configure_curl(); mycurl.setopt(pycurl.WRITEFUNCTION, lambda x: None); mycurl.perform(); mycurl.close()",
-              setup='import pycurl; from resttest import Test; input = {"url": "/search/users?q=jewzaam", "NAME":"foo", "group":"bar"}; mytest=Test.parse_test("https://api.github.com", input);',
-              number=100)
+timeit.timeit(
+    "mycurl=mytest.configure_curl(); mycurl.setopt(pycurl.WRITEFUNCTION, lambda x: None); mycurl.perform(); mycurl.close()",
+    setup='import pycurl; from resttest import Test; input = {"url": "/search/users?q=jewzaam", "NAME":"foo", "group":"bar"}; mytest=Test.parse_test("https://api.github.com", input);',
+    number=100)

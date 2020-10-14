@@ -1,6 +1,7 @@
 from django.conf.urls import patterns, include, url
-from testapp.api import PersonResource
 from django.contrib import admin
+from testapp.api import PersonResource
+
 admin.autodiscover()
 
 person_resource = PersonResource()

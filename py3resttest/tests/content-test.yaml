@@ -10,17 +10,17 @@
 ---
 - config:
     - testset: "Test content/url/header templating & file read"
-    - variable_binds: {'headername': 'Content-Type', 'headervalue': 'application/json'}
+    - variable_binds: { 'headername': 'Content-Type', 'headervalue': 'application/json' }
 - test:
     - name: "Get person, validate that header validator works right"
     - url: "/api/person/1/"
     - validators:
-        - assertTrue: {header: content-type, test: exists}
+        - assertTrue: { header: content-type, test: exists }
 - test:
     - name: "Create/update person 7, no template"
     - url: "/api/person/7/"
     - method: "PUT"
-    - headers: {template: {'$headername': '$headervalue'}}
+    - headers: { template: { '$headername': '$headervalue' } }
     - body: '{"first_name": "Gaius","id": "7","last_name": "Romani","login": "gromani"}'
 - test:
     - name: "Basic get for simple user"
@@ -35,35 +35,35 @@
     - name: "Get single person"
     - url: "/api/person/9999/"
     - method: 'PUT'
-    - expected_status: [400, 404, 500]
+    - expected_status: [ 400, 404, 500 ]
 
 - test: # Inline body, template URL and body
     - name: "Create/update person 8 with templating"
-    - variable_binds: {id: 8, login: traitor}
-    - url: {"template":"/api/person/$id/"}
+    - variable_binds: { id: 8, login: traitor }
+    - url: { "template": "/api/person/$id/" }
     - method: "PUT"
-    - headers: {'Content-Type': 'application/json'}
-    - body: {template: '{"first_name": "Gaius","id": "$id","last_name": "Baltar","login": "$login"}'}
+    - headers: { 'Content-Type': 'application/json' }
+    - body: { template: '{"first_name": "Gaius","id": "$id","last_name": "Baltar","login": "$login"}' }
 - test:
     - name: "Basic get with templating"
-    - url: {template: "/api/person/$id/"}
+    - url: { template: "/api/person/$id/" }
 - test:
     - name: "Delete single person with templating"
-    - url: {template: "/api/person/$id/"}
+    - url: { template: "/api/person/$id/" }
     - method: 'DELETE'
 - test:
     - name: "Templated get to confirm deletion"
-    - url: {template: "/api/person/8/"}
-    - expected_status: [404]
+    - url: { template: "/api/person/8/" }
+    - expected_status: [ 404 ]
 
 # Body from file with templating for file content
 - test:
     - name: "Create/update person 9 using templated body from file"
-    - variable_binds: {id: 9, login: 'horseyface'}
-    - url: {'template': "/api/person/$id/"}
+    - variable_binds: { id: 9, login: 'horseyface' }
+    - url: { 'template': "/api/person/$id/" }
     - method: "PUT"
-    - headers: {'Content-Type': 'application/json'}
-    - body: {'template':{'file':'person_body_template.json'}}
+    - headers: { 'Content-Type': 'application/json' }
+    - body: { 'template': { 'file': 'person_body_template.json' } }
 - test:
     - name: "Confirm person 9 create"
     - url: "/api/person/9/"
@@ -77,11 +77,11 @@
     - name: "Create/update person 10 using body from file"
     - url: "/api/person/10/"
     - method: "PUT"
-    - headers: {'Content-Type': 'application/json'}
-    - body: {'file':'person_body_notemplate.json'}
+    - headers: { 'Content-Type': 'application/json' }
+    - body: { 'file': 'person_body_notemplate.json' }
 - test:
     - name: "Confirm person 10 create"
-    - url: {template: "/api/person/10/"}
+    - url: { template: "/api/person/10/" }
 - test:
     - name: "Cleanup person 10"
     - url: "/api/person/10/"
@@ -90,11 +90,11 @@
 # Template body path, but not body itself
 - test:
     - name: "Create/update person 10 using templating for body path"
-    - variable_binds: {'path':'person_body_notemplate.json'}
+    - variable_binds: { 'path': 'person_body_notemplate.json' }
     - url: "/api/person/10/"
     - method: "PUT"
-    - headers: {'Content-Type': 'application/json'}
-    - body: {'file':{'template':'$path'}}
+    - headers: { 'Content-Type': 'application/json' }
+    - body: { 'file': { 'template': '$path' } }
 - test:
     - name: "Confirm person 10 create"
     - url: "/api/person/10/"
@@ -112,8 +112,8 @@
         - login: 'random'
     - url: "/api/person/12/"
     - method: "PUT"
-    - headers: {'Content-Type': 'application/json'}
-    - body: {template: {'file':{'template':'$path'}}}
+    - headers: { 'Content-Type': 'application/json' }
+    - body: { template: { 'file': { 'template': '$path' } } }
 - test:
     - name: "Confirm person 12 create"
     - url: "/api/person/12/"

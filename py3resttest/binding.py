@@ -23,7 +23,7 @@ class Context(object):
         if prev != variable_value:
             self.variables[str(variable_name)] = variable_value
             self.mod_count = self.mod_count + 1
-            #logging.debug('Context: altered variable named {0} to value {1}'.format(str_name, variable_value))
+            # logging.debug('Context: altered variable named {0} to value {1}'.format(str_name, variable_value))
 
     def bind_variables(self, variable_map):
         for key, value in variable_map.items():
@@ -38,7 +38,7 @@ class Context(object):
                 'Cannot add generator named {0}, it is not a generator type'.format(generator_name))
 
         self.generators[str(generator_name)] = generator
-        #logging.debug('Context: Added generator named {0}'.format(generator_name))
+        # logging.debug('Context: Added generator named {0}'.format(generator_name))
 
     def bind_generator_next(self, variable_name, generator_name):
         """ Binds the next value for generator_name to variable_name and return value used """
@@ -51,7 +51,7 @@ class Context(object):
             self.variables[str_name] = val
             self.mod_count = self.mod_count + 1
             # Logging is /expensive/
-            #logging.debug('Context: Set variable named {0} to next value {1} from generator named {2}'.format(variable_name, val, generator_name))
+            # logging.debug('Context: Set variable named {0} to next value {1} from generator named {2}'.format(variable_name, val, generator_name))
         return val
 
     def get_values(self):

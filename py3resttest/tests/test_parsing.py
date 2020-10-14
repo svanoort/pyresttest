@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-import unittest
 import sys
+import unittest
 
-from py3resttest import parsing
 from py3resttest.parsing import *
 
 PYTHON_MAJOR_VERSION = sys.version_info[0]
+
 
 class TestParsing(unittest.TestCase):
     """ Tests for parsing utility functions """
@@ -36,7 +36,6 @@ class TestParsing(unittest.TestCase):
         # Unicode template and normal substitution
         substituted = safe_substitute_unicode_template(unicode_template_string, normal_variables)
         self.assertEqual(u'my name is 指 and my value is bob', substituted)
-
 
     def test_flatten(self):
         """ Test flattening of lists of dictionaries to single dictionaries """
@@ -132,5 +131,7 @@ class TestParsing(unittest.TestCase):
     def test_configure(self):
         """ Do stuff here """
         pass
+
+
 if __name__ == '__main__':
     unittest.main()

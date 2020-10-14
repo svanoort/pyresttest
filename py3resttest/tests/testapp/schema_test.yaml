@@ -2,4 +2,4 @@
 - test:
     - url: /api/person/1/
     - validators:
-        - json_schema: {schema: {file: 'miniapp-schema.json'}}
+        - json_schema: { schema: { file: 'miniapp-schema.json' } }

@@ -1,12 +1,14 @@
 import unittest
+
 from py3resttest.binding import Context
 
 
 def count_gen():  # Generator that counts up from 1
     val = 1
-    while(True):
+    while (True):
         yield val
         val += 1
+
 
 """ Tests variable/generator binding """
 
@@ -62,6 +64,7 @@ class BindingTest(unittest.TestCase):
         context.bind_generator_next('foo', 'gen')
         self.assertEqual(1, context.get_value('foo'))
         self.assertEqual(2, context.mod_count)
+
 
 if __name__ == '__main__':
     unittest.main()

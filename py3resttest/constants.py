@@ -1,5 +1,5 @@
-
 DEFAULT_TIMEOUT = 10
+
 
 class YamlKeyWords:
     IMPORT = 'import'
@@ -13,4 +13,3 @@ class YamlKeyWords:
     VARS = 'variable_binds'
     GENERATORS = 'generators'
     RETRIES = 'retries'
-

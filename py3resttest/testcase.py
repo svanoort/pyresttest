@@ -1,14 +1,14 @@
-
 import copy
 import json
+from io import BytesIO as MyIO
+from urllib.parse import urljoin
+
 import pycurl
 
+from py3resttest import validators
 from py3resttest.constants import DEFAULT_TIMEOUT
 from py3resttest.contenthandling import ContentHandler
-from urllib.parse import urljoin
-from py3resttest import validators
 from py3resttest.parsing import *
-from io import BytesIO as MyIO
 
 """
 Pull out the Test objects and logic associated with them
@@ -54,7 +54,6 @@ def coerce_http_method(val: str):
     if not isinstance(val, str) or len(val) == 0:
         raise TypeError("Invalid HTTP method name: input {0} is not a string or has 0 length".format(val))
 
-
     return val.upper()
 
 
@@ -90,6 +89,11 @@ class Test(object):
     variable_binds = None
     generator_binds = None  # Dict of variable name and then generator name
     extract_binds = None  # Dict of variable name and extract function to run
+
+    def __init__(self):
+        self.headers = dict()
+        self.expected_status = [200]
+        self.templated = dict()
 
     @staticmethod
     def has_contains():
@@ -256,11 +260,6 @@ class Test(object):
             output = copy.copy(self)
             output._body = newbod
         return output
-
-    def __init__(self):
-        self.headers = dict()
-        self.expected_status = [200]
-        self.templated = dict()
 
     def __str__(self):
         return json.dumps(self, default=safe_to_json)

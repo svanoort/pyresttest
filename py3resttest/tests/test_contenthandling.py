@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 import json
-import unittest
-import string
 import os
-from py3resttest.contenthandling import ContentHandler
+import string
+import unittest
+
 from py3resttest.binding import Context
+from py3resttest.contenthandling import ContentHandler
 
 
 class ContentHandlerTest(unittest.TestCase):
@@ -52,7 +53,6 @@ class ContentHandlerTest(unittest.TestCase):
         body = u'$variable 😽 value'
         handler.setup(body, is_template_content=True)
         self.assertEqual(u'😽 😽 value', handler.get_content(context))
-
 
     def test_content_file_template(self):
         """ Test file read and templating of read files in this directory """

@@ -1,6 +1,7 @@
 import unittest
-from py3resttest.benchmarks import Benchmark
+
 from py3resttest import resttest
+from py3resttest.benchmarks import Benchmark
 from py3resttest.resttest import *
 
 
@@ -96,7 +97,7 @@ class TestRestTest(unittest.TestCase):
         importable = False
         try:
             import jmespath
-            importable = True            
+            importable = True
         except ImportError:
             print("Skipping jmespath import test because library absent")
             raise unittest.SkipTest("JMESPath module absent")
@@ -140,6 +141,7 @@ class TestRestTest(unittest.TestCase):
         args = parse_command_line_args(cmdline)
         self.assertEqual('my_url', args['url'])
         self.assertEqual('my_test_filename', args['test'])
+
 
 if __name__ == '__main__':
     unittest.main()
